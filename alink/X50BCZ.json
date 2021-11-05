@@ -1,0 +1,20 @@
+{
+    "ProductKey": "a1YTZpQDGwn",
+    "ProductSecret": "oE99dmyBcH5RAWE3",
+    "DeviceName": "X50_test1",
+    "DeviceSecret": "5fe43d0b7a6b2928c4310cc0d5fcb4b6",
+    "attr": [
+        {
+            "cloudKey": "SysPower",
+            "valueType": 0,
+            "uartCmd": 1,
+            "uartByteLen": 1
+        }
+    ],
+    "event": [
+
+    ],
+    "service": [
+
+    ]
+}
