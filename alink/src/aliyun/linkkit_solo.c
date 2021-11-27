@@ -21,22 +21,15 @@
 #ifdef ATM_ENABLED
 #include "at_api.h"
 #endif
+// #include "wifi_provision_api.h"
+#include "linkkit_solo.h"
+#include "linkkit_func.h"
 
 // char g_product_key[IOTX_PRODUCT_KEY_LEN + 1] = "a1YTZpQDGwn";
 // char g_product_secret[IOTX_PRODUCT_SECRET_LEN + 1] = "oE99dmyBcH5RAWE3";
 // char g_device_name[IOTX_DEVICE_NAME_LEN + 1] = "X50_test1";
 // char g_device_secret[IOTX_DEVICE_SECRET_LEN + 1] = "5fe43d0b7a6b2928c4310cc0d5fcb4b6";
-
-#define EXAMPLE_TRACE(...)                                      \
-    do                                                          \
-    {                                                           \
-        HAL_Printf("\033[1;32;40m%s.%d: ", __func__, __LINE__); \
-        HAL_Printf(__VA_ARGS__);                                \
-        HAL_Printf("\033[0m\r\n");                              \
-    } while (0)
-
-#define EXAMPLE_MASTER_DEVID (0)
-#define EXAMPLE_YIELD_TIMEOUT_MS (200)
+static iotx_linkkit_dev_meta_info_t master_meta_info;
 
 typedef struct
 {
@@ -154,15 +147,15 @@ static int user_timestamp_reply_event_handler(const char *timestamp)
 /** fota event handler **/
 static int user_fota_event_handler(int type, const char *version)
 {
-    char buffer[1024] = {0};
-    int buffer_length = 1024;
-
+    // char buffer[1024] = {0};
+    // int buffer_length = 1024;
+    EXAMPLE_TRACE("user_fota_event_handler");
     /* 0 - new firmware exist, query the new firmware */
     if (type == 0)
     {
-        EXAMPLE_TRACE("New Firmware Version: %s", version);
-
-        IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
+        EXAMPLE_TRACE("user_fota_event_handler New Firmware Version: %s", version);
+        set_ota_state(OTA_NEW_FIRMWARE, (void *)version);
+        // IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
     }
 
     return 0;
@@ -176,7 +169,7 @@ static int user_fota_module_event_handler(int type, const char *version, const c
     /* 0 - new firmware exist, query the new firmware */
     if (type == 0)
     {
-        EXAMPLE_TRACE("New Firmware Version: %s, module: %s", version, module);
+        EXAMPLE_TRACE("user_fota_module_event_handler New Firmware Version: %s, module: %s", version, module);
 
         IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
     }
@@ -243,10 +236,11 @@ static int user_state_dev_bind(int ev, const char *msg)
                 {
                     if (strcmp("Bind", Operation->valuestring) == 0)
                     {
+                        EXAMPLE_TRACE("STATE_BIND Bind............\n");
                     }
                     else if (strcmp("Unbind", Operation->valuestring) == 0)
                     {
-                        //SUBDEV_RESTORE
+                        EXAMPLE_TRACE("STATE_BIND Unbind............\n");
                     }
                 }
             }
@@ -317,6 +311,17 @@ static int user_sdk_state_dump(int ev, const char *msg)
     return 0;
 }
 
+void get_linkkit_dev_quad(char *product_key, char *product_secret, char *device_name, char *device_secret)
+{
+    if (product_key)
+        strcpy(product_key, master_meta_info.product_key);
+    if (product_secret)
+        strcpy(product_secret, master_meta_info.product_secret);
+    if (device_name)
+        strcpy(device_name, master_meta_info.device_name);
+    if (device_secret)
+        strcpy(device_secret, master_meta_info.device_secret);
+}
 void linkkit_close(void)
 {
     if (g_user_example_ctx.linkkit_runing > 0)
@@ -331,7 +336,7 @@ void linkkit_close(void)
 int linkkit_main(const char *product_key, const char *product_secret, const char *device_name, const char *device_secret)
 {
     int res = 0;
-    iotx_linkkit_dev_meta_info_t master_meta_info;
+
     int domain_type = 0, dynamic_register = 0, post_reply_need = 0, fota_timeout = 30;
 
 #ifdef ATM_ENABLED
@@ -353,26 +358,11 @@ int linkkit_main(const char *product_key, const char *product_secret, const char
     strcpy(master_meta_info.product_secret, product_secret);
     strcpy(master_meta_info.device_name, device_name);
     strcpy(master_meta_info.device_secret, device_secret);
-
-    IOT_SetLogLevel(IOT_LOG_INFO);
-
-    /*
-     * if the following conditions are met:
-     *    1) wifi provision is enabled,
-     *    2) current OS is Ubuntu,
-     *    3) a wireless card(Linksys思科wusb600n双频无线网卡) is inserted
-     *    4) g_ifname in HAL_AWSS_linux.c has been set to be the wireless card's name according to ifconfig
-     *       for example, the output of command "ifconfig" is like:
-     *         wlx00259ce04ceb Link encap:Ethernet  HWaddr 00:25:9c:e0:4c:eb
-     *         UP BROADCAST PROMISC MULTICAST  MTU:1500  Metric:1
-     *         RX packets:8709 errors:0 dropped:27 overruns:0 frame:0
-     *         TX packets:2457 errors:0 dropped:0 overruns:0 carrier:0
-     *         collisions:0 txqueuelen:1000
-     *         RX bytes:2940097 (2.9 MB)  TX bytes:382827 (382.8 KB)
-     *       then set g_ifname = "wlx00259ce04ceb"
-     *    5) the linkkit-example-solo is running with sudo permission
-     *  Then you can run wifi-provision example in Ubuntu, just to uncomment the following line
-     */
+    EXAMPLE_TRACE("product_key:%s", master_meta_info.product_key);
+    EXAMPLE_TRACE("product_secret:%s", master_meta_info.product_secret);
+    EXAMPLE_TRACE("device_name:%s", master_meta_info.device_name);
+    EXAMPLE_TRACE("device_secret:%s", master_meta_info.device_secret);
+    IOT_SetLogLevel(IOT_LOG_WARNING);
 
     /* Register Callback */
     IOT_RegisterCallback(ITE_STATE_EVERYTHING, user_sdk_state_dump);

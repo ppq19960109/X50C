@@ -123,7 +123,7 @@ void readFileList(const char *path, int (*readFileFunc)(const char *))
     closedir(dir);
 }
 
-void *get_dev_profile(const char *path, const char *devId, const char *modelId, void *(*func)(const char *, const char *))
+void *get_dev_profile(const char *path, void *input, const char *modelId, void *(*func)(void *, const char *))
 {
     char filePath[64] = {0};
     snprintf(filePath, sizeof(filePath), "%s/%s.json", path, modelId);
@@ -159,7 +159,7 @@ void *get_dev_profile(const char *path, const char *devId, const char *modelId, 
         goto fail;
     }
     close(fd);
-    void *dev = func(devId, buf);
+    void *dev = func(input, buf);
 
     free(buf);
     return dev;

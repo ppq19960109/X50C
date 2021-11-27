@@ -10,27 +10,28 @@ TOPDIR = .
 
 SRC_DIRS := $(shell find src -maxdepth 3 -type d)
 
-HYTOOL_PATH:=liblinktool
+LINKTOOL_PATH:=liblinktool
 ALI_PATH:=libalink
 
 CFLAGS += $(addprefix -I , $(SRC_DIRS))
-CFLAGS += -I$(HYTOOL_PATH)/include
-CFLAGS += -I$(HYTOOL_PATH)/include/base64
-CFLAGS += -I$(HYTOOL_PATH)/include/cJSON
-CFLAGS += -I$(HYTOOL_PATH)/include/klib
+CFLAGS += -I$(LINKTOOL_PATH)/include
+CFLAGS += -I$(LINKTOOL_PATH)/include/base64
+CFLAGS += -I$(LINKTOOL_PATH)/include/cJSON
+CFLAGS += -I$(LINKTOOL_PATH)/include/klib
+CFLAGS += -I$(LINKTOOL_PATH)/include/tcp
 CFLAGS += -I$(ALI_PATH)/include
 CFLAGS += -Wall
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
 endif
 
-LDFLAGS += -L$(HYTOOL_PATH)/lib
+LDFLAGS += -L$(LINKTOOL_PATH)/lib
 LDFLAGS += -L$(ALI_PATH)/lib
 LDFLAGS += -L$(TOPDIR)
 
 LIBS += -Wl,--start-group	\
-		-Wl,-Bstatic  -liot_hal -liot_sdk -liot_tls	-llinktool \
-		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lsqlite3	-lcurl \
+		-Wl,-Bstatic  -llinktool -liot_hal -liot_sdk -liot_tls \
+		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lsqlite3	-lcurl -lDeviceIo -lasound \
 		-Wl,--end-group
 
 SRC := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))

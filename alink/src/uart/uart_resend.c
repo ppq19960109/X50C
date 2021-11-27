@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
 
 #include "uart_resend.h"
-#include "uart_task.h"
+#include "uart_ecb_task.h"
 
 unsigned long get_systime_ms(void)
 {
@@ -44,7 +45,7 @@ void resend_list_add(struct list_head *head, struct list_head *node)
     list_add(node, head);
 }
 
-void resend_list_del(resend_t *ptr)
+void resend_list_del(uart_resend_t *ptr)
 {
     list_del(&ptr->node);
     if (ptr->send_data != NULL)
@@ -55,13 +56,13 @@ void resend_list_del(resend_t *ptr)
     ptr = NULL;
 }
 
-resend_t *resend_list_get_by_id(struct list_head *head, const int resend_seq_id)
+uart_resend_t *resend_list_get_by_id(struct list_head *head, const int resend_seq_id)
 {
     if (head == NULL)
     {
         return NULL;
     }
-    resend_t *ptr = NULL;
+    uart_resend_t *ptr = NULL;
 
     list_for_each_entry(ptr, head, node)
     {
@@ -75,7 +76,7 @@ resend_t *resend_list_get_by_id(struct list_head *head, const int resend_seq_id)
 
 int resend_list_del_by_id(struct list_head *head, const int resend_seq_id)
 {
-    resend_t *ptr = resend_list_get_by_id(head, resend_seq_id);
+    uart_resend_t *ptr = resend_list_get_by_id(head, resend_seq_id);
     if (ptr == NULL)
     {
         return -1;
@@ -86,7 +87,7 @@ int resend_list_del_by_id(struct list_head *head, const int resend_seq_id)
 
 void resend_list_each(struct list_head *head)
 {
-    resend_t *ptr, *next;
+    uart_resend_t *ptr, *next;
     if (head == NULL)
     {
         return;
@@ -100,7 +101,7 @@ void resend_list_each(struct list_head *head)
             {
                 ptr->wait_tick = resend_tick_set(current_tick, RESEND_WAIT_TICK);
                 --ptr->resend_cnt;
-                uart_send_data(ptr->uart_num, ptr->send_data, ptr->send_len, 0, 0);
+                uart_send_to_ecb(ptr->send_data, ptr->send_len, 0, 0);
             }
         }
         if (ptr->resend_cnt == 0)

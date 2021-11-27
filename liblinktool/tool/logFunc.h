@@ -1,7 +1,7 @@
 #ifndef __LOGFUNC_H_
 #define __LOGFUNC_H_
 
-#define NONE "\e[0m\n"
+#define COLOR_NONE "\e[0m\n"
 #define BLACK "\e[0;30m"
 #define L_BLACK "\e[1;30m"
 #define RED "\e[0;31m"
@@ -27,7 +27,7 @@
 #define CLRLINE "\r\e[K" //or "\e[1K\r"
 
 #define log_color(color, fmt, ...)                      \
-    logPrintf(color "[%s-%d]: " fmt NONE, __FUNCTION__, \
+    logPrintf(color "[%s-%d]: " fmt COLOR_NONE, __FUNCTION__, \
               __LINE__, ##__VA_ARGS__)
 
 #define MLOG_DEBUG(fmt, ...) log_color(BLUE, fmt, ##__VA_ARGS__)

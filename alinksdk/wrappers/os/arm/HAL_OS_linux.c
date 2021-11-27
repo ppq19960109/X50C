@@ -46,7 +46,7 @@ char _device_secret[IOTX_DEVICE_SECRET_LEN + 1] = "t9GmMf2jb3LgWfXBaZD2r3aJrfVWB
 #endif
 #endif
 
-static const char _firmware_version[IOTX_FIRMWARE_VER_LEN] = "Marssenger_X50V1.0";
+static const char _firmware_version[IOTX_FIRMWARE_VER_LEN] = "100";
 
 void *HAL_Malloc(uint32_t size)
 {
@@ -224,7 +224,7 @@ int HAL_ThreadCreate(
 
 static FILE *fp;
 
-#define otafilename "/tmp/upgrade.bin"
+// #define otafilename "/tmp/upgrade.bin"
 
 void HAL_Firmware_Persistence_Start(void)
 {
@@ -253,9 +253,7 @@ int HAL_Firmware_Persistence_Stop(void)
     }
 
     /* check file md5, and burning it to flash ... finally reboot system */
-    sync();
-    system("chmod 777 " otafilename);
-    system("cd /tmp;" otafilename);
+    
     return 0;
 }
 

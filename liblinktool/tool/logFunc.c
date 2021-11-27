@@ -11,7 +11,7 @@ void logPrintf(char *format, ...)
     va_end(args);
 }
 
-void logPrintfHex(char *title,unsigned char *data, unsigned int len)
+void MLOG_HEX(char *title,unsigned char *data, unsigned int len)
 {
     printf("%s", title);
     for (int i = 0; i < len; ++i)

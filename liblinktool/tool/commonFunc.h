@@ -12,7 +12,7 @@ extern "C"
     long getFileSize(const char *path);
     int operateFile(int action, const char *path, char *buf, int len);
     void readFileList(const char *path, int (*readFileFunc)(const char *));
-    void *get_dev_profile(const char *path, const char *devId, const char *modelId, void *(*func)(const char *, const char *));
+    void *get_dev_profile(const char *path, void *input, const char *modelId, void *(*func)(void *, const char *));
     long *stol(const char *str, int base, long *out);
     double *stod(const char *str, double *out);
     int findStrIndex(const char *key, char *const *array, const int arrayLen);

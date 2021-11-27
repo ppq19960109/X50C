@@ -225,6 +225,6 @@ struct at_conn_input {
 };
 
 #endif
-
+#define otafilename "/tmp/upgrade.bin"
 #endif
 

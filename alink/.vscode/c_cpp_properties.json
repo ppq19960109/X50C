@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/ppq/armrk3308_20210223/arm-rockchip-linux-gnueabihf/sysroot/usr/include"
+                "~/sdk/rk3308_sdk/buildroot/output/rockchip_rk3308_32_debug/host"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

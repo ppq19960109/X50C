@@ -66,15 +66,20 @@ char *getNetworkMac(const char *eth_inf, char *mac, unsigned int len, const char
     }
 
     close(sd);
-
-    snprintf(mac, len, "%02x%s%02x%s%02x%s%02x%s%02x%s%02x",
-             (unsigned char)ifr.ifr_hwaddr.sa_data[0], separator,
-             (unsigned char)ifr.ifr_hwaddr.sa_data[1], separator,
-             (unsigned char)ifr.ifr_hwaddr.sa_data[2], separator,
-             (unsigned char)ifr.ifr_hwaddr.sa_data[3], separator,
-             (unsigned char)ifr.ifr_hwaddr.sa_data[4], separator,
-             (unsigned char)ifr.ifr_hwaddr.sa_data[5]);
-
+    if (6 == len && separator == NULL)
+    {
+        memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
+    }
+    else
+    {
+        snprintf(mac, len, "%02x%s%02x%s%02x%s%02x%s%02x%s%02x",
+                 (unsigned char)ifr.ifr_hwaddr.sa_data[0], separator,
+                 (unsigned char)ifr.ifr_hwaddr.sa_data[1], separator,
+                 (unsigned char)ifr.ifr_hwaddr.sa_data[2], separator,
+                 (unsigned char)ifr.ifr_hwaddr.sa_data[3], separator,
+                 (unsigned char)ifr.ifr_hwaddr.sa_data[4], separator,
+                 (unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+    }
     return mac;
 }
 

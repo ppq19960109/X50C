@@ -1,18 +1,18 @@
-
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/reboot.h>
 
-#include "esp_log.h"
+#include "logFunc.h"
+#include "networkFunc.h"
 
-#include "app_uart_ecb.h"
-#include "ecb_parsing.h"
+#include "linkkit_func.h"
+#include "uart_ecb_task.h"
+#include "uart_ecb_parse.h"
 #include "uart_resend.h"
-#include "cloud.h"
+#include "cloud_process.h"
 
-extern void ecb_resend_list_add(resend_t *resend);
-extern void ecb_resend_list_del_by_id(const int resend_seq_id);
-
-static const char *TAG = "uart_ecb_protocol";
 static unsigned short ecb_seq_id = 0;
 
 typedef enum
@@ -57,10 +57,10 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
     return (wCRCin ^ 0xFFFF);
 }
 
-int ecb_uart_send_msg(unsigned char command, unsigned short msg_len, unsigned char *msg)
+int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len)
 {
     int index = 0;
-    unsigned char *send_msg = (unsigned char *)pvPortMalloc(ECB_MSG_MIN_LEN + msg_len);
+    unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     send_msg[index++] = 0xe6;
     send_msg[index++] = 0xe6;
     unsigned short seq_id = ecb_seq_id++;
@@ -79,12 +79,110 @@ int ecb_uart_send_msg(unsigned char command, unsigned short msg_len, unsigned ch
     send_msg[index++] = crc16 & 0xff;
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
-    return uart_send_data(CONFIG_ECB_UART_PORT_NUM, send_msg, ECB_MSG_MIN_LEN + msg_len, 0, 0);
+    return uart_send_to_ecb(send_msg, ECB_MSG_MIN_LEN + msg_len, 0, 0);
 }
 
+int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len)
+{
+    return uart_ecb_send_msg(ECB_UART_COMMAND_SET,msg,msg_len);
+}
 int ecb_uart_send_nak(unsigned char error_code)
 {
-    return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, 1, &error_code);
+    return uart_ecb_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1);
+}
+
+int ecb_uart_send_factory(ft_ret_t ret)
+{
+    unsigned char send[2] = {0};
+    send[0] = UART_STORE_FT_RESULT;
+    send[1] = ret;
+    return uart_ecb_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send));
+}
+
+static int send_factory_test(void)
+{
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+
+    int index = 0;
+    unsigned char send_msg[33];
+    char mac[6] = {0};
+    // 软件版本
+    send_msg[index++] = UART_STORE_SW_VERSION;
+    send_msg[index++] = (cloud_dev->software_ver / 100) % 10;
+    send_msg[index++] = (cloud_dev->software_ver / 10) % 10;
+    send_msg[index++] = cloud_dev->software_ver % 10;
+    // 硬件版本
+    send_msg[index++] = UART_STORE_HW_VERSION;
+    send_msg[index++] = (cloud_dev->hardware_ver / 100) % 10;
+    send_msg[index++] = (cloud_dev->hardware_ver / 10) % 10;
+    send_msg[index++] = cloud_dev->hardware_ver % 10;
+    // MAC地址
+    send_msg[index++] = UART_STORE_MAC;
+    //wifi mac
+    getNetworkMac(ETH_NAME, mac, sizeof(mac), NULL);
+    send_msg[index++] = mac[0];
+    send_msg[index++] = mac[1];
+    send_msg[index++] = mac[2];
+    send_msg[index++] = mac[3];
+    send_msg[index++] = mac[4];
+    send_msg[index++] = mac[5];
+    //蓝牙mac
+    send_msg[index++] = 0;
+    send_msg[index++] = 0;
+    send_msg[index++] = 0;
+    send_msg[index++] = 0;
+    send_msg[index++] = 0;
+    send_msg[index++] = 0;
+    return uart_ecb_send_msg(ECB_UART_COMMAND_STORE, send_msg, index);
+}
+
+void keypress_local_pro(unsigned char value)
+{
+    switch (value)
+    {
+    case KEYPRESS_LOCAL_POWER_ON: /* 上电提示 */
+        break;
+    case KEYPRESS_LOCAL_FT_START: /* 厂测开始 */
+        MLOG_ERROR("Factory test began");
+        send_factory_test();
+        break;
+    case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
+        MLOG_ERROR("End of the factory test");
+        break;
+    case KEYPRESS_LOCAL_RUN_IN_DO: /* 蒸烤模式下门未关闭时，按运行键 */
+        break;
+    case KEYPRESS_LOCAL_FT_WIFI: /* 整机厂测，通讯及WIFI检测 */
+        MLOG_INFO("factory test: wifi test ");
+
+        break;
+    case KEYPRESS_LOCAL_FT_BT: /* 整机厂测，蓝牙检测 */
+        MLOG_INFO("factory test: bluetooth test ");
+        break;
+    case KEYPRESS_LOCAL_FT_SPEAKER: /* 整机厂测，喇叭检测 */
+        MLOG_INFO("factory test: speaker test ");
+        break;
+    case KEYPRESS_LOCAL_FT_RESET: /* 整机厂测，恢复出厂设置 */
+        MLOG_INFO("factory test: reset test ");
+        if (0 != linkkit_unbind())
+        {
+            MLOG_ERROR("factory test: reset error ");
+            ecb_uart_send_factory(FT_RET_ERR_RESET);
+            break;
+        }
+
+        sleep(1);
+        ecb_uart_send_factory(FT_RET_OK_RESET);
+        break;
+    case KEYPRESS_LOCAL_RESET: /* 通讯板重启（主要用于强制断电前进行通知和追溯） */
+    case 0xFF:                 /*重启 */
+        MLOG_ERROR("now reboot......");
+        sync();
+        reboot(RB_AUTOBOOT);
+        break;
+
+    default:
+        break;
+    }
 }
 
 static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
@@ -93,7 +191,7 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     if (in_len < 2)
     {
         *end = 0;
-        ESP_LOGE(TAG, "input len too small");
+        MLOG_ERROR("input len too small");
         return ECB_UART_READ_LEN_SMALL;
     }
 
@@ -104,7 +202,7 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     }
     if (i >= in_len - 1)
     {
-        ESP_LOGE(TAG, "no header was detected");
+        MLOG_ERROR("no header was detected");
         return ECB_UART_READ_NO_HEADER;
     }
     index = i;
@@ -112,7 +210,7 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     if (index + in_len < ECB_MSG_MIN_LEN)
     {
         *end = index;
-        ESP_LOGE(TAG, "input len too small");
+        MLOG_ERROR("input len too small");
         return ECB_UART_READ_LEN_SMALL;
     }
     int msg_index = 2;
@@ -128,37 +226,38 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     if (index + msg_index + 2 + 2 > in_len)
     {
         *end = index;
-        ESP_LOGE(TAG, "input data len too small");
+        MLOG_ERROR("input data len too small");
         return ECB_UART_READ_LEN_SMALL;
     }
     else if (in[index + msg_index + 2] != 0x6e || in[index + msg_index + 2 + 1] != 0x6e)
     {
         *end = index + msg_index + 2 + 2;
-        ESP_LOGE(TAG, "no tailer was detected");
+        MLOG_ERROR("no tailer was detected");
         ecb_uart_send_nak(ECB_NAK_TAILER);
         return ECB_UART_READ_TAILER_ERR;
     }
     unsigned short crc16 = CRC16_MAXIM(&in[index + 2], msg_index - 2);
     unsigned short check_sum = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    ESP_LOGW(TAG, "crc16:%x,check_sum:%x", crc16, check_sum);
+    MLOG_INFO("crc16:%x,check_sum:%x", crc16, check_sum);
     msg_index += 2;
     msg_index += 2;
-    ESP_LOG_BUFFER_HEXDUMP(TAG, &in[index], msg_index, ESP_LOG_INFO);
+
     *end = index + msg_index;
     // if (crc16 != check_sum)
     // {
-    //     ESP_LOGE(TAG, "data check error");
+    //     MLOG_ERROR( "data check error");
     //     ecb_uart_send_nak(ECB_NAK_CHECKSUM);
     //     return ECB_UART_READ_CHECK_ERR;
     // }
     //----------------------
-    ESP_LOGI(TAG, "command:%d\n", command);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, payload, data_len, ESP_LOG_INFO);
+    MLOG_INFO("command:%d\n", command);
+    MLOG_HEX("payload:", (unsigned char *)payload, data_len);
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {
-        ecb_uart_send_msg(ECB_UART_COMMAND_ACK, 0, NULL);
+        uart_ecb_send_msg(ECB_UART_COMMAND_ACK, NULL, 0);
         if (command == ECB_UART_COMMAND_EVENT)
         {
+            send_data_to_cloud(payload, data_len);
         }
         else if (command == ECB_UART_COMMAND_KEYPRESS)
         {
@@ -166,7 +265,6 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
         else
         {
         }
-        recv_data_to_cloud(command, payload, data_len);
     }
     else if (command == ECB_UART_COMMAND_GETACK)
     {
@@ -190,7 +288,7 @@ void uart_read_parse(unsigned char *in, int *in_len)
     ecb_uart_read_status_t status;
     for (;;)
     {
-        ESP_LOGI(TAG, "start:%d,in len:%d", start, *in_len);
+        MLOG_INFO("start:%d,in len:%d", start, *in_len);
         status = uart_data_parse(&in[start], *in_len, &start);
         *in_len -= start;
 
@@ -214,7 +312,7 @@ void uart_read_parse(unsigned char *in, int *in_len)
         {
         }
     }
-    ESP_LOGI(TAG, "last start:%d,in len:%d", start, *in_len);
+    MLOG_INFO("last start:%d,in len:%d", start, *in_len);
     if (*in_len <= 0)
     {
         *in_len = 0;
@@ -223,4 +321,9 @@ void uart_read_parse(unsigned char *in, int *in_len)
     {
         memmove(in, &in[start], *in_len);
     }
+}
+
+void uart_ecb_parse_init(void)
+{
+    register_send_data_to_ecb_cb(clound_to_uart_ecb_msg);
 }

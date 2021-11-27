@@ -30,6 +30,4 @@
 #include "dev_reset_api.h"
 
 
-#define ETH_NAME "eth0"
-
 #endif
