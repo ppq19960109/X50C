@@ -18,6 +18,7 @@ enum OTA_TYPE
 int linkkit_unbind(void);
 int request_fota_image(void);
 int download_fota_image(void);
+int get_ota_progress(void);
 void register_ota_state_cb(int (*cb)(const int, void *));
 int get_ota_state(void);
 void set_ota_state(enum OTA_TYPE ota_state,void* arg);

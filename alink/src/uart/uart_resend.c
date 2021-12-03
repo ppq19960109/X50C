@@ -101,7 +101,7 @@ void resend_list_each(struct list_head *head)
             {
                 ptr->wait_tick = resend_tick_set(current_tick, RESEND_WAIT_TICK);
                 --ptr->resend_cnt;
-                uart_send_to_ecb(ptr->send_data, ptr->send_len, 0, 0);
+                uart_send_ecb(ptr->send_data, ptr->send_len, 0, 0);
             }
         }
         if (ptr->resend_cnt == 0)

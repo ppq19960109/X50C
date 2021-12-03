@@ -2,18 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <limits.h>
 
-#include "cJSON.h"
-#include "commonFunc.h"
-#include "networkFunc.h"
 #include "logFunc.h"
 
-#include "database.h"
-#include "uds_recv_send.h"
+#include "uds_protocol.h"
 #include "tcp_uds_server.h"
-#include "wifi_task.h"
+
+#include "cloud_task.h"
 #include "database_task.h"
+#include "database.h"
 
 // cook_attr_t g_cook_attr[120];
 // int g_cook_attr_len = 0;
@@ -22,7 +19,8 @@ int g_history_seqid = 0;
 int recipe_select_func(void *data, void *arg)
 {
     recipes_t *recipe = (recipes_t *)data;
-    cJSON *item = (cJSON *)arg;
+    cJSON *root = (cJSON *)arg;
+    cJSON *item = cJSON_CreateObject();
     cJSON_AddNumberToObject(item, "id", recipe->id);
     cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
     cJSON_AddStringToObject(item, "dishName", recipe->dishName);
@@ -30,16 +28,19 @@ int recipe_select_func(void *data, void *arg)
     cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
     cJSON_AddStringToObject(item, "details", recipe->details);
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
-    cJSON_AddNumberToObject(item, "time", recipe->time);
+    cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
+    cJSON_AddItemToArray(root,item);
     return 0;
 }
 
 int histroy_select_func(void *data, void *arg)
 {
+
     recipes_t *recipe = (recipes_t *)data;
-    cJSON *item = (cJSON *)arg;
+    cJSON *root = (cJSON *)arg;
+    cJSON *item = cJSON_CreateObject();
     cJSON_AddNumberToObject(item, "id", recipe->id);
     cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
     cJSON_AddStringToObject(item, "dishName", recipe->dishName);
@@ -47,9 +48,10 @@ int histroy_select_func(void *data, void *arg)
     cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
     cJSON_AddStringToObject(item, "details", recipe->details);
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
-    cJSON_AddNumberToObject(item, "time", recipe->time);
+    cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
+    cJSON_AddItemToArray(root,item);
     // g_cook_attr[g_cook_attr_len].id = recipe->id;
     // g_cook_attr[g_cook_attr_len].seqid = recipe->seqid;
     // ++g_cook_attr_len;
@@ -61,14 +63,14 @@ int histroy_select_func(void *data, void *arg)
 }
 static void *CookRecipe_cb(void *ptr, void *arg)
 {
-    cJSON *item = cJSON_CreateObject();
+    cJSON *item = cJSON_CreateArray();
     select_from_table(RECIPE_TABLE_NAME, recipe_select_func, item);
     return item;
 }
 
 static void *CookHistory_cb(void *ptr, void *arg)
 {
-    cJSON *item = cJSON_CreateObject();
+    cJSON *item = cJSON_CreateArray();
     // g_cook_attr_len = 0;
     select_from_table(HISTORY_TABLE_NAME, histroy_select_func, item);
 
@@ -77,12 +79,13 @@ static void *CookHistory_cb(void *ptr, void *arg)
 
 static void *UpdateRecipe_cb(void *ptr, void *arg)
 {
-
     return NULL;
 }
 
 static void *UpdateHistory_cb(void *ptr, void *arg)
 {
+    if (NULL == arg)
+        return NULL;
     cJSON *item = (cJSON *)arg;
 
     cJSON *id = cJSON_GetObjectItem(item, "id");
@@ -97,11 +100,11 @@ static void *UpdateHistory_cb(void *ptr, void *arg)
         update_key_to_table(HISTORY_TABLE_NAME, "collect", collect->valueint, id->valueint);
         cJSON_AddNumberToObject(root, "collect", collect->valueint);
     }
-    if (cJSON_HasObjectItem(item, "time"))
+    if (cJSON_HasObjectItem(item, "timestamp"))
     {
-        cJSON *time = cJSON_GetObjectItem(item, "time");
-        update_key_to_table(HISTORY_TABLE_NAME, "time", time->valueint, id->valueint);
-        cJSON_AddNumberToObject(root, "time", time->valueint);
+        cJSON *timestamp = cJSON_GetObjectItem(item, "timestamp");
+        update_key_to_table(HISTORY_TABLE_NAME, "timestamp", timestamp->valueint, id->valueint);
+        cJSON_AddNumberToObject(root, "timestamp", timestamp->valueint);
     }
 
     update_key_to_table(HISTORY_TABLE_NAME, "seqid", g_history_seqid + 1, id->valueint);
@@ -112,6 +115,8 @@ static void *UpdateHistory_cb(void *ptr, void *arg)
 
 static void *DeleteHistory_cb(void *ptr, void *arg)
 {
+    if (NULL == arg)
+        return NULL;
     cJSON *item = (cJSON *)arg;
     delete_row_from_table(HISTORY_TABLE_NAME, item->valueint);
     item = cJSON_CreateNumber(item->valueint);
@@ -120,6 +125,8 @@ static void *DeleteHistory_cb(void *ptr, void *arg)
 
 static void *InsertHistory_cb(void *ptr, void *arg)
 {
+    if (NULL == arg)
+        return NULL;
     cJSON *item = (cJSON *)arg;
 
     cJSON *dishName = cJSON_GetObjectItem(item, "dishName");
@@ -147,10 +154,10 @@ static void *InsertHistory_cb(void *ptr, void *arg)
         cJSON *collect = cJSON_GetObjectItem(item, "collect");
         recipe.collect = collect->valueint;
     }
-    if (cJSON_HasObjectItem(item, "time"))
+    if (cJSON_HasObjectItem(item, "timestamp"))
     {
-        cJSON *time = cJSON_GetObjectItem(item, "time");
-        recipe.time = time->valueint;
+        cJSON *timestamp = cJSON_GetObjectItem(item, "timestamp");
+        recipe.timestamp = timestamp->valueint;
     }
     if (cJSON_HasObjectItem(item, "cookType"))
     {
@@ -180,33 +187,61 @@ static set_attr_t g_database_set_attr[] = {
     },
     {
         cloud_key : "UpdateRecipe",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT_CTRL,
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : UpdateRecipe_cb
     },
     {
         cloud_key : "UpdateHistory",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT_CTRL,
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : UpdateHistory_cb
     },
     {
         cloud_key : "DeleteHistory",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT_CTRL,
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : DeleteHistory_cb
     },
     {
         cloud_key : "InsertHistory",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT_CTRL,
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : InsertHistory_cb
     },
 
 };
 
-int database_task_init(void)
+static const int attr_len = sizeof(g_database_set_attr) / sizeof(g_database_set_attr[0]);
+static set_attr_t *attr = g_database_set_attr;
+int database_resp_get(cJSON *root, cJSON *resp)
 {
 
+    for (int i = 0; i < attr_len; ++i)
+    {
+        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        {
+            set_attr_report_uds(resp, &attr[i]);
+        }
+    }
     return 0;
 }
 
-void database_task_deinit(void)
+int database_resp_getall(cJSON *root, cJSON *resp)
 {
+
+    for (int i = 0; i < attr_len; ++i)
+    {
+        set_attr_report_uds(resp, &attr[i]);
+    }
+    return 0;
+}
+
+int database_resp_set(cJSON *root, cJSON *resp)
+{
+
+    for (int i = 0; i < attr_len; ++i)
+    {
+        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        {
+            set_attr_ctrl_uds(resp, &attr[i], cJSON_GetObjectItem(root, attr[i].cloud_key));
+        }
+    }
+    return 0;
 }

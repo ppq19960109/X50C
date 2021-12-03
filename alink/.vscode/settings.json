@@ -46,6 +46,23 @@
         "tcp_uds.h": "c",
         "wifi_task.h": "c",
         "rkwifi.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "array": "c",
+        "chrono": "c",
+        "string_view": "c",
+        "functional": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "utility": "c",
+        "istream": "c",
+        "ostream": "c",
+        "optional": "c",
+        "system_error": "c",
+        "cloud_task.h": "c",
+        "uds_recv_send.h": "c",
+        "stdio.h": "c",
+        "uds_protocol.h": "c",
+        "string": "c",
+        "stdlib.h": "c"
     }
 }

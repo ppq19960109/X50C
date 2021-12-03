@@ -324,14 +324,8 @@ void get_linkkit_dev_quad(char *product_key, char *product_secret, char *device_
 }
 void linkkit_close(void)
 {
-    if (g_user_example_ctx.linkkit_runing > 0)
-    {
-        g_user_example_ctx.linkkit_runing = 0;
-        IOT_Linkkit_Close(g_user_example_ctx.master_devid);
-
-        IOT_DumpMemoryStats(IOT_LOG_DEBUG);
-        IOT_SetLogLevel(IOT_LOG_NONE);
-    }
+    EXAMPLE_TRACE("linkkit_close..............................");
+    g_user_example_ctx.linkkit_runing = 0;
 }
 int linkkit_main(const char *product_key, const char *product_secret, const char *device_name, const char *device_secret)
 {
@@ -432,7 +426,11 @@ int linkkit_main(const char *product_key, const char *product_secret, const char
     {
         IOT_Linkkit_Yield(EXAMPLE_YIELD_TIMEOUT_MS);
     }
-    linkkit_close();
+
+    IOT_Linkkit_Close(g_user_example_ctx.master_devid);
+
+    IOT_DumpMemoryStats(IOT_LOG_DEBUG);
+    IOT_SetLogLevel(IOT_LOG_NONE);
 
     return 0;
 }

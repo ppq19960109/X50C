@@ -1,7 +1,6 @@
 {
     "DeviceType": "Q6",
-    "HardwareVer": "1.0.0",
-    "SoftwareVer": "1.0.0",
+    "HardwareVer": 100,
     "attr": [
         {
             "cloudKey": "SysPower",

@@ -2,17 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <limits.h>
+#include <pthread.h>
 
-#include "cJSON.h"
 #include "logFunc.h"
 #include "commonFunc.h"
 #include "networkFunc.h"
 
-#include "linkkit_solo.h"
-#include "cloud_process.h"
+#include "uds_protocol.h"
 #include "tcp_uds_server.h"
 
+#include "uart_ecb_parse.h"
+#include "linkkit_solo.h"
+#include "cloud_task.h"
+static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 
 cloud_dev_t *get_cloud_dev(void)
@@ -20,18 +22,52 @@ cloud_dev_t *get_cloud_dev(void)
     return g_cloud_dev;
 }
 
-int (*send_data_to_ecb)(unsigned char *, const int);
-void register_send_data_to_ecb_cb(int (*cb)(unsigned char *, const int))
+int set_attr_report_uds(cJSON *root, set_attr_t *attr)
 {
-    send_data_to_ecb = cb;
+    if (root == NULL)
+    {
+        return -1;
+    }
+
+    if (attr != NULL)
+    {
+        if (attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT)
+        {
+            cJSON *item = (cJSON *)attr->cb(attr, NULL);
+            if (item != NULL)
+                cJSON_AddItemToObject(root, attr->cloud_key, item);
+        }
+    }
+    return 0;
 }
 
-cJSON *get_attr_report_value(cloud_attr_t *ptr)
+int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item)
 {
+    if (root == NULL)
+    {
+        return -1;
+    }
+    if (attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->fun_type == LINK_FUN_TYPE_ATTR_CTRL)
+    {
+        item = (cJSON *)attr->cb(attr, item);
+        if (item != NULL)
+        {
+            cJSON_AddItemToObject(root, attr->cloud_key, item);
+        }
+    }
+    return 0;
+}
+
+int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr)
+{
+    if (ptr->value == NULL || (ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT))
+    {
+        return -1;
+    }
     cJSON *item = NULL;
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
-        if (ptr->uart_cmd == 78)
+        if (ptr->uart_cmd == UART_CMD_MULTISTAGE_STATE)
         {
             item = cJSON_CreateObject();
 
@@ -82,7 +118,9 @@ cJSON *get_attr_report_value(cloud_attr_t *ptr)
         {
         }
     }
-    return item;
+    if (item != NULL)
+        cJSON_AddItemToObject(resp, ptr->cloud_key, item);
+    return 0;
 }
 
 int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out)
@@ -93,7 +131,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out)
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
         int index = 0;
-        if (ptr->uart_cmd == 77)
+        if (ptr->uart_cmd == UART_CMD_MULTISTAGE_SET)
         {
             int arraySize = cJSON_GetArraySize(item);
             if (arraySize == 0)
@@ -219,103 +257,123 @@ void send_data_to_cloud(const unsigned char *value, const int value_len)
 {
     MLOG_HEX("send_data_to_cloud:", (unsigned char *)value, value_len);
     int i, j;
-    cloud_dev_t *cloud_dev = get_cloud_dev();
-    cloud_attr_t *attr = NULL;
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
 
     cJSON *root = cJSON_CreateObject();
-    cJSON *item = NULL;
     if (value != NULL)
     {
         for (i = 0; i < value_len; ++i)
         {
             for (j = 0; j < cloud_dev->attr_len; ++j)
             {
-                attr = &cloud_dev->attr[j];
-                if (value[i] == attr->uart_cmd)
+                if (value[i] == attr[j].uart_cmd)
                 {
-                    if (attr->value != NULL)
-                    {
-                        memcpy(attr->value, &value[i + 1], attr->uart_byte_len);
-                        MLOG_DEBUG("i:%d cloud_key:%s", i, attr->cloud_key);
-                        MLOG_HEX("attr value:", (unsigned char *)attr->value, attr->uart_byte_len);
-                        item = get_attr_report_value(attr);
-                        if (item != NULL)
-                            cJSON_AddItemToObject(root, attr->cloud_key, item);
-                    }
-                    i += attr->uart_byte_len;
+                    memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
+                    MLOG_DEBUG("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                    MLOG_HEX("attr value:", (unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                    get_attr_report_value(root, &attr[j]);
+                    i += attr[j].uart_byte_len;
                     break;
                 }
             }
         }
     }
-    else
-    {
-        for (j = 0; j < cloud_dev->attr_len; ++j)
-        {
-            attr = &cloud_dev->attr[j];
-            if (attr->value != NULL && (attr->cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT))
-            {
-                item = get_attr_report_value(attr);
-                if (item != NULL)
-                    cJSON_AddItemToObject(root, attr->cloud_key, item);
-            }
-        }
-    }
-    if (!cJSON_IsNull(root))
-    {
-        char *json = cJSON_PrintUnformatted(root);
-        linkkit_user_post_property(json);
-        cJSON_free(json);
-    }
+
+    char *json = cJSON_PrintUnformatted(root);
+    linkkit_user_post_property(json);
+    cJSON_free(json);
+
+    send_event_uds(root);
+
     cJSON_Delete(root);
 }
 
 int send_all_to_cloud(void)
 {
-    MLOG_INFO("recv_all_to_cloud");
-    send_data_to_cloud(NULL, 0);
+    MLOG_INFO("send_all_to_cloud");
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    cJSON *root = cJSON_CreateObject();
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        get_attr_report_value(root, &attr[i]);
+    }
+    char *json = cJSON_PrintUnformatted(root);
+    linkkit_user_post_property(json);
+    cJSON_free(json);
+    return 0;
+}
+
+int cloud_resp_get(cJSON *root,cJSON *resp)
+{
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        {
+            get_attr_report_value(resp, &attr[i]);
+        }
+    }
+    return 0;
+}
+
+int cloud_resp_getall(cJSON *root,cJSON *resp)
+{
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        get_attr_report_value(resp, &attr[i]);
+    }
+    return 0;
+}
+
+int cloud_resp_set(cJSON *root,cJSON *resp)
+{
+    pthread_mutex_lock(&mutex);
+    static unsigned char uart_buf[1024];
+    int uart_buf_len = 0;
+
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        {
+            if ((attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL))
+            {
+                cJSON *item = cJSON_GetObjectItem(root, attr[i].cloud_key);
+                uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
+            }
+        }
+    }
+
+    if (uart_buf_len > 0)
+    {
+        clound_to_uart_ecb_msg(uart_buf, uart_buf_len);
+    }
+    pthread_mutex_unlock(&mutex);
     return 0;
 }
 
 static int recv_data_from_cloud(const int devid, const char *value, const int value_len)
 {
-    static unsigned char uart_buf[256];
-    int uart_buf_len = 0;
-
-    int j;
-    cloud_dev_t *cloud_dev = get_cloud_dev();
-    cloud_attr_t *ptr = NULL;
-
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
     {
         MLOG_ERROR("JSON Parse Error");
         return -1;
     }
-
-    for (j = 0; j < cloud_dev->attr_len; ++j)
-    {
-        ptr = &cloud_dev->attr[j];
-        if ((ptr->cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || ptr->cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, ptr->cloud_key))
-        {
-            cJSON *item = cJSON_GetObjectItem(root, ptr->cloud_key);
-            uart_buf_len += get_attr_set_value(ptr, item, &uart_buf[uart_buf_len]);
-        }
-    }
+    cloud_resp_set(root,NULL);
     cJSON_Delete(root);
-    if (uart_buf_len > 0)
-    {
-        if (send_data_to_ecb != NULL)
-            send_data_to_ecb(uart_buf, uart_buf_len);
-    }
     return 0;
 }
-
-static int recv_data_from_uds(char *value, unsigned int value_len)
-{
-    return recv_data_from_cloud(0,value,value_len);
-}
-
 static void *cloud_quad_parse_json(void *input, const char *str)
 {
     cJSON *root = cJSON_Parse(str);
@@ -381,13 +439,6 @@ static void *cloud_parse_json(void *input, const char *str)
         goto fail;
     }
 
-    cJSON *SoftwareVer = cJSON_GetObjectItem(root, "SoftwareVer");
-    if (SoftwareVer == NULL)
-    {
-        MLOG_ERROR("SoftwareVer is NULL\n");
-        goto fail;
-    }
-
     cJSON *attr = cJSON_GetObjectItem(root, "attr");
     if (attr == NULL)
     {
@@ -409,7 +460,6 @@ static void *cloud_parse_json(void *input, const char *str)
 
     strcpy(cloud_dev->device_type, DeviceType->valuestring);
     cloud_dev->hardware_ver = HardwareVer->valueint;
-    cloud_dev->software_ver = SoftwareVer->valueint;
 
     cJSON *arraySub, *cloudKey, *valueType, *uartCmd, *uartByteLen;
     for (i = 0; i < arraySize; i++)
@@ -462,27 +512,38 @@ void get_dev_version(char *hardware_ver, char *software_ver)
 
 int cloud_init(void)
 {
-    register_uds_recv_cb(recv_data_from_uds);
+    pthread_mutex_init(&mutex, NULL);
+
     register_property_set_event_cb(recv_data_from_cloud);
     register_property_report_all_cb(send_all_to_cloud);
-    g_cloud_dev = get_dev_profile(PROFILE_PATH, NULL, PROFILE_NAME, cloud_parse_json);
+    g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
         MLOG_ERROR("cloud_init error\n");
         return -1;
     }
-    if (get_dev_profile(PROFILE_PATH, g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
+    g_cloud_dev->software_ver = SOFTER_VER;
+    if (get_dev_profile(".", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
     {
         MLOG_ERROR("cloud_init cloud_quad_parse_json error\n");
         return -1;
     }
+
     return 0;
 }
 
 void cloud_deinit(void)
 {
+    linkkit_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
         free(g_cloud_dev->attr[i].value);
     free(g_cloud_dev->attr);
     free(g_cloud_dev);
+    MLOG_ERROR("cloud_deinit...........\n");
+    pthread_mutex_destroy(&mutex);
+}
+void *cloud_task(void *arg)
+{
+    linkkit_main("a1YTZpQDGwn", "oE99dmyBcH5RAWE3", "X50_test1", "5fe43d0b7a6b2928c4310cc0d5fcb4b6");
+    return NULL;
 }

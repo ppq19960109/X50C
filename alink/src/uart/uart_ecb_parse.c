@@ -11,7 +11,7 @@
 #include "uart_ecb_task.h"
 #include "uart_ecb_parse.h"
 #include "uart_resend.h"
-#include "cloud_process.h"
+#include "cloud_task.h"
 
 static unsigned short ecb_seq_id = 0;
 
@@ -79,7 +79,7 @@ int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int
     send_msg[index++] = crc16 & 0xff;
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
-    return uart_send_to_ecb(send_msg, ECB_MSG_MIN_LEN + msg_len, 0, 0);
+    return uart_send_ecb(send_msg, ECB_MSG_MIN_LEN + msg_len, 0, 0);
 }
 
 int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len)
@@ -321,9 +321,4 @@ void uart_read_parse(unsigned char *in, int *in_len)
     {
         memmove(in, &in[start], *in_len);
     }
-}
-
-void uart_ecb_parse_init(void)
-{
-    register_send_data_to_ecb_cb(clound_to_uart_ecb_msg);
 }

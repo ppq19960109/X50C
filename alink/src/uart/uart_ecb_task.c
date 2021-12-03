@@ -13,12 +13,10 @@
 
 #include "logFunc.h"
 
-#include "linkkit_solo.h"
 #include "UartCfg.h"
 #include "uart_ecb_task.h"
 #include "uart_ecb_parse.h"
 #include "uart_resend.h"
-#include "cloud_process.h"
 
 static int ecb_fd;
 static pthread_mutex_t lock;
@@ -34,7 +32,7 @@ void ecb_resend_list_del_by_id(const int resend_seq_id)
     resend_list_del_by_id(&ECB_LIST_RESEND, resend_seq_id);
 }
 
-int uart_send_to_ecb(unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
+int uart_send_ecb(unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
 {
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
@@ -44,7 +42,7 @@ int uart_send_to_ecb(unsigned char *in, int in_len, unsigned char resend, unsign
             res = 0;
             goto fail;
         }
-        MLOG_HEX("uart_send_to_ecb:", in, in_len);
+        MLOG_HEX("uart_send_ecb:", in, in_len);
         res = write(ecb_fd, in, in_len);
         if (resend)
         {
@@ -76,15 +74,15 @@ int uart_send_to_ecb(unsigned char *in, int in_len, unsigned char resend, unsign
 
 void *uart_ecb_task(void *arg)
 {
+    unsigned char uart_read_buf[1024];
+    int uart_read_len, uart_read_buf_index = 0;
+
+    pthread_mutex_init(&lock, NULL);
+
+    ecb_fd = uart_init("/dev/ttyS0", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
+
     fd_set rfds, copy_fds;
     FD_ZERO(&rfds);
-
-    unsigned char uart_read_buf[256];
-    int uart_read_len, uart_read_buf_index = 0;
-    cloud_init();
-    uart_ecb_parse_init();
-    pthread_mutex_init(&lock, NULL);
-    ecb_fd = uart_init("/dev/ttyS0", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
     FD_SET(ecb_fd, &rfds);
     int maxfd = ecb_fd;
     copy_fds = rfds;
@@ -125,6 +123,5 @@ void *uart_ecb_task(void *arg)
         }
     }
 
-    cloud_deinit();
     pthread_mutex_destroy(&lock);
 }

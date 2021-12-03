@@ -16,7 +16,7 @@
 
 #include "linkkit_solo.h"
 #include "linkkit_func.h"
-#include "cloud_process.h"
+#include "cloud_task.h"
 
 static enum OTA_TYPE g_ota_state = 0;
 
@@ -75,7 +75,12 @@ int linkkit_unbind(void)
 #endif
 }
 
-int (*ota_state_cb)(const int, void *);
+int get_ota_progress(void)
+{
+    return 0;
+}
+
+static int (*ota_state_cb)(const int, void *);
 void register_ota_state_cb(int (*cb)(const int, void *))
 {
     ota_state_cb = cb;

@@ -28,6 +28,7 @@ void wifiRegsiterCallback(AppWiFiCallback cb)
 {
     app_wifi_cb = cb;
     RK_wifi_register_callback(rk_wifi_cb);
+    // RK_wifi_ble_register_callback(rk_wifi_cb);
 }
 
 /**
@@ -35,8 +36,9 @@ void wifiRegsiterCallback(AppWiFiCallback cb)
  */
 void wifiInit()
 {
+    RK_wifi_disable_ap();
     char hostname[16];
-    RK_wifi_set_hostname("RKWIFI");
+    // RK_wifi_set_hostname("RKWIFI");
     memset(hostname, 0, sizeof(hostname));
     RK_wifi_get_hostname(hostname, sizeof(hostname));
     printf("RK_wifi host name:%s\n", hostname);
@@ -71,13 +73,15 @@ int wifiConnect(const char *ssid, const char *psk, const RK_WIFI_CONNECTION_Encr
 {
     int result = -1;
     printf("ssid:%s psk:%s encryp:%d\n", ssid, psk, encryp);
-
-    result = RK_wifi_connect1(ssid, NULL, encryp, 0);
-
+    // RK_wifi_disconnect_network();
+    result = RK_wifi_connect1(ssid, psk, encryp, 0);
+    // result = RK_wifi_connect(ssid, psk);
     if (result < 0)
     {
         printf("RK_wifi_connect_network fail!\n");
+        rk_wifi_cb(getWifiRunningState());
     }
+
     return result;
 }
 
@@ -102,7 +106,7 @@ int getWifiRunningState()
 {
     RK_WIFI_RUNNING_State_e state;
     RK_wifi_running_getState(&state);
-    printf("WiFi state :%d\n", state);
+    printf("getWifiRunningState WiFi state :%d\n", state);
     return state;
 }
 /**

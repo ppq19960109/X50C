@@ -2,37 +2,36 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <limits.h>
 
-#include "cJSON.h"
-#include "commonFunc.h"
-#include "networkFunc.h"
 #include "logFunc.h"
 
-#include "uds_recv_send.h"
+#include "uds_protocol.h"
 #include "tcp_uds_server.h"
-#include "rkwifi.h"
+
+#include "cloud_task.h"
 #include "wifi_task.h"
+#include "rkwifi.h"
 
 static void *WifiState_cb(void *ptr, void *arg)
 {
+    MLOG_WARN("WifiState_cb");
     set_attr_t *attr = (set_attr_t *)ptr;
-
+    attr->value.n = getWifiRunningState();
     cJSON *item = cJSON_CreateNumber(attr->value.n);
     return item;
 }
 
 static void *WifiEnable_cb(void *ptr, void *arg)
 {
-    set_attr_t *attr = (set_attr_t *)ptr;
+    if (NULL == arg)
+        return NULL;
     cJSON *item = (cJSON *)arg;
 
     if (wifiEnable(item->valueint) < 0)
     {
         return NULL;
     }
-    attr->value.n = item->valueint;
-    item = cJSON_CreateNumber(attr->value.n);
+    item = cJSON_CreateNumber(item->valueint);
     return item;
 }
 
@@ -50,6 +49,8 @@ static void *WifiScanR_cb(void *ptr, void *arg)
 
 static void *WifiConnect_cb(void *ptr, void *arg)
 {
+    if (NULL == arg)
+        return NULL;
     // set_attr_t *attr = (set_attr_t *)ptr;
     cJSON *item = (cJSON *)arg;
     cJSON *ssid = cJSON_GetObjectItem(item, "ssid");
@@ -61,10 +62,12 @@ static void *WifiConnect_cb(void *ptr, void *arg)
     cJSON *encryp = cJSON_GetObjectItem(item, "encryp");
     if (encryp == NULL)
         return NULL;
+    MLOG_WARN("WifiConnect_cb ssid:%s,psk:%s,encryp:%d", ssid->valuestring, psk->valuestring, encryp->valueint);
     if (wifiConnect(ssid->valuestring, psk->valuestring, encryp->valueint) < 0)
     {
         return NULL;
     }
+    MLOG_WARN("WifiConnect_cb succcess");
     return NULL;
 }
 
@@ -77,12 +80,13 @@ static void *WifiDisconnect_cb(void *ptr, void *arg)
     return NULL;
 }
 
-static void *wifiCurrentConnect_cb(void *ptr, void *arg)
+static void *WifiCurConnected_cb(void *ptr, void *arg)
 {
-    RK_WIFI_INFO_Connection_s wifiInfo;
+    RK_WIFI_INFO_Connection_s wifiInfo={0};
     if (getWifiConnectionInfo(&wifiInfo) < 0)
     {
-        return NULL;
+        MLOG_ERROR("getWifiConnectionInfo error");
+        // return NULL;
     }
     cJSON *item = cJSON_CreateObject();
     cJSON_AddStringToObject(item, "ssid", wifiInfo.ssid);
@@ -100,7 +104,7 @@ static set_attr_t g_wifi_set_attr[] = {
     },
     {
         cloud_key : "WifiEnable",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT_CTRL,
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : WifiEnable_cb
     },
     {
@@ -124,101 +128,61 @@ static set_attr_t g_wifi_set_attr[] = {
         cb : WifiDisconnect_cb
     },
     {
-        cloud_key : "wifiCurrentConnect",
+        cloud_key : "WifiCurConnected",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-        cb : wifiCurrentConnect_cb
+        cb : WifiCurConnected_cb
     },
 };
 
-static int set_attr_report_uds(cJSON *root, set_attr_t *attr)
-{
-    if (root == NULL)
-    {
-        return -1;
-    }
+static const int attr_len = sizeof(g_wifi_set_attr) / sizeof(g_wifi_set_attr[0]);
+static set_attr_t *attr = g_wifi_set_attr;
 
-    if (attr != NULL)
+int wifi_resp_get(cJSON *root, cJSON *resp)
+{
+    for (int i = 0; i < attr_len; ++i)
     {
-        if (attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT)
+        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
         {
-            cJSON *item = (cJSON *)attr->cb(attr, NULL);
-            if (item != NULL)
-                cJSON_AddItemToObject(root, attr->cloud_key, item);
+            set_attr_report_uds(resp, &attr[i]);
         }
     }
     return 0;
 }
 
+int wifi_resp_getall(cJSON *root, cJSON *resp)
+{
+    for (int i = 0; i < attr_len; ++i)
+    {
+        set_attr_report_uds(resp, &attr[i]);
+    }
+    return 0;
+}
+
+int wifi_resp_set(cJSON *root, cJSON *resp)
+{
+
+    for (int i = 0; i < attr_len; ++i)
+    {
+        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        {
+            set_attr_ctrl_uds(resp, &attr[i], cJSON_GetObjectItem(root, attr[i].cloud_key));
+        }
+    }
+    return 0;
+}
 static int WiFiCallback(int event)
 {
-    g_wifi_set_attr[0].value.n = event;
+    MLOG_WARN("%s,%d",__func__,event);
     cJSON *root = cJSON_CreateObject();
-    set_attr_report_uds(root, &g_wifi_set_attr[0]);
-    send_event_uds(root);
-}
+    cJSON_AddNumberToObject(root,"WifiState",event);
 
-static int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item)
-{
-    if (root == NULL)
-    {
-        return -1;
-    }
-    if (attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->fun_type == LINK_FUN_TYPE_ATTR_CTRL)
-    {
-        item = (cJSON *)attr->cb(attr, item);
-        if (item != NULL)
-        {
-            cJSON_AddItemToObject(root, attr->cloud_key, item);
-        }
-    }
-    return 0;
-}
-
-int wifi_recv_from_uds(cJSON *root, const char *type)
-{
-    int i;
-    static const int attr_len = sizeof(g_wifi_set_attr) / sizeof(g_wifi_set_attr[0]);
-    set_attr_t *attr = g_wifi_set_attr;
-
-    cJSON *root_send = cJSON_CreateObject();
-    if (strcmp(TYPE_GET, type) == 0)
-    {
-        for (i = 0; i < attr_len; ++i)
-        {
-            if (cJSON_HasObjectItem(root, attr[i].cloud_key))
-            {
-                set_attr_report_uds(root_send, &attr[i]);
-            }
-        }
-    }
-    else if (strcmp(TYPE_SET, type) == 0)
-    {
-        for (i = 0; i < attr_len; ++i)
-        {
-            if (cJSON_HasObjectItem(root, attr[i].cloud_key))
-            {
-                set_attr_ctrl_uds(root_send, &attr[i], cJSON_GetObjectItem(root, attr[i].cloud_key));
-            }
-        }
-    }
-    else
-    {
-        for (i = 0; i < attr_len; ++i)
-        {
-            set_attr_report_uds(root_send, &attr[i]);
-        }
-    }
-
-    send_event_uds(root_send);
-    return 0;
+    return send_event_uds(root);
 }
 
 int wifi_task_init(void)
 {
+    wifiInit();
     wifiRegsiterCallback(WiFiCallback);
-    return 0;
-}
 
-void wifi_task_deinit(void)
-{
+    return 0;
 }

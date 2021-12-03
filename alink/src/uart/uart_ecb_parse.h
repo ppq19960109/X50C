@@ -73,7 +73,8 @@ typedef enum
 
 unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen);
 int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len);
+int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len);
+
 void uart_read_parse(unsigned char *in, int *in_len);
-void uart_ecb_parse_init(void);
 int ecb_uart_send_factory(ft_ret_t ret);
 #endif

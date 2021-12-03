@@ -19,6 +19,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/base64
 CFLAGS += -I$(LINKTOOL_PATH)/include/cJSON
 CFLAGS += -I$(LINKTOOL_PATH)/include/klib
 CFLAGS += -I$(LINKTOOL_PATH)/include/tcp
+CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(ALI_PATH)/include
 CFLAGS += -Wall
 ifdef DEBUG

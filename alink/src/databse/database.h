@@ -19,16 +19,20 @@ extern "C"
         char imgUrl[64];
         char details[512];
         char cookSteps[64];
-        int time;
+        int timestamp;
         int collect;
         int cookTime;
         int cookType;
     } recipes_t;
-int select_from_table(const char *table_name, int (*select_func)(void *, void *), void *arg);
-int select_seqid_from_table(const char *table_name, const int seqid, int (*select_func)(void *, void *), void *arg);
-int update_key_to_table(const char *table_name, const char *key, const int val, const int id);
-int delete_row_from_table(const char *table_name, const int id);
-int insert_replace_row_to_table(const char *table_name, recipes_t *recipes);
+
+    int database_init(void);
+    void database_deinit(void);
+
+    int select_from_table(const char *table_name, int (*select_func)(void *, void *), void *arg);
+    int select_seqid_from_table(const char *table_name, const int seqid, int (*select_func)(void *, void *), void *arg);
+    int update_key_to_table(const char *table_name, const char *key, const int val, const int id);
+    int delete_row_from_table(const char *table_name, const int id);
+    int insert_replace_row_to_table(const char *table_name, recipes_t *recipes);
 #ifdef __cplusplus
 }
 #endif

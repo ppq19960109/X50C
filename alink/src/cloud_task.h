@@ -1,10 +1,15 @@
-#ifndef _CLOUD_PROCESS_H_
-#define _CLOUD_PROCESS_H_
+#ifndef _CLOUD_TASK_H_
+#define _CLOUD_TASK_H_
 
-#define PROFILE_PATH "."
+#include "cJSON.h"
+
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
+#define SOFTER_VER (100)
+
+#define UART_CMD_MULTISTAGE_SET (77)
+#define UART_CMD_MULTISTAGE_STATE (78)
 
 enum LINK_VALUE_TYPE
 {
@@ -46,10 +51,33 @@ typedef struct
     int attr_len;
 } cloud_dev_t;
 
+typedef struct
+{
+    char cloud_key[33];
+    enum LINK_FUN_TYPE fun_type;
+    void *(*cb)(void *, void *);
+
+    union
+    {
+        char c;
+        int n;
+        double f;
+        char *p;
+    } value;
+} set_attr_t;
+
 int cloud_init(void);
 void cloud_deinit(void);
+void *cloud_task(void *arg);
+
 void send_data_to_cloud(const unsigned char *value, const int value_len);
-void register_send_data_to_ecb_cb(int (*cb)(unsigned char *, const int));
+void register_send_data_ecb_cb(int (*cb)(unsigned char *, const int));
+
+int set_attr_report_uds(cJSON *root, set_attr_t *attr);
+int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item);
+int cloud_resp_get(cJSON *root,cJSON *resp);
+int cloud_resp_getall(cJSON *root,cJSON *resp);
+int cloud_resp_set(cJSON *root,cJSON *resp);
 
 cloud_dev_t *get_cloud_dev(void);
 void get_dev_version(char *hardware_ver, char *software_ver);
