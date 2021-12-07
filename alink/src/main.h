@@ -18,16 +18,6 @@
 #include "commonFunc.h"
 #include "networkFunc.h"
 
-#include "infra_config.h"
-#include "infra_types.h"
-#include "infra_defs.h"
-#include "infra_state.h"
-#include "infra_compat.h"
-#include "infra_log.h"
-#include "dev_model_api.h"
-#include "dynreg_api.h"
-#include "wrappers.h"
-#include "dev_reset_api.h"
 
 
 #endif

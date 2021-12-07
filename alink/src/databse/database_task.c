@@ -31,7 +31,7 @@ int recipe_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
-    cJSON_AddItemToArray(root,item);
+    cJSON_AddItemToArray(root, item);
     return 0;
 }
 
@@ -51,10 +51,32 @@ int histroy_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
-    cJSON_AddItemToArray(root,item);
+    cJSON_AddItemToArray(root, item);
     // g_cook_attr[g_cook_attr_len].id = recipe->id;
     // g_cook_attr[g_cook_attr_len].seqid = recipe->seqid;
     // ++g_cook_attr_len;
+    if (recipe->seqid > g_history_seqid)
+    {
+        g_history_seqid = recipe->seqid;
+    }
+    return 0;
+}
+
+int histroy_select_seqid_func(void *data, void *arg)
+{
+    recipes_t *recipe = (recipes_t *)data;
+    cJSON *item = (cJSON *)arg;
+    cJSON_AddNumberToObject(item, "id", recipe->id);
+    cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
+    cJSON_AddStringToObject(item, "dishName", recipe->dishName);
+    cJSON_AddStringToObject(item, "imgUrl", recipe->imgUrl);
+    cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
+    cJSON_AddStringToObject(item, "details", recipe->details);
+    cJSON_AddNumberToObject(item, "collect", recipe->collect);
+    cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
+    cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
+    cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
+
     if (recipe->seqid > g_history_seqid)
     {
         g_history_seqid = recipe->seqid;
@@ -110,6 +132,7 @@ static void *UpdateHistory_cb(void *ptr, void *arg)
     update_key_to_table(HISTORY_TABLE_NAME, "seqid", g_history_seqid + 1, id->valueint);
     cJSON_AddNumberToObject(root, "seqid", g_history_seqid + 1);
     ++g_history_seqid;
+    printf("UpdateHistory_cb:g_history_seqid:%d\n", g_history_seqid);
     return root;
 }
 
@@ -143,11 +166,11 @@ static void *InsertHistory_cb(void *ptr, void *arg)
     }
     if (cJSON_HasObjectItem(item, "cookSteps"))
     {
-        strcpy(recipe.cookSteps, cJSON_GetObjectItem(item, "cookSteps")->valuestring);
+        strncpy(recipe.cookSteps, cJSON_GetObjectItem(item, "cookSteps")->valuestring, sizeof(recipe.cookSteps));
     }
     if (cJSON_HasObjectItem(item, "details"))
     {
-        strcpy(recipe.details, cJSON_GetObjectItem(item, "details")->valuestring);
+        strncpy(recipe.details, cJSON_GetObjectItem(item, "details")->valuestring, sizeof(recipe.details));
     }
     if (cJSON_HasObjectItem(item, "collect"))
     {
@@ -170,7 +193,7 @@ static void *InsertHistory_cb(void *ptr, void *arg)
     insert_replace_row_to_table(HISTORY_TABLE_NAME, &recipe);
 
     cJSON *root = cJSON_CreateObject();
-    select_seqid_from_table(HISTORY_TABLE_NAME, g_history_seqid + 1, histroy_select_func, root);
+    select_seqid_from_table(HISTORY_TABLE_NAME, g_history_seqid + 1, histroy_select_seqid_func, root);
     return root;
 }
 

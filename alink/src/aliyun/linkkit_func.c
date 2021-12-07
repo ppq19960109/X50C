@@ -11,13 +11,15 @@
 #include "dev_reset_api.h"
 #include "dev_model_api.h"
 #include "wrappers.h"
-#include "wrappers_defs.h"
+
 #include "cJSON.h"
 
 #include "linkkit_solo.h"
 #include "linkkit_func.h"
 #include "cloud_task.h"
+#include "POSIXTimer.h"
 
+static timer_t g_ota_timer;
 static enum OTA_TYPE g_ota_state = 0;
 
 void linkkit_devrst_evt_handle(iotx_devrst_evt_type_t evt, void *msg)
@@ -75,6 +77,23 @@ int linkkit_unbind(void)
 #endif
 }
 
+void fota_event_handler(const char *version)
+{
+    char buffer[64] = {0};
+    POSIXTimerSet(g_ota_timer, 0, 0);
+    get_dev_version(NULL, buffer);
+    if (strcmp(version, buffer) == 0)
+    {
+        EXAMPLE_TRACE("fota_event_handler Firmware Version the same");
+        set_ota_state(OTA_NO_FIRMWARE, NULL);
+    }
+    else
+    {
+        EXAMPLE_TRACE("fota_event_handler New Firmware Version");
+        set_ota_state(OTA_NEW_FIRMWARE, (void *)version);
+    }
+}
+
 int get_ota_progress(void)
 {
     return 0;
@@ -102,13 +121,20 @@ int request_fota_image(void)
 {
     int res = 0;
     char buffer[64] = {0};
-    get_dev_version(buffer, NULL);
+    get_dev_version(NULL, buffer);
     int buffer_length = strlen(buffer);
-
+    EXAMPLE_TRACE("request_fota_image:%s,%d", buffer, buffer_length);
     set_ota_state(OTA_IDLE, NULL);
     res = IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_REQUEST_FOTA_IMAGE, (unsigned char *)buffer, buffer_length);
-    EXAMPLE_TRACE("request_fota_image:%d", res);
-
+    EXAMPLE_TRACE("request_fota_image res:%d", res);
+    if (res != 0)
+    {
+        set_ota_state(OTA_NO_FIRMWARE, NULL);
+    }
+    else
+    {
+        POSIXTimerSet(g_ota_timer, 0, 10);
+    }
     return res;
 }
 
@@ -133,8 +159,24 @@ int download_fota_image(void)
     sleep(1);
     set_ota_state(OTA_INSTALL_START, NULL);
     sync();
-    system("chmod 777 " otafilename);
-    system("cd /tmp;" otafilename);
+    // system("chmod 777 " otafilename);
+    // system("cd /tmp;" otafilename);
     set_ota_state(OTA_INSTALL_SUCCESS, NULL);
     return res;
+}
+
+void POSIXTimer_cb(union sigval val)
+{
+    EXAMPLE_TRACE("request_fota_image timeout");
+    set_ota_state(OTA_NO_FIRMWARE, NULL);
+}
+int linkkit_func_init(void)
+{
+    g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+    return 0;
+}
+
+void linkkit_func_deinit(void)
+{
+    POSIXTimerDelete(g_ota_timer);
 }

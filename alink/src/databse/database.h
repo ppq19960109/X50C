@@ -18,7 +18,7 @@ extern "C"
         char dishName[64];
         char imgUrl[64];
         char details[512];
-        char cookSteps[64];
+        char cookSteps[256];
         int timestamp;
         int collect;
         int cookTime;

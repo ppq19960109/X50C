@@ -226,5 +226,6 @@ struct at_conn_input {
 
 #endif
 #define otafilename "/tmp/upgrade.bin"
+void register_dm_fota_download_percent_cb(void (*cb)(int));
 #endif
 

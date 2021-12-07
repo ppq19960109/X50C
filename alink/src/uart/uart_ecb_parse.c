@@ -12,6 +12,7 @@
 #include "uart_ecb_parse.h"
 #include "uart_resend.h"
 #include "cloud_task.h"
+#include "uds_protocol.h"
 
 static unsigned short ecb_seq_id = 0;
 
@@ -84,7 +85,7 @@ int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int
 
 int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len)
 {
-    return uart_ecb_send_msg(ECB_UART_COMMAND_SET,msg,msg_len);
+    return uart_ecb_send_msg(ECB_UART_COMMAND_SET, msg, msg_len);
 }
 int ecb_uart_send_nak(unsigned char error_code)
 {
@@ -104,13 +105,13 @@ static int send_factory_test(void)
     cloud_dev_t *cloud_dev = get_cloud_dev();
 
     int index = 0;
-    unsigned char send_msg[33];
+    unsigned char send_msg[33] = {0};
     char mac[6] = {0};
     // 软件版本
     send_msg[index++] = UART_STORE_SW_VERSION;
-    send_msg[index++] = (cloud_dev->software_ver / 100) % 10;
-    send_msg[index++] = (cloud_dev->software_ver / 10) % 10;
-    send_msg[index++] = cloud_dev->software_ver % 10;
+    send_msg[index++] = cloud_dev->software_ver[0] - 0x30;
+    send_msg[index++] = cloud_dev->software_ver[2] - 0x30;
+    send_msg[index++] = cloud_dev->software_ver[4] - 0x30;
     // 硬件版本
     send_msg[index++] = UART_STORE_HW_VERSION;
     send_msg[index++] = (cloud_dev->hardware_ver / 100) % 10;
@@ -145,6 +146,9 @@ void keypress_local_pro(unsigned char value)
     case KEYPRESS_LOCAL_FT_START: /* 厂测开始 */
         MLOG_ERROR("Factory test began");
         send_factory_test();
+        cJSON *resp = cJSON_CreateObject();
+        cJSON_AddNullToObject(resp, "ProductionTest");
+        send_event_uds(resp);
         break;
     case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
         MLOG_ERROR("End of the factory test");
@@ -261,6 +265,21 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
         }
         else if (command == ECB_UART_COMMAND_KEYPRESS)
         {
+            for (int i = 0; i < data_len; ++i)
+            {
+                if (payload[i] == 0xf1)
+                {
+                    keypress_local_pro(payload[i + 1]);
+                    i += 1;
+                }
+                else if (payload[i] == 0xf9)
+                {
+                    cJSON *resp = cJSON_CreateObject();
+                    cJSON_AddNullToObject(resp, "SteamStart");
+                    send_event_uds(resp);
+                    i += 1;
+                }
+            }
         }
         else
         {

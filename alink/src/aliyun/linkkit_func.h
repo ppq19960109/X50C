@@ -1,6 +1,8 @@
 #ifndef __LINKKIT_FUNC_H_
 #define __LINKKIT_FUNC_H_
 
+#include "wrappers_defs.h"
+
 enum OTA_TYPE
 {
     OTA_IDLE= 0x00,
@@ -22,4 +24,8 @@ int get_ota_progress(void);
 void register_ota_state_cb(int (*cb)(const int, void *));
 int get_ota_state(void);
 void set_ota_state(enum OTA_TYPE ota_state,void* arg);
+void fota_event_handler(const char *version);
+
+int linkkit_func_init(void);
+void linkkit_func_deinit(void);
 #endif

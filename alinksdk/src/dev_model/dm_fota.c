@@ -69,7 +69,11 @@ static int _dm_fota_send_new_config_to_user(void *ota_handle)
 
     return SUCCESS_RETURN;
 }
-
+void (*dm_fota_download_percent_cb)(int percent);
+void register_dm_fota_download_percent_cb(void (*cb)(int))
+{
+    dm_fota_download_percent_cb=cb;
+}
 int dm_fota_perform_sync(_OU_ char *output, _IN_ int output_len)
 {
     int res = 0, file_download = 0, retry_timeout = 0, retry_max_timeout = 0;
@@ -147,6 +151,8 @@ int dm_fota_perform_sync(_OU_ char *output, _IN_ int output_len)
             IOT_OTA_ReportProgress(ota_handle, percent_now, NULL);
             percent_pre = percent_now;
             report_pre = report_now;
+            if(dm_fota_download_percent_cb != NULL)
+                dm_fota_download_percent_cb(percent_pre);
         }
 
         /* Check If OTA Finished */

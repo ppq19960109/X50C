@@ -63,6 +63,8 @@
         "stdio.h": "c",
         "uds_protocol.h": "c",
         "string": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "device_task.h": "c",
+        "wrappers_defs.h": "c"
     }
 }

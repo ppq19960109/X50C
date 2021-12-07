@@ -1,5 +1,7 @@
 {
-    "DeviceType": "Q6",
+    "DeviceCategory": "集成灶",
+    "DeviceModel": "X50BCZ",
+    "AfterSalesPhone": "400-888-8490",
     "HardwareVer": 100,
     "attr": [
         {
@@ -331,6 +333,13 @@
             "valueType": 0,
             "funType": 1,
             "uartCmd": 90,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "PermitSteamStartStatus",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 248,
             "uartByteLen": 1
         }
     ],

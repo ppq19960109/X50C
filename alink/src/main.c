@@ -15,6 +15,7 @@ static int main_quit(void)
 {
     uds_protocol_deinit();
     cloud_deinit();
+    return 0;
 }
 int main(int argc, char **argv)
 {
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
     uds_protocol_init();
     pthread_create(&uds_tid, NULL, tcp_uds_server_task, NULL);
     pthread_create(&uart_tid, NULL, uart_ecb_task, NULL);
-    // cloud_task(NULL);
+    cloud_task(NULL);
     while (1)
     {
         sleep(2);

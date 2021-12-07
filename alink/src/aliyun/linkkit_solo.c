@@ -153,8 +153,9 @@ static int user_fota_event_handler(int type, const char *version)
     /* 0 - new firmware exist, query the new firmware */
     if (type == 0)
     {
-        EXAMPLE_TRACE("user_fota_event_handler New Firmware Version: %s", version);
-        set_ota_state(OTA_NEW_FIRMWARE, (void *)version);
+        EXAMPLE_TRACE("user_fota_event_handler New Firmware Version: %s,%d", version, strlen(version));
+        fota_event_handler(version);
+
         // IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
     }
 
@@ -165,7 +166,7 @@ static int user_fota_module_event_handler(int type, const char *version, const c
 {
     char buffer[1024] = {0};
     int buffer_length = 1024;
-
+    EXAMPLE_TRACE("user_fota_module_event_handler");
     /* 0 - new firmware exist, query the new firmware */
     if (type == 0)
     {

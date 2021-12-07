@@ -307,7 +307,7 @@ int send_all_to_cloud(void)
     return 0;
 }
 
-int cloud_resp_get(cJSON *root,cJSON *resp)
+int cloud_resp_get(cJSON *root, cJSON *resp)
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
@@ -322,7 +322,7 @@ int cloud_resp_get(cJSON *root,cJSON *resp)
     return 0;
 }
 
-int cloud_resp_getall(cJSON *root,cJSON *resp)
+int cloud_resp_getall(cJSON *root, cJSON *resp)
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
@@ -334,7 +334,7 @@ int cloud_resp_getall(cJSON *root,cJSON *resp)
     return 0;
 }
 
-int cloud_resp_set(cJSON *root,cJSON *resp)
+int cloud_resp_set(cJSON *root, cJSON *resp)
 {
     pthread_mutex_lock(&mutex);
     static unsigned char uart_buf[1024];
@@ -370,7 +370,7 @@ static int recv_data_from_cloud(const int devid, const char *value, const int va
         MLOG_ERROR("JSON Parse Error");
         return -1;
     }
-    cloud_resp_set(root,NULL);
+    cloud_resp_set(root, NULL);
     cJSON_Delete(root);
     return 0;
 }
@@ -425,11 +425,22 @@ static void *cloud_parse_json(void *input, const char *str)
     {
         return NULL;
     }
-
-    cJSON *DeviceType = cJSON_GetObjectItem(root, "DeviceType");
-    if (DeviceType == NULL)
+    cJSON *DeviceCategory = cJSON_GetObjectItem(root, "DeviceCategory");
+    if (DeviceCategory == NULL)
     {
-        MLOG_ERROR("DeviceType is NULL\n");
+        MLOG_ERROR("DeviceCategory is NULL\n");
+        goto fail;
+    }
+    cJSON *DeviceModel = cJSON_GetObjectItem(root, "DeviceModel");
+    if (DeviceModel == NULL)
+    {
+        MLOG_ERROR("DeviceModel is NULL\n");
+        goto fail;
+    }
+    cJSON *AfterSalesPhone = cJSON_GetObjectItem(root, "AfterSalesPhone");
+    if (AfterSalesPhone == NULL)
+    {
+        MLOG_ERROR("AfterSalesPhone is NULL\n");
         goto fail;
     }
     cJSON *HardwareVer = cJSON_GetObjectItem(root, "HardwareVer");
@@ -458,7 +469,9 @@ static void *cloud_parse_json(void *input, const char *str)
     cloud_dev->attr = (cloud_attr_t *)malloc(sizeof(cloud_attr_t) * cloud_dev->attr_len);
     memset(cloud_dev->attr, 0, sizeof(cloud_attr_t) * cloud_dev->attr_len);
 
-    strcpy(cloud_dev->device_type, DeviceType->valuestring);
+    strcpy(cloud_dev->device_category, DeviceCategory->valuestring);
+    strcpy(cloud_dev->device_model, DeviceModel->valuestring);
+    strcpy(cloud_dev->after_sales_phone, AfterSalesPhone->valuestring);
     cloud_dev->hardware_ver = HardwareVer->valueint;
 
     cJSON *arraySub, *cloudKey, *valueType, *uartCmd, *uartByteLen;
@@ -507,7 +520,7 @@ void get_dev_version(char *hardware_ver, char *software_ver)
     if (hardware_ver)
         sprintf(hardware_ver, "%d", g_cloud_dev->hardware_ver);
     if (software_ver)
-        sprintf(software_ver, "%d", g_cloud_dev->software_ver);
+        strcpy(software_ver, g_cloud_dev->software_ver);
 }
 
 int cloud_init(void)
@@ -522,7 +535,8 @@ int cloud_init(void)
         MLOG_ERROR("cloud_init error\n");
         return -1;
     }
-    g_cloud_dev->software_ver = SOFTER_VER;
+
+    strcpy(g_cloud_dev->software_ver, SOFTER_VER);
     if (get_dev_profile(".", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
     {
         MLOG_ERROR("cloud_init cloud_quad_parse_json error\n");

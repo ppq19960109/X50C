@@ -6,7 +6,7 @@
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER (100)
+#define SOFTER_VER "1.0.1"
 
 #define UART_CMD_MULTISTAGE_SET (77)
 #define UART_CMD_MULTISTAGE_STATE (78)
@@ -43,9 +43,11 @@ typedef struct
     char product_secret[33];
     char device_name[33];
     char device_secret[33];
-    char device_type[16];
+    char device_category[33];
+    char device_model[16];
+    char after_sales_phone[16];
     int hardware_ver;
-    int software_ver;
+    char software_ver[6];
     char remind[3][48];
     cloud_attr_t *attr;
     int attr_len;

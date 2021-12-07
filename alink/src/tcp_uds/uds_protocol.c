@@ -14,10 +14,22 @@
 #include "database.h"
 #include "database_task.h"
 #include "ota_task.h"
+#include "device_task.h"
 
 static pthread_mutex_t mutex;
 static char g_send_buf[4096];
 static int g_seqid = 0;
+
+unsigned char CheckSum(unsigned char *buf, int len)
+{
+    int i;
+    unsigned char ret = 0;
+    for (i = 0; i < len; i++)
+    {
+        ret += *(buf++);
+    }
+    return ret;
+}
 
 int cJSON_Object_isNull(cJSON *object)
 {
@@ -37,7 +49,7 @@ int send_event_uds(cJSON *send)
     if (cJSON_Object_isNull(send))
     {
         cJSON_Delete(send);
-        MLOG_ERROR("%s,send NULL", __func__);
+        MLOG_WARN("%s,send NULL", __func__);
         goto fail;
     }
     cJSON *root = cJSON_CreateObject();
@@ -114,6 +126,7 @@ static int uds_json_parse(char *value, unsigned int value_len)
         database_resp_get(Data, resp);
         cloud_resp_get(Data, resp);
         ota_resp_get(Data, resp);
+        device_resp_get(Data, resp);
     }
     else if (strcmp(TYPE_SET, Type->valuestring) == 0)
     {
@@ -121,6 +134,7 @@ static int uds_json_parse(char *value, unsigned int value_len)
         database_resp_set(Data, resp);
         cloud_resp_set(Data, resp);
         ota_resp_set(Data, resp);
+        device_resp_set(Data, resp);
     }
     else
     {
@@ -128,6 +142,7 @@ static int uds_json_parse(char *value, unsigned int value_len)
         database_resp_getall(Data, resp);
         cloud_resp_getall(Data, resp);
         ota_resp_getall(Data, resp);
+        device_resp_getall(Data, resp);
     }
     send_event_uds(resp);
 
@@ -185,6 +200,7 @@ int uds_protocol_init(void)
 }
 void uds_protocol_deinit(void)
 {
+    ota_task_deinit();
     select_server_deinit();
     database_deinit();
     pthread_mutex_destroy(&mutex);

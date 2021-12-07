@@ -31,14 +31,12 @@ static void *OTARquest_cb(void *ptr, void *arg)
     {
         download_fota_image();
     }
-
-    return item;
+    return NULL;
 }
 
 static void *OTAProgress_cb(void *ptr, void *arg)
 {
-    cJSON *item = cJSON_CreateNumber(get_ota_progress());
-    return item;
+    return NULL;
 }
 
 static void *OTANewVersion_cb(void *ptr, void *arg)
@@ -110,16 +108,31 @@ static int ota_state_event(const int state, void *arg)
 {
     MLOG_INFO("ota_state_event:%d", state);
     cJSON *root = cJSON_CreateObject();
-    set_attr_report_uds(root, &g_ota_set_attr[0]);
     if (OTA_NEW_FIRMWARE == state)
     {
-        set_attr_report_uds(root, &g_ota_set_attr[3]);
+        cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
     }
+    set_attr_report_uds(root, &g_ota_set_attr[0]);
+
     return send_event_uds(root);
 }
 
+static void ota_progress_cb(int precent)
+{
+    MLOG_INFO("ota_progress_cb:%d", precent);
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, g_ota_set_attr[2].cloud_key, precent);
+
+    send_event_uds(root);
+}
 int ota_task_init(void)
 {
     register_ota_state_cb(ota_state_event);
+    register_dm_fota_download_percent_cb(ota_progress_cb);
+    linkkit_func_init();
     return 0;
+}
+void ota_task_deinit(void)
+{
+    linkkit_func_deinit();
 }

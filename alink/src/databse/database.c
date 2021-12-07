@@ -196,7 +196,7 @@ int select_seqid_from_table(const char *table_name, const int seqid, int (*selec
         sqlite3_finalize(stmt);
         return -1;
     }
-
+    sqlite3_bind_int(stmt, 1, seqid);
     recipes_t recipes = {0};
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
