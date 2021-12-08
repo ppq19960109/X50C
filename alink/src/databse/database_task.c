@@ -31,6 +31,7 @@ int recipe_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
+    cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
     cJSON_AddItemToArray(root, item);
     return 0;
 }
@@ -51,6 +52,7 @@ int histroy_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
+    cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
     cJSON_AddItemToArray(root, item);
     // g_cook_attr[g_cook_attr_len].id = recipe->id;
     // g_cook_attr[g_cook_attr_len].seqid = recipe->seqid;
@@ -76,6 +78,7 @@ int histroy_select_seqid_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
+    cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
 
     if (recipe->seqid > g_history_seqid)
     {

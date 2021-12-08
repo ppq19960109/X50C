@@ -5,11 +5,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "cJSON.h"
+#include "logFunc.h"
+#include "commonFunc.h"
+
 #include "sqlite3.h"
 
 #include "database.h"
-
-#define COLLECT_FIELD "COLLECT"
 
 typedef struct
 {
@@ -30,12 +32,13 @@ static const char *create_table =
     TIMESTAMP INTEGER,\
     COLLECT INTEGER,\
     COOKTIME INTEGER,\
-    COOKTYPE INTEGER);";
+    COOKTYPE INTEGER,\
+    RECIPETYPE INTEGER);";
 
 static const char *sql_select_seqid = "SELECT * FROM %s WHERE SEQID = ?;";
 static const char *sql_select_id_seqid = "SELECT ID,SEQID FROM %s;";
 static const char *sql_select = "SELECT * FROM %s;";
-static const char *sql_insert_replace = "INSERT OR REPLACE INTO %s VALUES (NULL,?,?,?,?,?,?,?,?,?);";
+static const char *sql_insert_replace = "INSERT OR REPLACE INTO %s VALUES (NULL,?,?,?,?,?,?,?,?,?,?);";
 static const char *sql_update = "UPDATE %s SET %s = ? WHERE ID = ?;";
 static const char *sql_delete = "DELETE FROM %s WHERE ID = ?;";
 
@@ -138,6 +141,7 @@ int insert_replace_row_to_table(const char *table_name, recipes_t *recipes)
     sqlite3_bind_int(pstmt, 7, recipes->collect);
     sqlite3_bind_int(pstmt, 8, recipes->cookTime);
     sqlite3_bind_int(pstmt, 9, recipes->cookType);
+    sqlite3_bind_int(pstmt, 10, recipes->recipeType);
 
     sqlite3_step(pstmt);
     sqlite3_reset(pstmt);
@@ -174,6 +178,7 @@ int select_from_table(const char *table_name, int (*select_func)(void *, void *)
         recipes.collect = sqlite3_column_int(stmt, 7);
         recipes.cookTime = sqlite3_column_int(stmt, 8);
         recipes.cookType = sqlite3_column_int(stmt, 9);
+        recipes.recipeType = sqlite3_column_int(stmt, 10);
 
         printf("id:%d dishName:%s imgUrl:%s\n", recipes.id, recipes.dishName, recipes.imgUrl);
         if (select_func != NULL)
@@ -211,6 +216,7 @@ int select_seqid_from_table(const char *table_name, const int seqid, int (*selec
         recipes.collect = sqlite3_column_int(stmt, 7);
         recipes.cookTime = sqlite3_column_int(stmt, 8);
         recipes.cookType = sqlite3_column_int(stmt, 9);
+        recipes.recipeType = sqlite3_column_int(stmt, 10);
 
         printf("id:%d dishName:%s imgUrl:%s\n", recipes.id, recipes.dishName, recipes.imgUrl);
         if (select_func != NULL)
@@ -224,7 +230,7 @@ static int databse_create_table(const char *table_name)
 {
     char buf[512];
     sprintf(buf, create_table, table_name);
-    printf("%s,sql:%s\n", __func__, buf);
+    // printf("%s,sql:%s\n", __func__, buf);
     char *errMsg = NULL;
     int rc = sqlite3_exec(sqlHandle.db, buf, NULL, NULL, &errMsg);
     if (SQLITE_OK != rc)
@@ -235,6 +241,73 @@ static int databse_create_table(const char *table_name)
     return rc;
 }
 //---------------------------------
+static void *recipes_parse_json(void *input, const char *str)
+{
+    cJSON *root = cJSON_Parse(str);
+    if (root == NULL)
+    {
+        return NULL;
+    }
+    cJSON *RecipesVersion = cJSON_GetObjectItem(root, "RecipesVersion");
+    if (RecipesVersion == NULL)
+    {
+        MLOG_ERROR("RecipesVersion is NULL\n");
+        goto fail;
+    }
+
+    cJSON *attr = cJSON_GetObjectItem(root, "recipes");
+    if (attr == NULL)
+    {
+        MLOG_ERROR("attr is NULL\n");
+        goto fail;
+    }
+
+    int arraySize = cJSON_GetArraySize(attr);
+    if (arraySize == 0)
+    {
+        MLOG_ERROR("attr arraySize is 0\n");
+        goto fail;
+    }
+    int i;
+    recipes_t recipes = {0};
+    cJSON *arraySub, *seqid, *dishName, *imgUrl, *cookSteps, *details, *cookType, *cookTime, *recipeType;
+    for (i = 0; i < arraySize; i++)
+    {
+        arraySub = cJSON_GetArrayItem(attr, i);
+        if (arraySub == NULL)
+            continue;
+
+        if (cJSON_HasObjectItem(arraySub, "seqid"))
+        {
+            seqid = cJSON_GetObjectItem(arraySub, "seqid");
+            recipes.seqid = seqid->valueint;
+        }
+        dishName = cJSON_GetObjectItem(arraySub, "dishName");
+        strcpy(recipes.dishName, dishName->valuestring);
+        imgUrl = cJSON_GetObjectItem(arraySub, "imgUrl");
+        strcpy(recipes.imgUrl, imgUrl->valuestring);
+        cookSteps = cJSON_GetObjectItem(arraySub, "cookSteps");
+        strcpy(recipes.cookSteps, cookSteps->valuestring);
+        details = cJSON_GetObjectItem(arraySub, "details");
+        strcpy(recipes.details, details->valuestring);
+
+        cookType = cJSON_GetObjectItem(arraySub, "cookType");
+        recipes.cookType = cookType->valueint;
+        cookTime = cJSON_GetObjectItem(arraySub, "cookTime");
+        recipes.cookTime = cookTime->valueint;
+        recipeType = cJSON_GetObjectItem(arraySub, "recipeType");
+        recipes.recipeType = recipeType->valueint;
+
+        insert_replace_row_to_table(RECIPE_TABLE_NAME, &recipes);
+    }
+
+    cJSON_Delete(root);
+    return NULL;
+fail:
+    cJSON_Delete(root);
+    return NULL;
+}
+
 void database_deinit(void)
 {
     sqlite3_close_v2(sqlHandle.db);
@@ -250,7 +323,11 @@ int database_init(void)
         sqlite3_close_v2(sqlHandle.db);
     }
     databse_create_table(HISTORY_TABLE_NAME);
-    databse_create_table(RECIPE_TABLE_NAME);
+    if (databse_create_table(RECIPE_TABLE_NAME) == 0)
+    {
+        printf("%s,first databse_create_table RECIPE_TABLE_NAME.....................\n", __func__);
+        get_dev_profile(".", NULL, RECIPES_FILE, recipes_parse_json);
+    }
     // recipes_t recipes = {0};
     // recipes.seqid = 34;
     // strcpy(recipes.dishName, "清蒸鱼");
@@ -260,6 +337,7 @@ int database_init(void)
     // recipes.timestamp = 213412312;
     // recipes.cookType = 0;
     // recipes.cookTime = 90;
+    // recipes.recipeType = 0;
 
     // insert_replace_row_to_table(HISTORY_TABLE_NAME, &recipes);
     // recipes.seqid = 76;

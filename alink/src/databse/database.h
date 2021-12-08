@@ -10,6 +10,7 @@ extern "C"
 #define DB_NAME "mars.db"
 #define HISTORY_TABLE_NAME "history"
 #define RECIPE_TABLE_NAME "recipe"
+#define RECIPES_FILE "Recipes"
 
     typedef struct
     {
@@ -23,6 +24,7 @@ extern "C"
         int collect;
         int cookTime;
         int cookType;
+        int recipeType;
     } recipes_t;
 
     int database_init(void);
