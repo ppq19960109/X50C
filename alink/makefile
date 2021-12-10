@@ -1,4 +1,3 @@
-
 CROSS_COMPILE =arm-rockchip-linux-gnueabihf-
 CC = @echo "GCC $@"; $(CROSS_COMPILE)gcc
 RM = rm -rf

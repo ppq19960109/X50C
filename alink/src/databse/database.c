@@ -328,20 +328,6 @@ int database_init(void)
         printf("%s,first databse_create_table RECIPE_TABLE_NAME.....................\n", __func__);
         get_dev_profile(".", NULL, RECIPES_FILE, recipes_parse_json);
     }
-    // recipes_t recipes = {0};
-    // recipes.seqid = 34;
-    // strcpy(recipes.dishName, "清蒸鱼");
-    // strcpy(recipes.imgUrl, "images/peitu01.png");
-    // strcpy(recipes.cookSteps, "[{\"device\":0,\"mode\":5,\"temp\":100,\"time\":90}]");
-    // strcpy(recipes.details, "食材：\n鸡蛋2个，蛤蜊50g，盐2g，油3滴葱花30g\n步骤：\n1、鱼片加入适量鸡蛋，料酒、升降、盐，醋、糖，搅拌均匀后加一点淀粉（淀粉加水）增加粘度\n2、鱼片加入适量鸡蛋，料酒、升降、盐，醋、糖，搅拌均匀后加一点淀粉（淀粉加水）增加粘度\n3、鱼片加入适量鸡蛋，料酒、升降、盐，醋、糖，搅拌均匀后加一点淀粉（淀粉加水）增加粘度");
-    // recipes.timestamp = 213412312;
-    // recipes.cookType = 0;
-    // recipes.cookTime = 90;
-    // recipes.recipeType = 0;
 
-    // insert_replace_row_to_table(HISTORY_TABLE_NAME, &recipes);
-    // recipes.seqid = 76;
-    // strcpy(recipes.dishName, "烤面包");
-    // insert_replace_row_to_table(HISTORY_TABLE_NAME, &recipes);
     return 0;
 }

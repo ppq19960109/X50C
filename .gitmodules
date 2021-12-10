@@ -1,0 +1,3 @@
+[submodule "X50QML"]
+	path = X50QML
+	url = git@github.com:ppq19960109/X50QML.git
