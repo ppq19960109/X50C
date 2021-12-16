@@ -10,12 +10,12 @@
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 
-cloud_dev_t *get_cloud_dev(void)
+cloud_dev_t *get_cloud_dev(void) 
 {
     return g_cloud_dev;
 }
 
-int set_attr_report_uds(cJSON *root, set_attr_t *attr)
+int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回调函数，并拼包
 {
     if (root == NULL)
     {
@@ -34,7 +34,7 @@ int set_attr_report_uds(cJSON *root, set_attr_t *attr)
     return 0;
 }
 
-int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item)
+int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) //调用相关设置回调函数，并拼包
 {
     if (root == NULL)
     {
@@ -51,7 +51,7 @@ int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item)
     return 0;
 }
 
-int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr)
+int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
     if (ptr->value == NULL || (ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT))
     {
@@ -116,7 +116,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr)
     return 0;
 }
 
-int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out)
+int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把阿里云下发数据解析，并解析成串口数据
 {
     long num = 0;
     if (out == NULL)
@@ -246,7 +246,7 @@ end:
     return ptr->uart_byte_len + 1;
 }
 
-void send_data_to_cloud(const unsigned char *value, const int value_len)
+void send_data_to_cloud(const unsigned char *value, const int value_len) //所有串口数据解析，并上报阿里云平台和UI
 {
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
@@ -274,15 +274,15 @@ void send_data_to_cloud(const unsigned char *value, const int value_len)
     }
 
     char *json = cJSON_PrintUnformatted(root);
-    linkkit_user_post_property(json);
+    linkkit_user_post_property(json); //阿里云平台上报接口
     cJSON_free(json);
 
-    send_event_uds(root);
+    send_event_uds(root); //UI上报接口
 
     cJSON_Delete(root);
 }
 
-int send_all_to_cloud(void)
+int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚建立连接
 {
     dzlog_info("send_all_to_cloud");
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -300,7 +300,7 @@ int send_all_to_cloud(void)
     return 0;
 }
 
-int cloud_resp_get(cJSON *root, cJSON *resp)
+int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
@@ -315,7 +315,7 @@ int cloud_resp_get(cJSON *root, cJSON *resp)
     return 0;
 }
 
-int cloud_resp_getall(cJSON *root, cJSON *resp)
+int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
@@ -327,7 +327,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp)
     return 0;
 }
 
-int cloud_resp_set(cJSON *root, cJSON *resp)
+int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
     static unsigned char uart_buf[1024];
@@ -355,7 +355,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp)
     return 0;
 }
 
-static int recv_data_from_cloud(const int devid, const char *value, const int value_len)
+static int recv_data_from_cloud(const int devid, const char *value, const int value_len) //阿里云下发接口回调函数，初始化时注册
 {
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
@@ -367,7 +367,7 @@ static int recv_data_from_cloud(const int devid, const char *value, const int va
     cJSON_Delete(root);
     return 0;
 }
-static void *cloud_quad_parse_json(void *input, const char *str)
+static void *cloud_quad_parse_json(void *input, const char *str) //启动时解析四元组文件
 {
     cJSON *root = cJSON_Parse(str);
     if (root == NULL)
@@ -411,7 +411,7 @@ fail:
     cJSON_Delete(root);
     return NULL;
 }
-static void *cloud_parse_json(void *input, const char *str)
+static void *cloud_parse_json(void *input, const char *str) //启动时解析转换配置文件
 {
     cJSON *root = cJSON_Parse(str);
     if (root == NULL)
@@ -508,7 +508,7 @@ fail:
     return NULL;
 }
 
-void get_dev_version(char *hardware_ver, char *software_ver)
+void get_dev_version(char *hardware_ver, char *software_ver) //获取软件版本号
 {
     if (hardware_ver)
         sprintf(hardware_ver, "%d", g_cloud_dev->hardware_ver);
@@ -516,12 +516,12 @@ void get_dev_version(char *hardware_ver, char *software_ver)
         strcpy(software_ver, g_cloud_dev->software_ver);
 }
 
-int cloud_init(void)
+int cloud_init(void) //初始化
 {
     pthread_mutex_init(&mutex, NULL);
 
-    register_property_set_event_cb(recv_data_from_cloud);
-    register_property_report_all_cb(send_all_to_cloud);
+    register_property_set_event_cb(recv_data_from_cloud);//注册阿里云下发回调
+    register_property_report_all_cb(send_all_to_cloud);//注册阿里云连接回调
     g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
@@ -539,7 +539,7 @@ int cloud_init(void)
     return 0;
 }
 
-void cloud_deinit(void)
+void cloud_deinit(void) //反初始化
 {
     linkkit_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
@@ -549,7 +549,7 @@ void cloud_deinit(void)
     dzlog_warn("cloud_deinit...........\n");
     pthread_mutex_destroy(&mutex);
 }
-void *cloud_task(void *arg)
+void *cloud_task(void *arg) //云端任务
 {
     linkkit_main("a1YTZpQDGwn", "oE99dmyBcH5RAWE3", "X50_test1", "5fe43d0b7a6b2928c4310cc0d5fcb4b6");
     return NULL;

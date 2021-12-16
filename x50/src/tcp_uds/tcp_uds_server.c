@@ -81,7 +81,7 @@ static int add_tcp_select_client_event(int cfd)
     return 0;
 }
 
-static int select_tcp_server_accetp_cb(void *arg)
+static int select_tcp_server_accetp_cb(void *arg) //uds服务端accetp回调
 {
     struct Select_Server_Event *event = (struct Select_Server_Event *)arg;
     // struct Select_Tcp_Server_Event *tcp_event = container_of(event, struct Select_Tcp_Server_Event, select_Event);
@@ -110,19 +110,19 @@ static int select_tcp_server_accetp_cb(void *arg)
 }
 
 int (*uds_recv_cb)(char *, unsigned int);
-void register_uds_recv_cb(int (*cb)(char *, unsigned int))
+void register_uds_recv_cb(int (*cb)(char *, unsigned int)) //uds接受数据回调
 {
     uds_recv_cb = cb;
 }
 
-int uds_connect(int fd)
+int uds_connect(int fd) //uds连接回调
 {
     printf("uds_connect fd:%d\n", fd);
 
     return 0;
 }
 
-int uds_disconnect(int fd)
+int uds_disconnect(int fd)//uds断开连接回调
 {
     printf("uds_disconnect fd:%d\n", fd);
     return 0;
@@ -140,18 +140,18 @@ void tcp_uds_server_close(void)
     }
     
 }
-void *tcp_uds_server_task(void *arg)
+void *tcp_uds_server_task(void *arg) //uds任务
 {
     printf("%s UNIX_DOMAIN:%s\r\n", __func__, UNIX_DOMAIN);
     select_server_init();
 
-    select_Tcp_Server.select_Event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT);
+    select_Tcp_Server.select_Event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT); //uds server fd初始化
     select_Tcp_Server.select_Event.read_cb = select_tcp_server_accetp_cb;
     select_Tcp_Server.select_Event.except_cb = select_tcp_server_except_cb;
     select_Tcp_Server.recv_cb = uds_recv_cb;
     select_Tcp_Server.connect_cb = uds_connect;
     select_Tcp_Server.disconnect_cb = uds_disconnect;
-    add_select_server_event(&select_Tcp_Server.select_Event);
+    add_select_server_event(&select_Tcp_Server.select_Event); //添加uds server fd进select
     select_server_task(200);
 
     tcp_uds_server_close();

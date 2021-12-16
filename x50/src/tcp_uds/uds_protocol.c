@@ -15,7 +15,7 @@ static pthread_mutex_t mutex;
 static char g_send_buf[4096];
 static int g_seqid = 0;
 
-unsigned char CheckSum(unsigned char *buf, int len)
+unsigned char CheckSum(unsigned char *buf, int len) //和校验算法
 {
     int i;
     unsigned char ret = 0;
@@ -26,7 +26,7 @@ unsigned char CheckSum(unsigned char *buf, int len)
     return ret;
 }
 
-int cJSON_Object_isNull(cJSON *object)
+int cJSON_Object_isNull(cJSON *object) //cJSON判断Object是否为空
 {
     char *json = cJSON_PrintUnformatted(object);
     if (strlen(json) == 2 && strcmp(json, "{}") == 0)
@@ -38,7 +38,7 @@ int cJSON_Object_isNull(cJSON *object)
     return 0;
 }
 
-int send_event_uds(cJSON *send)
+int send_event_uds(cJSON *send) //uds发送u接口
 {
     pthread_mutex_lock(&mutex);
     if (cJSON_Object_isNull(send))
@@ -88,7 +88,7 @@ fail:
     return 0;
 }
 
-static int uds_json_parse(char *value, unsigned int value_len)
+static int uds_json_parse(char *value, unsigned int value_len) //uds接受的json数据解析
 {
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
@@ -114,8 +114,8 @@ static int uds_json_parse(char *value, unsigned int value_len)
         dzlog_error("Data is NULL\n");
         goto fail;
     }
-    cJSON *resp = cJSON_CreateObject();
-    if (strcmp(TYPE_GET, Type->valuestring) == 0)
+    cJSON *resp = cJSON_CreateObject(); //创建返回数据
+    if (strcmp(TYPE_GET, Type->valuestring) == 0) //解析GET命令
     {
         wifi_resp_get(Data, resp);
         database_resp_get(Data, resp);
@@ -123,7 +123,7 @@ static int uds_json_parse(char *value, unsigned int value_len)
         ota_resp_get(Data, resp);
         device_resp_get(Data, resp);
     }
-    else if (strcmp(TYPE_SET, Type->valuestring) == 0)
+    else if (strcmp(TYPE_SET, Type->valuestring) == 0)  //解析SET命令
     {
         wifi_resp_set(Data, resp);
         database_resp_set(Data, resp);
@@ -131,7 +131,7 @@ static int uds_json_parse(char *value, unsigned int value_len)
         ota_resp_set(Data, resp);
         device_resp_set(Data, resp);
     }
-    else
+    else  //解析GETALL命令
     {
         wifi_resp_getall(Data, resp);
         database_resp_getall(Data, resp);
@@ -139,7 +139,7 @@ static int uds_json_parse(char *value, unsigned int value_len)
         ota_resp_getall(Data, resp);
         device_resp_getall(Data, resp);
     }
-    send_event_uds(resp);
+    send_event_uds(resp);  //发送返回数据
 
     cJSON_Delete(root);
     return 0;
@@ -148,7 +148,7 @@ fail:
     return -1;
 }
 
-static int uds_recv(char *data, unsigned int len)
+static int uds_recv(char *data, unsigned int len) //uds接受回调函数，初始化时注册
 {
     if (data == NULL)
         return -1;
@@ -181,7 +181,7 @@ static int uds_recv(char *data, unsigned int len)
     return 0;
 }
 
-int uds_protocol_init(void)
+int uds_protocol_init(void) //uds协议相关初始化
 {
     pthread_mutex_init(&mutex, NULL);
     wifi_task_init();
@@ -191,7 +191,7 @@ int uds_protocol_init(void)
     register_uds_recv_cb(uds_recv);
     return 0;
 }
-void uds_protocol_deinit(void)
+void uds_protocol_deinit(void) //uds协议相关反初始化
 {
     ota_task_deinit();
     select_server_deinit();
