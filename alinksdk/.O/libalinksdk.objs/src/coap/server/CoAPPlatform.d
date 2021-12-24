@@ -1,2 +1,2 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/coap/server/CoAPPlatform.o: \
- /home/ppq/git/alink-x50/alinksdk/src/coap/server/CoAPPlatform.c
+/home/ppq/git/x50bcz/alinksdk/.O/src/coap/server/CoAPPlatform.o: \
+ /home/ppq/git/x50bcz/alinksdk/src/coap/server/CoAPPlatform.c

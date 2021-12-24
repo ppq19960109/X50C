@@ -36,6 +36,11 @@ typedef enum
     KEYPRESS_LOCAL_FT_START = 0X03,   /* 厂测开?*/
     KEYPRESS_LOCAL_FT_END = 0X04,     /* 厂测结束 */
     KEYPRESS_LOCAL_RUN_IN_DO = 0X05,  /* 蒸烤模式下门未关闭时，按运行?*/
+    KEYPRESS_LOCAL_POWER_LONG = 0X06,
+    KEYPRESS_LOCAL_POWER_SHORT = 0X07,
+    KEYPRESS_LOCAL_HOOD_SPEED = 0X08,
+    KEYPRESS_LOCAL_HOOD_LIGHT = 0X09,
+    KEYPRESS_LOCAL_STEAM_START = 0X0A,
     KEYPRESS_LOCAL_FT_WIFI = 0XA1,    /* 整机厂测，通讯及WIFI检?*/
     KEYPRESS_LOCAL_FT_BT = 0XA2,      /* 整机厂测，蓝牙检?*/
     KEYPRESS_LOCAL_FT_SPEAKER = 0XA3, /* 整机厂测，喇叭检?*/
@@ -71,10 +76,12 @@ typedef enum
 #define WIFI_TEST_SSID      "moduletest"        /* 厂测SSID */
 #define WIFI_TEST_PASSWD    "58185818"          /* 厂测PSK */
 
+#define ECB_DISCONNECT_COUNT (5)
+int get_ecb_disconnect_count(void);
 unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen);
-int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len);
+int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend);
 int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len);
-
+int uart_ecb_get_msg();
 void uart_read_parse(unsigned char *in, int *in_len);
 int ecb_uart_send_factory(ft_ret_t ret);
 #endif

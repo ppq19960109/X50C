@@ -1,6 +1,6 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/coap/CoAPPacket/CoAPDeserialize_common.o: \
- /home/ppq/git/alink-x50/alinksdk/src/coap/CoAPPacket/CoAPDeserialize_common.c \
- /home/ppq/git/alink-x50/alinksdk/src/coap/CoAPPacket/CoAPPlatform.h \
+/home/ppq/git/x50bcz/alinksdk/.O/src/coap/CoAPPacket/CoAPDeserialize_common.o: \
+ /home/ppq/git/x50bcz/alinksdk/src/coap/CoAPPacket/CoAPDeserialize_common.c \
+ /home/ppq/git/x50bcz/alinksdk/src/coap/CoAPPacket/CoAPPlatform.h \
  src/coap/iotx_coap_internal.h src/infra/infra_string.h \
  src/infra/infra_types.h src/infra/infra_config.h \
  src/infra/infra_compat.h src/infra/infra_defs.h src/infra/infra_types.h \

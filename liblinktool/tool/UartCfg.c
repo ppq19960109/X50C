@@ -21,7 +21,7 @@ int uart_init(const char *device, unsigned int baudrate, enum UART_DATABIT datab
     speed_t speed;
 
     /* 打开串口终端 */
-    int fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY);
+    int fd = open(device, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (0 > fd)
     {
         fprintf(stderr, "open error: %s: %s\n", device, strerror(errno));

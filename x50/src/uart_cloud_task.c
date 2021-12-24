@@ -6,11 +6,12 @@
 #include "uart_ecb_parse.h"
 #include "linkkit_solo.h"
 #include "uart_cloud_task.h"
+#include "database_task.h"
 
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 
-cloud_dev_t *get_cloud_dev(void) 
+cloud_dev_t *get_cloud_dev(void)
 {
     return g_cloud_dev;
 }
@@ -242,7 +243,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
     }
 end:
     out[0] = ptr->uart_cmd;
-
+    dzlog_warn("uart_cmd:%d", ptr->uart_cmd);
     return ptr->uart_byte_len + 1;
 }
 
@@ -279,7 +280,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
 
     send_event_uds(root); //UI上报接口
 
-    cJSON_Delete(root);
+    // cJSON_Delete(root);
 }
 
 int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚建立连接
@@ -297,6 +298,15 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     char *json = cJSON_PrintUnformatted(root);
     linkkit_user_post_property(json);
     cJSON_free(json);
+    cJSON_Delete(root);
+
+    root = cJSON_CreateObject();
+    database_resp_getall(NULL, root);
+
+    json = cJSON_PrintUnformatted(root);
+    linkkit_user_post_property(json);
+    cJSON_free(json);
+    cJSON_Delete(root);
     return 0;
 }
 
@@ -342,15 +352,22 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
             if ((attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL))
             {
                 cJSON *item = cJSON_GetObjectItem(root, attr[i].cloud_key);
-                uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
+                uart_buf_len += get_attr_set_value(&attr[i], item, &uart_buf[uart_buf_len]);
             }
         }
     }
-
     if (uart_buf_len > 0)
     {
         clound_to_uart_ecb_msg(uart_buf, uart_buf_len);
     }
+ 
+    cJSON *resp_db = cJSON_CreateObject();
+    database_resp_set(root, resp_db);
+    char *json = cJSON_PrintUnformatted(resp_db);
+    linkkit_user_post_property(json);
+    cJSON_free(json);
+    send_event_uds(resp_db);
+
     pthread_mutex_unlock(&mutex);
     return 0;
 }
@@ -364,6 +381,7 @@ static int recv_data_from_cloud(const int devid, const char *value, const int va
         return -1;
     }
     cloud_resp_set(root, NULL);
+
     cJSON_Delete(root);
     return 0;
 }
@@ -520,8 +538,8 @@ int cloud_init(void) //初始化
 {
     pthread_mutex_init(&mutex, NULL);
 
-    register_property_set_event_cb(recv_data_from_cloud);//注册阿里云下发回调
-    register_property_report_all_cb(send_all_to_cloud);//注册阿里云连接回调
+    register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
+    register_property_report_all_cb(send_all_to_cloud);   //注册阿里云连接回调
     g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
@@ -551,6 +569,6 @@ void cloud_deinit(void) //反初始化
 }
 void *cloud_task(void *arg) //云端任务
 {
-    linkkit_main("a1YTZpQDGwn", "oE99dmyBcH5RAWE3", "X50_test1", "5fe43d0b7a6b2928c4310cc0d5fcb4b6");
+    linkkit_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret);
     return NULL;
 }

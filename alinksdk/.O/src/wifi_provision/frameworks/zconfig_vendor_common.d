@@ -1,5 +1,5 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/wifi_provision/frameworks/zconfig_vendor_common.o: \
- /home/ppq/git/alink-x50/alinksdk/src/wifi_provision/frameworks/zconfig_vendor_common.c \
+/home/ppq/git/x50bcz/alinksdk/.O/src/wifi_provision/frameworks/zconfig_vendor_common.o: \
+ /home/ppq/git/x50bcz/alinksdk/src/wifi_provision/frameworks/zconfig_vendor_common.c \
  src/wifi_provision/wifi_provision_internal.h src/infra/infra_config.h \
  src/wifi_provision/frameworks/aws_lib.h \
  src/wifi_provision/frameworks/zconfig_lib.h \

@@ -1,7 +1,6 @@
 #include "main.h"
 
 #include "sqlite3.h"
-
 #include "database.h"
 
 typedef struct
@@ -307,7 +306,11 @@ fail:
 
 void database_deinit(void)
 {
-    sqlite3_close_v2(sqlHandle.db);
+    if (sqlHandle.db != NULL)
+    {
+        sqlite3_close_v2(sqlHandle.db);
+        sqlHandle.db = NULL;
+    }
 }
 
 int database_init(void)

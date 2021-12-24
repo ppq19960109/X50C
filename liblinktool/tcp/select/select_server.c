@@ -24,14 +24,14 @@ static int select_client_num = 0;
 static int runing = 0;
 void select_server_init(void)
 {
-    runing=1;
+    runing = 1;
     FD_ZERO(&rfds);
     FD_ZERO(&r_copy_fds);
 }
 
 void select_server_deinit(void)
 {
-    runing=0;
+    runing = 0;
 }
 
 int add_select_server_event(struct Select_Server_Event *event)
@@ -105,11 +105,12 @@ void *select_server_task(int time_out)
     int i;
     int n;
     struct timeval timeout;
-    timeout.tv_sec = time_out / 1000;
-    timeout.tv_usec = (time_out % 1000) * 1000;
-
+    int sec = time_out / 1000;
+    int usec = (time_out % 1000) * 1000;
     while (runing)
     {
+        timeout.tv_sec = sec;
+        timeout.tv_usec = usec;
         rfds = r_copy_fds;
         n = select(maxfd + 1, &rfds, NULL, NULL, &timeout);
         if (n < 0)
@@ -134,4 +135,5 @@ void *select_server_task(int time_out)
             }
         }
     }
+    return NULL;
 }

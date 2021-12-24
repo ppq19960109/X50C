@@ -1,5 +1,4 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/coap/server/CoAPServer.o: \
- /home/ppq/git/alink-x50/alinksdk/src/coap/server/CoAPServer.c \
+/home/ppq/git/x50bcz/alinksdk/.O/src/coap/server/CoAPServer.o: /home/ppq/git/x50bcz/alinksdk/src/coap/server/CoAPServer.c \
  src/coap/CoAPPacket/CoAPPlatform.h src/coap/iotx_coap_internal.h \
  src/infra/infra_string.h src/infra/infra_types.h \
  src/infra/infra_config.h src/infra/infra_compat.h src/infra/infra_defs.h \
@@ -10,6 +9,6 @@
  src/infra/infra_json_parser.h src/infra/infra_cjson.h \
  src/infra/infra_list.h src/infra/infra_md5.h src/infra/infra_sha256.h \
  src/infra/infra_report.h src/coap/iotx_coap_config.h \
- /home/ppq/git/alink-x50/alinksdk/src/coap/server/CoAPExport.h \
- /home/ppq/git/alink-x50/alinksdk/src/coap/server/../iotx_coap_internal.h \
- /home/ppq/git/alink-x50/alinksdk/src/coap/server/CoAPServer.h
+ /home/ppq/git/x50bcz/alinksdk/src/coap/server/CoAPExport.h \
+ /home/ppq/git/x50bcz/alinksdk/src/coap/server/../iotx_coap_internal.h \
+ /home/ppq/git/x50bcz/alinksdk/src/coap/server/CoAPServer.h

@@ -1,8 +1,8 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/dev_bind/bind_token.o: /home/ppq/git/alink-x50/alinksdk/src/dev_bind/bind_token.c \
+/home/ppq/git/x50bcz/alinksdk/.O/src/dev_bind/bind_token.o: /home/ppq/git/x50bcz/alinksdk/src/dev_bind/bind_token.c \
  src/infra/infra_sha256.h src/coap/coap_api.h src/infra/infra_defs.h \
  src/infra/infra_types.h src/infra/infra_config.h src/infra/infra_state.h \
- /home/ppq/git/alink-x50/alinksdk/src/dev_bind/bind_msg.h \
- /home/ppq/git/alink-x50/alinksdk/src/dev_bind/bind_utils.h \
+ /home/ppq/git/x50bcz/alinksdk/src/dev_bind/bind_msg.h \
+ /home/ppq/git/x50bcz/alinksdk/src/dev_bind/bind_utils.h \
  src/infra/infra_log.h src/infra/infra_defs.h wrappers/wrappers.h \
  src/infra/infra_types.h wrappers/wrappers_defs.h wrappers/wrappers_os.h \
  wrappers/wrappers_tcp.h wrappers/wrappers_udp.h src/infra/infra_compat.h \

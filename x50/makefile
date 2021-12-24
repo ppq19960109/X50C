@@ -46,7 +46,7 @@ OBJ += $(SRC:%.c=%.o)
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-TARGET := alinkapp
+TARGET := x50app
 .PHONY : all clean
 
 all: $(TARGET)

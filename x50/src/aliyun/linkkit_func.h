@@ -2,7 +2,7 @@
 #define __LINKKIT_FUNC_H_
 
 #include "wrappers_defs.h"
-
+#include "wrappers.h"
 enum OTA_TYPE
 {
     OTA_IDLE= 0x00,

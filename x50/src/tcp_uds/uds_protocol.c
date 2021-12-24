@@ -10,7 +10,6 @@
 #include "ota_task.h"
 #include "device_task.h"
 
-
 static pthread_mutex_t mutex;
 static char g_send_buf[4096];
 static int g_seqid = 0;
@@ -114,7 +113,7 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
         dzlog_error("Data is NULL\n");
         goto fail;
     }
-    cJSON *resp = cJSON_CreateObject(); //创建返回数据
+    cJSON *resp = cJSON_CreateObject();           //创建返回数据
     if (strcmp(TYPE_GET, Type->valuestring) == 0) //解析GET命令
     {
         wifi_resp_get(Data, resp);
@@ -123,15 +122,15 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
         ota_resp_get(Data, resp);
         device_resp_get(Data, resp);
     }
-    else if (strcmp(TYPE_SET, Type->valuestring) == 0)  //解析SET命令
+    else if (strcmp(TYPE_SET, Type->valuestring) == 0) //解析SET命令
     {
         wifi_resp_set(Data, resp);
-        database_resp_set(Data, resp);
+        // database_resp_set(Data, resp);
         cloud_resp_set(Data, resp);
         ota_resp_set(Data, resp);
         device_resp_set(Data, resp);
     }
-    else  //解析GETALL命令
+    else //解析GETALL命令
     {
         wifi_resp_getall(Data, resp);
         database_resp_getall(Data, resp);
@@ -139,7 +138,7 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
         ota_resp_getall(Data, resp);
         device_resp_getall(Data, resp);
     }
-    send_event_uds(resp);  //发送返回数据
+    send_event_uds(resp); //发送返回数据
 
     cJSON_Delete(root);
     return 0;
@@ -193,8 +192,8 @@ int uds_protocol_init(void) //uds协议相关初始化
 }
 void uds_protocol_deinit(void) //uds协议相关反初始化
 {
-    ota_task_deinit();
     select_server_deinit();
+    ota_task_deinit();
     database_deinit();
     pthread_mutex_destroy(&mutex);
 }

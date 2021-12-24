@@ -1,5 +1,5 @@
-/home/ppq/git/alink-x50/alinksdk/.O/wrappers/tls/HAL_TLS_mbedtls.o: \
- /home/ppq/git/alink-x50/alinksdk/wrappers/tls/HAL_TLS_mbedtls.c \
+/home/ppq/git/x50bcz/alinksdk/.O/wrappers/tls/HAL_TLS_mbedtls.o: \
+ /home/ppq/git/x50bcz/alinksdk/wrappers/tls/HAL_TLS_mbedtls.c \
  src/infra/infra_config.h src/infra/infra_compat.h src/infra/infra_defs.h \
  src/infra/infra_types.h src/infra/infra_config.h \
  external_libs/mbedtls/include/mbedtls/error.h \

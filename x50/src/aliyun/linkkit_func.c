@@ -158,9 +158,10 @@ int download_fota_image(void)
     set_ota_state(OTA_DOWNLOAD_SUCCESS, NULL);
     sleep(1);
     set_ota_state(OTA_INSTALL_START, NULL);
+    // sync();
+    system("chmod 777 " otafilename);
+    system("cd /tmp;" otafilename);
     sync();
-    // system("chmod 777 " otafilename);
-    // system("cd /tmp;" otafilename);
     set_ota_state(OTA_INSTALL_SUCCESS, NULL);
     return res;
 }
@@ -173,10 +174,15 @@ static void POSIXTimer_cb(union sigval val)
 int linkkit_func_init(void)
 {
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+    EXAMPLE_TRACE("linkkit_func_init timer:%p", g_ota_timer);
     return 0;
 }
 
 void linkkit_func_deinit(void)
 {
-    POSIXTimerDelete(g_ota_timer);
+    if (g_ota_timer != NULL)
+    {
+        POSIXTimerDelete(g_ota_timer);
+        g_ota_timer = NULL;
+    }
 }

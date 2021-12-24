@@ -8,16 +8,21 @@
 #include "uds_protocol.h"
 
 static unsigned short ecb_seq_id = 0;
-
+static int get_ack_count = 0;
 typedef enum
 {
     ECB_UART_READ_VALID = 0,
     ECB_UART_READ_NO_HEADER,
     ECB_UART_READ_LEN_SMALL,
+    ECB_UART_READ_LEN_ERR,
     ECB_UART_READ_CHECK_ERR,
     ECB_UART_READ_TAILER_ERR
 } ecb_uart_read_status_t;
 
+int get_ecb_disconnect_count(void)
+{
+    return get_ack_count;
+}
 static void InvertUint16(unsigned short *dBuf, unsigned short *srcBuf)
 {
     int i;
@@ -51,8 +56,9 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
     return (wCRCin ^ 0xFFFF);
 }
 
-int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len)
+int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend)
 {
+    
     int index = 0;
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     send_msg[index++] = 0xe6;
@@ -73,16 +79,40 @@ int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int
     send_msg[index++] = crc16 & 0xff;
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
-    return uart_send_ecb(send_msg, ECB_MSG_MIN_LEN + msg_len, 0, 0);
+    return uart_send_ecb(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
 }
 
+void send_error_to_cloud(int error_code)
+{
+    unsigned char payload[8] = {0};
+    int index = 0;
+    int code = 1 << (error_code - 1);
+    payload[index++] = 0x0a;
+    payload[index++] = code >> 24;
+    payload[index++] = code >> 16;
+    payload[index++] = code >> 6;
+    payload[index++] = code;
+    payload[index++] = 0x0b;
+    payload[index++] = error_code;
+    send_data_to_cloud(payload, index);
+}
+int uart_ecb_get_msg()
+{
+    if (get_ack_count <= ECB_DISCONNECT_COUNT)
+        ++get_ack_count;
+    if (get_ack_count == ECB_DISCONNECT_COUNT)
+    {
+        send_error_to_cloud(9);
+    }
+    return uart_ecb_send_msg(ECB_UART_COMMAND_GET, NULL, 0, 0);
+}
 int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len)
 {
-    return uart_ecb_send_msg(ECB_UART_COMMAND_SET, msg, msg_len);
+    return uart_ecb_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1);
 }
 int ecb_uart_send_nak(unsigned char error_code)
 {
-    return uart_ecb_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1);
+    return uart_ecb_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0);
 }
 
 int ecb_uart_send_factory(ft_ret_t ret)
@@ -90,7 +120,7 @@ int ecb_uart_send_factory(ft_ret_t ret)
     unsigned char send[2] = {0};
     send[0] = UART_STORE_FT_RESULT;
     send[1] = ret;
-    return uart_ecb_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send));
+    return uart_ecb_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send), 1);
 }
 
 static int send_factory_test(void)
@@ -127,7 +157,7 @@ static int send_factory_test(void)
     send_msg[index++] = 0;
     send_msg[index++] = 0;
     send_msg[index++] = 0;
-    return uart_ecb_send_msg(ECB_UART_COMMAND_STORE, send_msg, index);
+    return uart_ecb_send_msg(ECB_UART_COMMAND_STORE, send_msg, index, 1);
 }
 
 void keypress_local_pro(unsigned char value)
@@ -137,12 +167,14 @@ void keypress_local_pro(unsigned char value)
     case KEYPRESS_LOCAL_POWER_ON: /* 上电提示 */
         break;
     case KEYPRESS_LOCAL_FT_START: /* 厂测开始 */
+    {
         dzlog_error("Factory test began");
         send_factory_test();
         cJSON *resp = cJSON_CreateObject();
         cJSON_AddNullToObject(resp, "ProductionTest");
         send_event_uds(resp);
-        break;
+    }
+    break;
     case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
         dzlog_error("End of the factory test");
         break;
@@ -150,8 +182,15 @@ void keypress_local_pro(unsigned char value)
         break;
     case KEYPRESS_LOCAL_FT_WIFI: /* 整机厂测，通讯及WIFI检测 */
         dzlog_info("factory test: wifi test ");
-
         break;
+    case KEYPRESS_LOCAL_STEAM_START: /* 启动蒸烤箱 */
+    {
+        dzlog_info("SteamStart");
+        cJSON *resp = cJSON_CreateObject();
+        cJSON_AddNullToObject(resp, "SteamStart");
+        send_event_uds(resp);
+    }
+    break;
     case KEYPRESS_LOCAL_FT_BT: /* 整机厂测，蓝牙检测 */
         dzlog_info("factory test: bluetooth test ");
         break;
@@ -217,14 +256,29 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     unsigned char command = in[index + msg_index];
     msg_index += 1;
     int data_len = in[index + msg_index] * 256 + in[index + msg_index + 1];
+    if (data_len > 1024)
+    {
+        *end = index + 2;
+        dzlog_error("input data len error");
+        return ECB_UART_READ_LEN_ERR;
+    }
     msg_index += 2;
     const unsigned char *payload = &in[index + msg_index];
     msg_index += data_len;
     if (index + msg_index + 2 + 2 > in_len)
     {
-        *end = index;
-        dzlog_error("input data len too small");
-        return ECB_UART_READ_LEN_SMALL;
+        if (in[in_len - 1] == 0x6e && in[in_len - 2] == 0x6e)
+        {
+            *end = index + 2;
+            dzlog_error("input data len error2");
+            return ECB_UART_READ_LEN_ERR;
+        }
+        else
+        {
+            *end = index;
+            dzlog_error("input data len too small");
+            return ECB_UART_READ_LEN_SMALL;
+        }
     }
     else if (in[index + msg_index + 2] != 0x6e || in[index + msg_index + 2 + 1] != 0x6e)
     {
@@ -251,7 +305,7 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     hdzlog_info((unsigned char *)payload, data_len);
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {
-        uart_ecb_send_msg(ECB_UART_COMMAND_ACK, NULL, 0);
+        uart_ecb_send_msg(ECB_UART_COMMAND_ACK, NULL, 0, 0);
         if (command == ECB_UART_COMMAND_EVENT)
         {
             send_data_to_cloud(payload, data_len);
@@ -280,7 +334,13 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_GETACK)
     {
-        ecb_resend_list_del_by_id(seq_id);
+        if (get_ack_count >= ECB_DISCONNECT_COUNT)
+        {
+            send_error_to_cloud(0);
+        }
+        get_ack_count = 0;
+        // ecb_resend_list_del_by_id(seq_id);
+        send_data_to_cloud(payload, data_len);
     }
     else if (command == ECB_UART_COMMAND_ACK || command == ECB_UART_COMMAND_NAK)
     {
@@ -304,7 +364,7 @@ void uart_read_parse(unsigned char *in, int *in_len)
         status = uart_data_parse(&in[start], *in_len, &start);
         *in_len -= start;
 
-        if (status == ECB_UART_READ_VALID || status == ECB_UART_READ_CHECK_ERR || status == ECB_UART_READ_TAILER_ERR)
+        if (status == ECB_UART_READ_VALID || status == ECB_UART_READ_CHECK_ERR || status == ECB_UART_READ_TAILER_ERR || status == ECB_UART_READ_LEN_ERR)
         {
             if (*in_len <= 0)
             {

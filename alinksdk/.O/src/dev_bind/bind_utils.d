@@ -1,4 +1,4 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/dev_bind/bind_utils.o: /home/ppq/git/alink-x50/alinksdk/src/dev_bind/bind_utils.c \
+/home/ppq/git/x50bcz/alinksdk/.O/src/dev_bind/bind_utils.o: /home/ppq/git/x50bcz/alinksdk/src/dev_bind/bind_utils.c \
  src/coap/coap_api.h src/infra/infra_defs.h src/infra/infra_types.h \
  src/infra/infra_config.h wrappers/wrappers.h src/infra/infra_types.h \
  wrappers/wrappers_defs.h wrappers/wrappers_os.h wrappers/wrappers_tcp.h \

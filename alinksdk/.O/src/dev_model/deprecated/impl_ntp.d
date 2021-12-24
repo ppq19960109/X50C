@@ -1,5 +1,5 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/dev_model/deprecated/impl_ntp.o: \
- /home/ppq/git/alink-x50/alinksdk/src/dev_model/deprecated/impl_ntp.c \
+/home/ppq/git/x50bcz/alinksdk/.O/src/dev_model/deprecated/impl_ntp.o: \
+ /home/ppq/git/x50bcz/alinksdk/src/dev_model/deprecated/impl_ntp.c \
  src/dev_model/iotx_dm_internal.h src/infra/infra_compat.h \
  src/infra/infra_defs.h src/infra/infra_types.h src/infra/infra_config.h \
  src/infra/infra_config.h src/infra/infra_types.h src/infra/infra_defs.h \

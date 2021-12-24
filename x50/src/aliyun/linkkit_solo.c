@@ -18,6 +18,7 @@
 #include "dev_model_api.h"
 #include "wrappers.h"
 #include "cJSON.h"
+
 #ifdef ATM_ENABLED
 #include "at_api.h"
 #endif
@@ -56,13 +57,23 @@ void register_service_request_event_cb(int (*cb)(const int, const char *, const 
 {
     service_request_event_cb = cb;
 }
-
+void (*connected_cb)(int);
+void register_connected_cb(void (*cb)(int))
+{
+    connected_cb = cb;
+}
+// int (*bind_cb)(void);
+// void register_bind_cb(int (*cb)())
+// {
+//     bind_cb = cb;
+// }
 /** cloud connected event callback */
 static int user_connected_event_handler(void)
 {
     EXAMPLE_TRACE("Cloud Connected");
     g_user_example_ctx.cloud_connected = 1;
-
+    if (connected_cb != NULL)
+        connected_cb(1);
     return 0;
 }
 
@@ -70,6 +81,8 @@ static int user_connect_fail_event_handler(void)
 {
     EXAMPLE_TRACE("user_connect_fail_event_handler");
     g_user_example_ctx.cloud_connected = 0;
+    if (connected_cb != NULL)
+        connected_cb(0);
     return 0;
 }
 
@@ -78,7 +91,8 @@ static int user_disconnected_event_handler(void)
 {
     EXAMPLE_TRACE("Cloud Disconnected");
     g_user_example_ctx.cloud_connected = 0;
-
+    if (connected_cb != NULL)
+        connected_cb(0);
     return 0;
 }
 
@@ -154,9 +168,16 @@ static int user_fota_event_handler(int type, const char *version)
     if (type == 0)
     {
         EXAMPLE_TRACE("user_fota_event_handler New Firmware Version: %s,%d", version, strlen(version));
+        // if (get_ota_state() == OTA_IDLE)
+        // {
         fota_event_handler(version);
-
-        // IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
+        // }
+        // else
+        // {
+        //     fota_event_handler(version);
+        //     download_fota_image();
+        //     // IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
+        // }
     }
 
     return 0;
@@ -235,14 +256,19 @@ static int user_state_dev_bind(int ev, const char *msg)
                 cJSON *Operation = cJSON_GetObjectItem(value, "Operation");
                 if (Operation != NULL)
                 {
+                    // char bind_flag = 0;
                     if (strcmp("Bind", Operation->valuestring) == 0)
                     {
+                        // bind_flag = 1;
                         EXAMPLE_TRACE("STATE_BIND Bind............\n");
                     }
                     else if (strcmp("Unbind", Operation->valuestring) == 0)
                     {
                         EXAMPLE_TRACE("STATE_BIND Unbind............\n");
                     }
+                    // HAL_Kv_Set("BindState", &bind_flag, 1, 1);
+                    // if(bind_cb!= NULL)
+                    //     bind_cb();
                 }
             }
             cJSON_Delete(root);
@@ -325,6 +351,7 @@ void get_linkkit_dev_quad(char *product_key, char *product_secret, char *device_
 }
 void linkkit_close(void)
 {
+
     EXAMPLE_TRACE("linkkit_close..............................");
     g_user_example_ctx.linkkit_runing = 0;
 }
@@ -357,7 +384,7 @@ int linkkit_main(const char *product_key, const char *product_secret, const char
     EXAMPLE_TRACE("product_secret:%s", master_meta_info.product_secret);
     EXAMPLE_TRACE("device_name:%s", master_meta_info.device_name);
     EXAMPLE_TRACE("device_secret:%s", master_meta_info.device_secret);
-    IOT_SetLogLevel(IOT_LOG_WARNING);
+    IOT_SetLogLevel(IOT_LOG_DEBUG);
 
     /* Register Callback */
     IOT_RegisterCallback(ITE_STATE_EVERYTHING, user_sdk_state_dump);

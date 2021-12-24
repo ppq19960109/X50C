@@ -6,6 +6,7 @@
 #include "uart_cloud_task.h"
 #include "wifi_task.h"
 #include "rkwifi.h"
+#include "linkkit_solo.h"
 #include "uart_gesture_task.h"
 
 static void *WifiState_cb(void *ptr, void *arg)
@@ -171,18 +172,32 @@ static int WiFiCallback(int event)
     dzlog_warn("%s,%d", __func__, event);
     if (event == RK_WIFI_State_CONNECTED)
     {
-        gesture_time_sync_task();
+        gesture_time_sync_task(1);
+    }
+    else if(event == RK_WIFI_State_DISCONNECTED)
+    {
+        gesture_time_sync_task(0);
     }
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
 
     return send_event_uds(root);
 }
-
+static void linkkit_connected_cb(int connect)
+{
+    if(connect)
+    {
+        WiFiCallback(RK_WIFI_State_CONNECTED);
+    }
+    else
+    {
+        WiFiCallback(RK_WIFI_State_DISCONNECTED);
+    }
+}
 int wifi_task_init(void)
 {
     wifiInit();
     wifiRegsiterCallback(WiFiCallback);
-
+    register_connected_cb(linkkit_connected_cb);
     return 0;
 }

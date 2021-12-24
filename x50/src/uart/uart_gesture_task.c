@@ -3,6 +3,7 @@
 #include "rkwifi.h"
 #include "uart_gesture_task.h"
 
+static int running = 0;
 static timer_t g_gesture_timer;
 static int gesture_fd;
 static pthread_mutex_t lock;
@@ -63,6 +64,11 @@ int uart_send_gesture(unsigned char *in, int in_len)
             goto fail;
         }
         hdzlog_info(in, in_len);
+        if (gesture_fd <= 0)
+        {
+            dzlog_error("uart_send_gesture fd error\n");
+            goto fail;
+        }
         res = write(gesture_fd, in, in_len);
 
     fail:
@@ -116,12 +122,20 @@ static void *gesture_time_sync(void *arg)
     struct tm *local_tm = localtime(&systemTime);
     send_gesture_msg(1, local_tm->tm_hour, local_tm->tm_min);
     dzlog_info("gesture_time_sync end\n");
+    return NULL;
 }
 
-void gesture_time_sync_task(void)
+void gesture_time_sync_task(int state)
 {
-    pthread_t tid;
-    pthread_create(&tid, NULL, gesture_time_sync, NULL);
+    if (state)
+    {
+        pthread_t tid;
+        pthread_create(&tid, NULL, gesture_time_sync, NULL);
+    }
+    else
+    {
+        send_gesture_msg(0, 0, 0);
+    }
 }
 static void POSIXTimer_gesture_cb(union sigval val)
 {
@@ -130,19 +144,35 @@ static void POSIXTimer_gesture_cb(union sigval val)
     {
         gesture_time_sync(NULL);
     }
+    else
+    {
+        gesture_time_sync_task(0);
+    }
+}
+void uart_gesture_task_close(void)
+{
+    running = 0;
 }
 //ntpdate pool.ntp.org
 void *uart_gesture_task(void *arg)
 {
-    unsigned char uart_read_buf[128];
+    static unsigned char uart_read_buf[48];
     int uart_read_len;
+
+    gesture_fd = uart_init("/dev/ttyS1", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
+    if (gesture_fd <= 0)
+    {
+        dzlog_error("uart_gesture_task uart init error:%d,%s", errno, strerror(errno));
+        return NULL;
+    }
+    dzlog_info("uart_gesture_task,fd:%d", gesture_fd);
 
     pthread_mutex_init(&lock, NULL);
     g_gesture_timer = POSIXTimerCreate(1, POSIXTimer_gesture_cb);
-    POSIXTimerSet(g_gesture_timer, 6 * 60, 60);
-    gesture_fd = uart_init("/dev/ttyS1", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
+    POSIXTimerSet(g_gesture_timer, 1 * 60 * 60, 1);
 
-    while (1)
+    running = 1;
+    while (running)
     {
         uart_read_len = read(gesture_fd, uart_read_buf, sizeof(uart_read_buf));
         if (uart_read_len > 0)
@@ -152,5 +182,7 @@ void *uart_gesture_task(void *arg)
         }
     }
     POSIXTimerDelete(g_gesture_timer);
+    close(gesture_fd);
     pthread_mutex_destroy(&lock);
+    return NULL;
 }

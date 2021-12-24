@@ -1,0 +1,119 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Install Linux packages
+      if: runner.os == 'Linux'
+      run: sudo env DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pbzip2 zstd
+
+    - name: Install macOS packages
+      if: runner.os == 'macOS'
+      run: brew install pbzip2 coreutils zstd
+
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+
+    - name: Build release
+      run: |
+        git submodule update --init --recursive
+        make
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: Makeself-Build-${{ runner.os }}
+        path: release
+        
+    - name: Run tests
+      run: make test
+
+  test-freebsd:
+    needs: test
+    runs-on: macos-10.15
+    name: Test Makeself on FreeBSD
+    steps:
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+    - name: Install git submodules
+      run: git submodule update --init --recursive
+    - name: Download Linux-built artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Linux
+        path: linux
+    - name: Download Mac-built artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-macOS
+        path: mac
+    - name: Download Windows-built artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Windows
+        path: windows
+    - name: Test on FreeBSD
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        prepare: pkg install -y pbzip2 bash
+        run: |
+          pwd; freebsd-version
+          sh ./linux/makeself*.run --target /tmp/makeself-linux
+          sh ./mac/makeself*.run --target /tmp/makeself-mac
+          sh ./windows/makeself*.run --target /tmp/makeself-windows
+
+  test-solaris:
+    needs: test
+    runs-on: macos-10.15
+    name: Test Makeself on Solaris
+    steps:
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+    - name: Install git submodules
+      run: git submodule update --init --recursive
+    - name: Download Linux-built artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Linux
+        path: linux
+    - name: Download Mac-built artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-macOS
+        path: mac
+    - name: Download Windows-built artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Windows
+        path: windows
+    - name: Test on Solaris
+      uses: vmactions/solaris-vm@v0.0.3
+      with:
+        mem: 2048
+        prepare: pkgutil -y -i pbzip2
+        run: |
+          pwd
+          sh ./linux/makeself*.run --target /tmp/makeself-linux
+          sh ./mac/makeself*.run --target /tmp/makeself-mac
+          sh ./windows/makeself*.run --target /tmp/makeself-windows
+
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+    - name: Run ShellCheck
+      uses: megastep/shell-linter@develop
+      with:
+        path: "makeself.sh"
+        severity: "error"

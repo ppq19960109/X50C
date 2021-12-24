@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #include "rkwifi.h"
 
 AppWiFiCallback app_wifi_cb = NULL;
@@ -36,17 +36,26 @@ void wifiRegsiterCallback(AppWiFiCallback cb)
  */
 void wifiInit()
 {
-    RK_wifi_disable_ap();
-    char hostname[16];
-    // RK_wifi_set_hostname("RKWIFI");
-    memset(hostname, 0, sizeof(hostname));
-    RK_wifi_get_hostname(hostname, sizeof(hostname));
-    printf("RK_wifi host name:%s\n", hostname);
+    // RK_wifi_disable_ap();
     //获取Mac地址
-    char mac[18];
-    memset(mac, 0, sizeof(mac));
+    char mac[16] = {0};
     RK_wifi_get_mac(mac);
     printf("RK_wifi Mac:%s\n", mac);
+
+    char hostname_get[16] = {0};
+    RK_wifi_get_hostname(hostname_get, sizeof(hostname_get));
+    printf("RK_wifi hostname_get:%s\n", hostname_get);
+
+    char hostname[16] = {0};
+    sprintf(hostname, "X50BCZ_%c%c%c%c", mac[12], mac[13], mac[15], mac[16]);
+    if (strcmp(hostname_get, hostname) != 0)
+    {
+        printf("RK_wifi hostname_set:%s\n", hostname);
+        RK_wifi_set_hostname(hostname);
+        char cmd[64] = {0};
+        sprintf(cmd, "echo %s > /etc/hostname", hostname);
+        system(cmd);
+    }
 }
 
 /**

@@ -268,7 +268,6 @@ int database_resp_getall(cJSON *root, cJSON *resp)
 
 int database_resp_set(cJSON *root, cJSON *resp)
 {
-
     for (int i = 0; i < attr_len; ++i)
     {
         if (cJSON_HasObjectItem(root, attr[i].cloud_key))

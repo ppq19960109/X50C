@@ -1,3 +1,3 @@
-/home/ppq/git/alink-x50/alinksdk/.O/src/infra/infra_mem_stats.o: \
- /home/ppq/git/alink-x50/alinksdk/src/infra/infra_mem_stats.c \
- /home/ppq/git/alink-x50/alinksdk/src/infra/infra_config.h
+/home/ppq/git/x50bcz/alinksdk/.O/src/infra/infra_mem_stats.o: \
+ /home/ppq/git/x50bcz/alinksdk/src/infra/infra_mem_stats.c \
+ /home/ppq/git/x50bcz/alinksdk/src/infra/infra_config.h

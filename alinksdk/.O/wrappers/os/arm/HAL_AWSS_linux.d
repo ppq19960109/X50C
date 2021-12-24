@@ -1,5 +1,5 @@
-/home/ppq/git/alink-x50/alinksdk/.O/wrappers/os/arm/HAL_AWSS_linux.o: \
- /home/ppq/git/alink-x50/alinksdk/wrappers/os/arm/HAL_AWSS_linux.c \
+/home/ppq/git/x50bcz/alinksdk/.O/wrappers/os/arm/HAL_AWSS_linux.o: \
+ /home/ppq/git/x50bcz/alinksdk/wrappers/os/arm/HAL_AWSS_linux.c \
  src/infra/infra_config.h src/infra/infra_defs.h src/infra/infra_types.h \
  src/infra/infra_config.h wrappers/wrappers.h src/infra/infra_types.h \
  wrappers/wrappers_defs.h wrappers/wrappers_os.h wrappers/wrappers_tcp.h \

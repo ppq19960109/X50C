@@ -68,6 +68,7 @@
         "wrappers_defs.h": "c",
         "uart_gesture_task.h": "c",
         "posixtimer.h": "c",
-        "signalquit.h": "c"
+        "signalquit.h": "c",
+        "wifi_provision_api.h": "c"
     }
 }
