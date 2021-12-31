@@ -22,7 +22,7 @@ void register_connected_cb(void (*cb)(int));
 void register_bind_cb(int (*cb)());
 
 void register_fota_event_handler_cb(void (*cb)(char*));
-
+int get_linkkit_connected_state();
 int linkkit_main(const char *product_key, const char *product_secret, const char *device_name, const char *device_secret);
 void linkkit_close(void);
 void get_linkkit_dev_quad(char *product_key, char *product_secret, char *device_name, char *device_secret);

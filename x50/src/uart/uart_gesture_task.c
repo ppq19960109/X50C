@@ -2,16 +2,18 @@
 
 #include "rkwifi.h"
 #include "uart_gesture_task.h"
+#include "wifi_task.h"
 
 static int running = 0;
 static timer_t g_gesture_timer;
-static int gesture_fd;
+static timer_t g_gesture_heart_timer;
+static int gesture_fd = 0;
 static pthread_mutex_t lock;
 int uart_gesture_parse(unsigned char *data, int len)
 {
-    unsigned char type;
+    // unsigned char type;
     unsigned char msg_len;
-    unsigned char cmd;
+    // unsigned char cmd;
     int verify;
     unsigned char data1;
     unsigned char hour, minute;
@@ -23,13 +25,10 @@ int uart_gesture_parse(unsigned char *data, int len)
             {
                 continue;
             }
-
-            type = data[i + 1];
+            // type = data[i + 1];
             msg_len = data[i + 2];
-            cmd = data[i + 3];
-
+            // cmd = data[i + 3];
             verify = data[i + 8] + (data[i + 9] << 8);
-            dzlog_info("uart_gesture_parse msg_len:%d\n", msg_len);
             if (msg_len > 0)
             {
                 data1 = data[i + 4];
@@ -55,6 +54,11 @@ int uart_gesture_parse(unsigned char *data, int len)
 }
 int uart_send_gesture(unsigned char *in, int in_len)
 {
+    if (gesture_fd <= 0)
+    {
+        dzlog_error("uart_send_gesture fd error\n");
+        return -1;
+    }
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
@@ -64,11 +68,7 @@ int uart_send_gesture(unsigned char *in, int in_len)
             goto fail;
         }
         hdzlog_info(in, in_len);
-        if (gesture_fd <= 0)
-        {
-            dzlog_error("uart_send_gesture fd error\n");
-            goto fail;
-        }
+
         res = write(gesture_fd, in, in_len);
 
     fail:
@@ -85,21 +85,26 @@ int uart_send_gesture(unsigned char *in, int in_len)
 unsigned short msg_verify(unsigned char *data, int len)
 {
     unsigned short verify = 0;
-    for (int i; i < len; ++i)
+    for (int i = 0; i < len; ++i)
     {
         verify += data[i];
     }
     return ~verify;
 }
-
-int send_gesture_msg(unsigned char sync, unsigned char hour, unsigned char minute)
+// aa 01 08 01 09 01 02 3f ff
+// aa 01 08 01 01 00 00 4a ff
+// aa 01 08 01 09 ff ff fd 42
+// aa 01 08 01 01 ff ff fd 4a
+int send_gesture_msg(unsigned char whole_show, unsigned char sync, unsigned char hour, unsigned char minute)
 {
     unsigned char data1 = 0;
     data1 |= (1 << 0);
     if (sync)
         data1 |= (1 << 3);
+    if (whole_show)
+        data1 |= (1 << 2);
 
-    unsigned char msg[33] = {0};
+    unsigned char msg[16] = {0};
     unsigned char index = 0;
     msg[index++] = 0xaa;
     msg[index++] = 0x01;
@@ -116,12 +121,13 @@ int send_gesture_msg(unsigned char sync, unsigned char hour, unsigned char minut
 
 static void *gesture_time_sync(void *arg)
 {
+    dzlog_info("gesture_time_sync\n");
     systemRun("ntpdate pool.ntp.org && hwclock -w");
     time_t systemTime;
     time(&systemTime);
     struct tm *local_tm = localtime(&systemTime);
-    send_gesture_msg(1, local_tm->tm_hour, local_tm->tm_min);
-    dzlog_info("gesture_time_sync end\n");
+    send_gesture_msg(0, 1, local_tm->tm_hour, local_tm->tm_min);
+
     return NULL;
 }
 
@@ -131,22 +137,37 @@ void gesture_time_sync_task(int state)
     {
         pthread_t tid;
         pthread_create(&tid, NULL, gesture_time_sync, NULL);
+        pthread_detach(tid);
     }
     else
     {
-        send_gesture_msg(0, 0, 0);
+        send_gesture_msg(0, 0, 0, 0);
     }
 }
 static void POSIXTimer_gesture_cb(union sigval val)
 {
-    dzlog_warn("POSIXTimer_gesture_cb timeout");
-    if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
+    dzlog_warn("POSIXTimer_gesture_cb timeout:%d", val.sival_int);
+    if (val.sival_int == 1)
     {
-        gesture_time_sync(NULL);
+        if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
+        {
+            gesture_time_sync_task(1);
+        }
+        else
+        {
+            gesture_time_sync_task(0);
+        }
     }
-    else
+    else if (val.sival_int == 2)
     {
-        gesture_time_sync_task(0);
+        if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
+        {
+            send_gesture_msg(0, 1, 0xff, 0xff);
+        }
+        else
+        {
+            send_gesture_msg(0, 0, 0, 0);
+        }
     }
 }
 void uart_gesture_task_close(void)
@@ -154,9 +175,15 @@ void uart_gesture_task_close(void)
     running = 0;
 }
 //ntpdate pool.ntp.org
+/*********************************************************************************
+  *Function:  uart_ecb_task
+  *Description： 手势任务函数，接收手势控制板的数据并处理
+  *Input:  
+  *Return:
+**********************************************************************************/
 void *uart_gesture_task(void *arg)
 {
-    static unsigned char uart_read_buf[48];
+    static unsigned char uart_read_buf[128];
     int uart_read_len;
 
     gesture_fd = uart_init("/dev/ttyS1", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
@@ -168,8 +195,13 @@ void *uart_gesture_task(void *arg)
     dzlog_info("uart_gesture_task,fd:%d", gesture_fd);
 
     pthread_mutex_init(&lock, NULL);
+    register_wifi_connected_cb(gesture_time_sync_task);
+    send_gesture_msg(1, 0, 0, 0);
+
     g_gesture_timer = POSIXTimerCreate(1, POSIXTimer_gesture_cb);
-    POSIXTimerSet(g_gesture_timer, 1 * 60 * 60, 1);
+    POSIXTimerSet(g_gesture_timer, 1 * 60 * 60, 10);
+    g_gesture_heart_timer = POSIXTimerCreate(2, POSIXTimer_gesture_cb);
+    POSIXTimerSet(g_gesture_heart_timer, 60, 60);
 
     running = 1;
     while (running)
@@ -182,6 +214,7 @@ void *uart_gesture_task(void *arg)
         }
     }
     POSIXTimerDelete(g_gesture_timer);
+    POSIXTimerDelete(g_gesture_heart_timer);
     close(gesture_fd);
     pthread_mutex_destroy(&lock);
     return NULL;

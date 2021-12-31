@@ -216,6 +216,16 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             }
             dzlog_warn("get_attr_set_value %s:%d %d", ptr->cloud_key, ptr->uart_byte_len, index);
         }
+        else if (strcmp(ptr->cloud_key, "CookbookName") == 0)
+        {
+            cJSON *resp = cJSON_CreateObject();
+            cJSON_AddItemToObject(resp, ptr->cloud_key, item);
+            char *json = cJSON_PrintUnformatted(resp);
+            linkkit_user_post_property(json);
+            cJSON_free(json);
+            send_event_uds(resp);
+            return 0;
+        }
     }
     else
     {
@@ -358,9 +368,9 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     }
     if (uart_buf_len > 0)
     {
-        clound_to_uart_ecb_msg(uart_buf, uart_buf_len);
+        cloud_to_uart_ecb_msg(uart_buf, uart_buf_len);
     }
- 
+
     cJSON *resp_db = cJSON_CreateObject();
     database_resp_set(root, resp_db);
     char *json = cJSON_PrintUnformatted(resp_db);

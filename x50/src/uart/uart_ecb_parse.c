@@ -106,7 +106,7 @@ int uart_ecb_get_msg()
     }
     return uart_ecb_send_msg(ECB_UART_COMMAND_GET, NULL, 0, 0);
 }
-int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len)
+int cloud_to_uart_ecb_msg(unsigned char *msg, const int msg_len)
 {
     return uart_ecb_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1);
 }

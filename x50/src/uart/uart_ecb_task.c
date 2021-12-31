@@ -5,7 +5,7 @@
 #include "uart_resend.h"
 
 static int running = 0;
-static int ecb_fd;
+static int ecb_fd = 0;
 static pthread_mutex_t lock;
 LIST_HEAD(ECB_LIST_RESEND);
 
@@ -21,6 +21,11 @@ void ecb_resend_list_del_by_id(const int resend_seq_id)
 
 int uart_send_ecb(unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
 {
+    if (ecb_fd <= 0)
+    {
+        dzlog_error("uart_send_ecb fd error\n");
+        return -1;
+    }
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
@@ -30,11 +35,6 @@ int uart_send_ecb(unsigned char *in, int in_len, unsigned char resend, unsigned 
             goto fail;
         }
         hdzlog_info(in, in_len);
-        if (ecb_fd <= 0)
-        {
-            dzlog_error("uart_send_ecb fd error\n");
-            goto fail;
-        }
 
         res = write(ecb_fd, in, in_len);
         if (resend)
@@ -68,6 +68,13 @@ void uart_ecb_task_close(void)
 {
     running = 0;
 }
+
+/*********************************************************************************
+  *Function:  uart_ecb_task
+  *Description： ecb任务函数，接收ecb的数据并处理
+  *Input:  
+  *Return:
+**********************************************************************************/
 void *uart_ecb_task(void *arg)
 {
     static int ecb_get_count = 0;
@@ -76,7 +83,7 @@ void *uart_ecb_task(void *arg)
     static unsigned char uart_read_buf[512];
     int uart_read_len, uart_read_buf_index = 0;
 
-    ecb_fd = uart_init("/dev/ttyS0", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
+    ecb_fd = uart_init("/dev/ttyS0", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE);
     if (ecb_fd <= 0)
     {
         dzlog_error("uart_ecb_task uart init error:%d,%s", errno, strerror(errno));
@@ -125,8 +132,8 @@ void *uart_ecb_task(void *arg)
             if (++ecb_get_count > ecb_get_timeout)
             {
                 ecb_get_count = 0;
-                uart_ecb_get_msg();
-                dzlog_warn("select timeout:uart_ecb_get_msg\n");
+                // uart_ecb_get_msg();
+                // dzlog_warn("select timeout:uart_ecb_get_msg\n");
             }
             // dzlog_warn("select timeout:%ld\n", timeout.tv_usec);
             continue;
@@ -136,9 +143,11 @@ void *uart_ecb_task(void *arg)
             if (FD_ISSET(ecb_fd, &rfds))
             {
                 ecb_get_count = 0;
+
                 uart_read_len = read(ecb_fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf));
                 if (uart_read_len > 0)
                 {
+                    dzlog_warn("uart_read_len:%d\n", uart_read_len);
                     uart_read_buf_index += uart_read_len;
                     hdzlog_info(uart_read_buf, uart_read_buf_index);
                     uart_read_parse(uart_read_buf, &uart_read_buf_index);

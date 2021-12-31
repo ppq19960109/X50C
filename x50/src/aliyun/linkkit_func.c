@@ -22,7 +22,7 @@
 static timer_t g_ota_timer;
 static enum OTA_TYPE g_ota_state = 0;
 
-void linkkit_devrst_evt_handle(iotx_devrst_evt_type_t evt, void *msg)
+static void linkkit_devrst_evt_handle(iotx_devrst_evt_type_t evt, void *msg)
 {
     switch (evt)
     {
@@ -73,7 +73,7 @@ int linkkit_unbind(void)
         EXAMPLE_TRACE("IOT_DevReset_Report Failed\n");
         return -1;
     }
-    return 0;
+    return res;
 #endif
 }
 

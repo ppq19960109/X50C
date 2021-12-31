@@ -341,6 +341,13 @@
             "funType": 2,
             "uartCmd": 248,
             "uartByteLen": 1
+        },
+        {
+            "cloudKey": "CookbookName",
+            "valueType": 3,
+            "funType": 2,
+            "uartCmd": 0,
+            "uartByteLen": 0
         }
     ],
     "event": [],

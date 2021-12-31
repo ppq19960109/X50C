@@ -67,6 +67,10 @@ void register_connected_cb(void (*cb)(int))
 // {
 //     bind_cb = cb;
 // }
+int get_linkkit_connected_state()
+{
+    return g_user_example_ctx.cloud_connected;
+}
 /** cloud connected event callback */
 static int user_connected_event_handler(void)
 {

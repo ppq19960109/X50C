@@ -13,9 +13,10 @@ AppWiFiCallback app_wifi_cb = NULL;
 int rk_wifi_cb(RK_WIFI_RUNNING_State_e state)
 {
     printf("rk_wifi_cb state:%d\n", state);
+
     if (app_wifi_cb != NULL)
     {
-        app_wifi_cb(state);
+            app_wifi_cb(state);
     }
     return 0;
 }

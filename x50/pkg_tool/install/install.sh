@@ -17,11 +17,10 @@ cp -af root/* /
 #     fi
 # done
 
-sync
 #delete files
 rm -rf *
-
+sync
 echo "Successfully installed"
 
 echo "App reboot......"
-# reboot
+reboot

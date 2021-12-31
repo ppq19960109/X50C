@@ -23,7 +23,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(ALI_PATH)/include
 CFLAGS += -I$(LOG_PATH)/include
-CFLAGS += -Wall
+CFLAGS += -Wall 
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
 endif
@@ -46,7 +46,7 @@ OBJ += $(SRC:%.c=%.o)
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-TARGET := x50app
+TARGET := X50app
 .PHONY : all clean
 
 all: $(TARGET)

@@ -7,7 +7,6 @@
 #include "wifi_task.h"
 #include "rkwifi.h"
 #include "linkkit_solo.h"
-#include "uart_gesture_task.h"
 
 static void *WifiState_cb(void *ptr, void *arg)
 {
@@ -167,37 +166,57 @@ int wifi_resp_set(cJSON *root, cJSON *resp)
     }
     return 0;
 }
-static int WiFiCallback(int event)
+
+void (*wifi_connected_cb)(int);
+void register_wifi_connected_cb(void (*cb)(int))
+{
+    wifi_connected_cb = cb;
+}
+static int wiFiReport(int event)
 {
     dzlog_warn("%s,%d", __func__, event);
-    if (event == RK_WIFI_State_CONNECTED)
+    if (wifi_connected_cb != NULL)
     {
-        gesture_time_sync_task(1);
+        if (event == RK_WIFI_State_CONNECTED)
+        {
+            wifi_connected_cb(1);
+        }
+        else if (event == RK_WIFI_State_DISCONNECTED)
+        {
+            wifi_connected_cb(0);
+        }
     }
-    else if(event == RK_WIFI_State_DISCONNECTED)
-    {
-        gesture_time_sync_task(0);
-    }
+
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
 
     return send_event_uds(root);
 }
+
+static int wiFiCallback(int event)
+{
+    if (event == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
+    {
+        return -1;
+    }
+
+    return wiFiReport(event);
+}
 static void linkkit_connected_cb(int connect)
 {
-    if(connect)
+    if (connect)
     {
-        WiFiCallback(RK_WIFI_State_CONNECTED);
+        wiFiReport(RK_WIFI_State_CONNECTED);
     }
     else
     {
-        WiFiCallback(RK_WIFI_State_DISCONNECTED);
+        wiFiReport(RK_WIFI_State_DISCONNECTED);
     }
 }
 int wifi_task_init(void)
 {
     wifiInit();
-    wifiRegsiterCallback(WiFiCallback);
+    wifiRegsiterCallback(wiFiCallback);
     register_connected_cb(linkkit_connected_cb);
     return 0;
 }

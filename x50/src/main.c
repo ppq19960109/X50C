@@ -7,18 +7,23 @@
 #include "uart_gesture_task.h"
 
 static int running = 0;
-
+/*********************************************************************************
+  *Function:  main_quit
+  *Description： main主函数退出清理资源函数
+  *Input:  
+  *Return:  0:success otherwise:fail
+**********************************************************************************/
 static int main_quit(void)
 {
     if (running != 0)
     {
         running = 0;
-        uart_ecb_task_close();
-        uart_gesture_task_close();
+        uart_ecb_task_close(); //ECB串口资源释放
+        uart_gesture_task_close(); //手势资源释放
         uds_protocol_deinit(); //uds相关释放
         cloud_deinit();        //阿里云相关释放
         zlog_fini();           //zlog释放
-        usleep(1000);
+        // usleep(1000);
     }
     return 0;
 }
@@ -53,7 +58,7 @@ int main(int argc, char **argv)
     cloud_task(NULL); //阿里云线程启动
     // while (1)
     // {
-    //     sleep(2);
+    //     sleep(1);
     // }
     main_quit();
     // pthread_join(uart_tid,NULL);

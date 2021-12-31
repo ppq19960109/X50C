@@ -21,7 +21,6 @@ static const char *create_table =
     COOKSTEPS TEXT NOT NULL,\
     TIMESTAMP INTEGER,\
     COLLECT INTEGER,\
-    COOKTIME INTEGER,\
     COOKTYPE INTEGER,\
     RECIPETYPE INTEGER,\
     COOKPOS INTEGER);";
@@ -29,7 +28,7 @@ static const char *create_table =
 static const char *sql_select_seqid = "SELECT * FROM %s WHERE SEQID = ?;";
 // static const char *sql_select_id_seqid = "SELECT ID,SEQID FROM %s;";
 static const char *sql_select = "SELECT * FROM %s;";
-static const char *sql_insert_replace = "INSERT OR REPLACE INTO %s VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?);";
+static const char *sql_insert_replace = "INSERT OR REPLACE INTO %s VALUES (NULL,?,?,?,?,?,?,?,?,?,?);";
 static const char *sql_update = "UPDATE %s SET %s = ? WHERE ID = ?;";
 static const char *sql_delete = "DELETE FROM %s WHERE ID = ?;";
 
@@ -130,10 +129,9 @@ int insert_replace_row_to_table(const char *table_name, recipes_t *recipes)
     sqlite3_bind_text(pstmt, 5, recipes->cookSteps, strlen(recipes->cookSteps), NULL);
     sqlite3_bind_int(pstmt, 6, recipes->timestamp);
     sqlite3_bind_int(pstmt, 7, recipes->collect);
-    sqlite3_bind_int(pstmt, 8, recipes->cookTime);
-    sqlite3_bind_int(pstmt, 9, recipes->cookType);
-    sqlite3_bind_int(pstmt, 10, recipes->recipeType);
-    sqlite3_bind_int(pstmt, 11, recipes->cookPos);
+    sqlite3_bind_int(pstmt, 8, recipes->cookType);
+    sqlite3_bind_int(pstmt, 9, recipes->recipeType);
+    sqlite3_bind_int(pstmt, 10, recipes->cookPos);
 
     sqlite3_step(pstmt);
     sqlite3_reset(pstmt);
@@ -168,10 +166,9 @@ int select_from_table(const char *table_name, int (*select_func)(void *, void *)
         strcpy(recipes.cookSteps, (const char *)sqlite3_column_text(stmt, 5));
         recipes.timestamp = sqlite3_column_int(stmt, 6);
         recipes.collect = sqlite3_column_int(stmt, 7);
-        recipes.cookTime = sqlite3_column_int(stmt, 8);
-        recipes.cookType = sqlite3_column_int(stmt, 9);
-        recipes.recipeType = sqlite3_column_int(stmt, 10);
-        recipes.cookPos = sqlite3_column_int(stmt, 11);
+        recipes.cookType = sqlite3_column_int(stmt, 8);
+        recipes.recipeType = sqlite3_column_int(stmt, 9);
+        recipes.cookPos = sqlite3_column_int(stmt, 10);
 
         printf("id:%d dishName:%s imgUrl:%s\n", recipes.id, recipes.dishName, recipes.imgUrl);
         if (select_func != NULL)
@@ -207,10 +204,9 @@ int select_seqid_from_table(const char *table_name, const int seqid, int (*selec
         strcpy(recipes.cookSteps, (const char *)sqlite3_column_text(stmt, 5));
         recipes.timestamp = sqlite3_column_int(stmt, 6);
         recipes.collect = sqlite3_column_int(stmt, 7);
-        recipes.cookTime = sqlite3_column_int(stmt, 8);
-        recipes.cookType = sqlite3_column_int(stmt, 9);
-        recipes.recipeType = sqlite3_column_int(stmt, 10);
-        recipes.cookPos = sqlite3_column_int(stmt, 11);
+        recipes.cookType = sqlite3_column_int(stmt, 8);
+        recipes.recipeType = sqlite3_column_int(stmt, 9);
+        recipes.cookPos = sqlite3_column_int(stmt, 10);
 
         printf("id:%d dishName:%s imgUrl:%s\n", recipes.id, recipes.dishName, recipes.imgUrl);
         if (select_func != NULL)
@@ -264,7 +260,7 @@ static void *recipes_parse_json(void *input, const char *str)
     }
     int i;
     recipes_t recipes = {0};
-    cJSON *arraySub, *seqid, *dishName, *imgUrl, *cookSteps, *details, *cookType, *cookTime, *recipeType, *cookPos;
+    cJSON *arraySub, *seqid, *dishName, *imgUrl, *cookSteps, *details, *cookType, *recipeType, *cookPos;
     for (i = 0; i < arraySize; i++)
     {
         arraySub = cJSON_GetArrayItem(attr, i);
@@ -287,8 +283,6 @@ static void *recipes_parse_json(void *input, const char *str)
 
         cookType = cJSON_GetObjectItem(arraySub, "cookType");
         recipes.cookType = cookType->valueint;
-        cookTime = cJSON_GetObjectItem(arraySub, "cookTime");
-        recipes.cookTime = cookTime->valueint;
         recipeType = cJSON_GetObjectItem(arraySub, "recipeType");
         recipes.recipeType = recipeType->valueint;
         cookPos = cJSON_GetObjectItem(arraySub, "cookPos");

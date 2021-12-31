@@ -80,7 +80,7 @@ typedef enum
 int get_ecb_disconnect_count(void);
 unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen);
 int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend);
-int clound_to_uart_ecb_msg(unsigned char *msg, const int msg_len);
+int cloud_to_uart_ecb_msg(unsigned char *msg, const int msg_len);
 int uart_ecb_get_msg();
 void uart_read_parse(unsigned char *in, int *in_len);
 int ecb_uart_send_factory(ft_ret_t ret);

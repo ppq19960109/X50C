@@ -25,7 +25,6 @@ int recipe_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
-    cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
     cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
     cJSON_AddNumberToObject(item, "cookPos", recipe->cookPos);
 
@@ -48,7 +47,6 @@ int histroy_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
-    cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
     cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
     cJSON_AddNumberToObject(item, "cookPos", recipe->cookPos);
 
@@ -76,7 +74,6 @@ int histroy_select_seqid_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
-    cJSON_AddNumberToObject(item, "cookTime", recipe->cookTime);
     cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
     cJSON_AddNumberToObject(item, "cookPos", recipe->cookPos);
 
@@ -144,9 +141,24 @@ static void *DeleteHistory_cb(void *ptr, void *arg)
     if (NULL == arg)
         return NULL;
     cJSON *item = (cJSON *)arg;
-    delete_row_from_table(HISTORY_TABLE_NAME, item->valueint);
-    item = cJSON_CreateNumber(item->valueint);
-    return item;
+    int itemSize = cJSON_GetArraySize(item);
+    if (itemSize == 0)
+    {
+        dzlog_error("itemSize is 0\n");
+        return NULL;
+    }
+    cJSON *array = cJSON_CreateArray();
+    cJSON *arraySub;
+    for (int i = 0; i < itemSize; i++)
+    {
+        arraySub = cJSON_GetArrayItem(item, i);
+        if (arraySub == NULL)
+            continue;
+        delete_row_from_table(HISTORY_TABLE_NAME, arraySub->valueint);
+        cJSON_AddItemToArray(array, cJSON_CreateNumber(arraySub->valueint));
+    }
+
+    return array;
 }
 
 static void *InsertHistory_cb(void *ptr, void *arg)
@@ -188,10 +200,6 @@ static void *InsertHistory_cb(void *ptr, void *arg)
     if (cJSON_HasObjectItem(item, "cookType"))
     {
         recipe.cookType = cJSON_GetObjectItem(item, "cookType")->valueint;
-    }
-    if (cJSON_HasObjectItem(item, "cookTime"))
-    {
-        recipe.cookTime = cJSON_GetObjectItem(item, "cookTime")->valueint;
     }
     if (cJSON_HasObjectItem(item, "recipeType"))
     {

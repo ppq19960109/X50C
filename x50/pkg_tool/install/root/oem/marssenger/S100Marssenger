@@ -1,0 +1,40 @@
+#!/bin/sh
+
+SERVER_APP_NAME="X50app"
+UI_APP_NAME="X50QML"
+DAEMON_APP_NAME="X50Daemon.sh"
+BASE_PATH="/oem/marssenger"
+
+start() {
+    echo "Starting marssenger: "
+    cd $(dirname $0)
+    ./$SERVER_APP_NAME &
+    ./$UI_APP_NAME &
+    sh $DAEMON_APP_NAME &
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+stop() {
+    echo "Stopping marssenger: "
+    killall $SERVER_APP_NAME $UI_APP_NAME $DAEMON_APP_NAME
+
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        stop
+        start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

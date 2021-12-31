@@ -6,6 +6,7 @@
 #include "uart_cloud_task.h"
 #include "device_task.h"
 #include "linkkit_func.h"
+#include "database.h"
 
 static void *SoftVersion_cb(void *ptr, void *arg)
 {
@@ -32,14 +33,31 @@ static void *ProductModel_cb(void *ptr, void *arg)
     cJSON *item = cJSON_CreateString(cloud_dev->device_model);
     return item;
 }
-
+static void *ProductKey_cb(void *ptr, void *arg)
+{
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+    cJSON *item = cJSON_CreateString(cloud_dev->product_key);
+    return item;
+}
 static void *DeviceName_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
     cJSON *item = cJSON_CreateString(cloud_dev->device_name);
     return item;
 }
+static void *ProductSecret_cb(void *ptr, void *arg)
+{
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+    cJSON *item = cJSON_CreateString(cloud_dev->product_secret);
+    return item;
+}
 
+static void *DeviceSecret_cb(void *ptr, void *arg)
+{
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+    cJSON *item = cJSON_CreateString(cloud_dev->device_secret);
+    return item;
+}
 static void *QrCode_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
@@ -61,6 +79,17 @@ static void *AfterSalesQrCode_cb(void *ptr, void *arg)
     char buf[256];
     sprintf(buf, "http://club.marssenger.com/hxr/download.html?pk=%s", cloud_dev->product_key);
     cJSON *item = cJSON_CreateString(buf);
+    return item;
+}
+
+static void *Reset_cb(void *ptr, void *arg)
+{
+    // wifiDisconnect();
+    // systemRun("wpa_cli remove_network all && wpa_cli save_config");
+    // systemRun("wpa_cli reconfigure");
+    // databse_Reset(HISTORY_TABLE_NAME);
+
+    cJSON *item = cJSON_CreateNumber(1);
     return item;
 }
 static set_attr_t g_device_set_attr[] = {
@@ -85,9 +114,24 @@ static set_attr_t g_device_set_attr[] = {
         cb : ProductModel_cb
     },
     {
+        cloud_key : "ProductKey",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : ProductKey_cb
+    },
+    {
         cloud_key : "DeviceName",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : DeviceName_cb
+    },
+    {
+        cloud_key : "ProductSecret",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : ProductSecret_cb
+    },
+    {
+        cloud_key : "DeviceSecret",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : DeviceSecret_cb
     },
     {
         cloud_key : "QrCode",
@@ -103,6 +147,11 @@ static set_attr_t g_device_set_attr[] = {
         cloud_key : "AfterSalesQrCode",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : AfterSalesQrCode_cb
+    },
+    {
+        cloud_key : "Reset",
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
+        cb : Reset_cb
     },
 };
 static const int attr_len = sizeof(g_device_set_attr) / sizeof(g_device_set_attr[0]);

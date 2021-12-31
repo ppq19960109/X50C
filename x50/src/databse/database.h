@@ -22,7 +22,6 @@ extern "C"
         char cookSteps[256];
         int timestamp;
         int collect;
-        int cookTime;
         int cookType;
         int recipeType;
         int cookPos;
