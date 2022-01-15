@@ -15,7 +15,48 @@ cloud_dev_t *get_cloud_dev(void)
 {
     return g_cloud_dev;
 }
+// unsigned char get_BuzControl(void)
+// {
+//     cloud_dev_t *cloud_dev = g_cloud_dev;
+//     cloud_attr_t *attr = cloud_dev->attr;
 
+//     for (int i = 0; i < cloud_dev->attr_len; ++i)
+//     {
+//         if (strcmp("BuzControl", attr->cloud_key) == 0)
+//         {
+//             return *(attr->value);
+//         }
+//     }
+//     return 0;
+// }
+unsigned char get_ErrorCodeShow(void)
+{
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if (strcmp("ErrorCodeShow", attr->cloud_key) == 0)
+        {
+            return *(attr->value);
+        }
+    }
+    return 0;
+}
+unsigned int get_ErrorCode(void)
+{
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if (strcmp("ErrorCode", attr->cloud_key) == 0)
+        {
+            return *((int *)(attr->value));
+        }
+    }
+    return 0;
+}
 int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回调函数，并拼包
 {
     if (root == NULL)
@@ -54,7 +95,7 @@ int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) //调用相关
 
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
-    if (ptr->value == NULL || (ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT))
+    if (ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT)
     {
         return -1;
     }
@@ -93,11 +134,13 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
+            // if (strcmp("SysPower", ptr->cloud_key) == 0)
+            //     cloud_val = 1;
             item = cJSON_CreateNumber(cloud_val);
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
-            if (ptr->value[ptr->uart_byte_len - 1] != 0)
+            if (ptr->uart_byte_len > 1 && ptr->value[ptr->uart_byte_len - 1] != 0)
             {
                 char *buf = (char *)malloc(ptr->uart_byte_len + 1);
                 memcpy(buf, ptr->value, ptr->uart_byte_len);
@@ -106,7 +149,22 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                 free(buf);
             }
             else
-                item = cJSON_CreateString(ptr->value);
+            {
+                if (strcmp("ComSWVersion", ptr->cloud_key) == 0)
+                {
+                    item = cJSON_CreateString(g_cloud_dev->software_ver);
+                }
+                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0)
+                {
+                    char buf[6];
+                    sprintf(buf, "%d.%d", *ptr->value >> 4, *ptr->value & 0x0f);
+                    item = cJSON_CreateString(buf);
+                }
+                else
+                {
+                    item = cJSON_CreateString(ptr->value);
+                }
+            }
         }
         else
         {
@@ -223,7 +281,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             char *json = cJSON_PrintUnformatted(resp);
             linkkit_user_post_property(json);
             cJSON_free(json);
-            send_event_uds(resp);
+            send_event_uds(resp, NULL);
             return 0;
         }
     }
@@ -288,8 +346,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
     linkkit_user_post_property(json); //阿里云平台上报接口
     cJSON_free(json);
 
-    send_event_uds(root); //UI上报接口
-
+    send_event_uds(root, NULL); //UI上报接口
     // cJSON_Delete(root);
 }
 
@@ -350,20 +407,17 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
-    static unsigned char uart_buf[1024];
+    static unsigned char uart_buf[256];
     int uart_buf_len = 0;
 
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
-        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        if ((attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, attr[i].cloud_key))
         {
-            if ((attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL))
-            {
-                cJSON *item = cJSON_GetObjectItem(root, attr[i].cloud_key);
-                uart_buf_len += get_attr_set_value(&attr[i], item, &uart_buf[uart_buf_len]);
-            }
+            cJSON *item = cJSON_GetObjectItem(root, attr[i].cloud_key);
+            uart_buf_len += get_attr_set_value(&attr[i], item, &uart_buf[uart_buf_len]);
         }
     }
     if (uart_buf_len > 0)
@@ -376,7 +430,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     char *json = cJSON_PrintUnformatted(resp_db);
     linkkit_user_post_property(json);
     cJSON_free(json);
-    send_event_uds(resp_db);
+    send_event_uds(resp_db, NULL);
 
     pthread_mutex_unlock(&mutex);
     return 0;
@@ -470,7 +524,12 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
         dzlog_error("HardwareVer is NULL\n");
         goto fail;
     }
-
+    cJSON *UpdateLog = cJSON_GetObjectItem(root, "UpdateLog");
+    if (UpdateLog == NULL)
+    {
+        dzlog_error("UpdateLog is NULL\n");
+        goto fail;
+    }
     cJSON *attr = cJSON_GetObjectItem(root, "attr");
     if (attr == NULL)
     {
@@ -493,7 +552,8 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
     strcpy(cloud_dev->device_category, DeviceCategory->valuestring);
     strcpy(cloud_dev->device_model, DeviceModel->valuestring);
     strcpy(cloud_dev->after_sales_phone, AfterSalesPhone->valuestring);
-    cloud_dev->hardware_ver = HardwareVer->valueint;
+    strcpy(cloud_dev->update_log, UpdateLog->valuestring);
+    strcpy(cloud_dev->hardware_ver, HardwareVer->valuestring);
 
     cJSON *arraySub, *cloudKey, *valueType, *uartCmd, *uartByteLen;
     for (i = 0; i < arraySize; i++)
@@ -539,7 +599,7 @@ fail:
 void get_dev_version(char *hardware_ver, char *software_ver) //获取软件版本号
 {
     if (hardware_ver)
-        sprintf(hardware_ver, "%d", g_cloud_dev->hardware_ver);
+        strcpy(hardware_ver, g_cloud_dev->hardware_ver);
     if (software_ver)
         strcpy(software_ver, g_cloud_dev->software_ver);
 }

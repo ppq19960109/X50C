@@ -5,6 +5,16 @@
 
 typedef enum
 {
+    ECB_UART_READ_VALID = 0,
+    ECB_UART_READ_NO_HEADER,
+    ECB_UART_READ_LEN_SMALL,
+    ECB_UART_READ_LEN_ERR,
+    ECB_UART_READ_CHECK_ERR,
+    ECB_UART_READ_TAILER_ERR
+} ecb_uart_read_status_t;
+
+typedef enum
+{
     ECB_UART_COMMAND_GET = 0x01, /* GET */
     ECB_UART_COMMAND_SET,     /* SET */
     ECB_UART_COMMAND_EVENT,

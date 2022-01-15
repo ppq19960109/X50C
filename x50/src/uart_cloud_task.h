@@ -46,9 +46,10 @@ typedef struct
     char device_category[33];
     char device_model[16];
     char after_sales_phone[16];
-    int hardware_ver;
+    char hardware_ver[6];
     char software_ver[6];
     char remind[3][48];
+    char update_log[1024];
     cloud_attr_t *attr;
     int attr_len;
 } cloud_dev_t;
@@ -77,10 +78,13 @@ void register_send_data_ecb_cb(int (*cb)(unsigned char *, const int));
 
 int set_attr_report_uds(cJSON *root, set_attr_t *attr);
 int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item);
-int cloud_resp_get(cJSON *root,cJSON *resp);
-int cloud_resp_getall(cJSON *root,cJSON *resp);
-int cloud_resp_set(cJSON *root,cJSON *resp);
+int cloud_resp_get(cJSON *root, cJSON *resp);
+int cloud_resp_getall(cJSON *root, cJSON *resp);
+int cloud_resp_set(cJSON *root, cJSON *resp);
 
 cloud_dev_t *get_cloud_dev(void);
+// unsigned char get_BuzControl(void);
+unsigned int get_ErrorCode(void);
+unsigned char get_ErrorCodeShow(void);
 void get_dev_version(char *hardware_ver, char *software_ver);
 #endif

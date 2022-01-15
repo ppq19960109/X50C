@@ -9,15 +9,6 @@
 
 static unsigned short ecb_seq_id = 0;
 static int get_ack_count = 0;
-typedef enum
-{
-    ECB_UART_READ_VALID = 0,
-    ECB_UART_READ_NO_HEADER,
-    ECB_UART_READ_LEN_SMALL,
-    ECB_UART_READ_LEN_ERR,
-    ECB_UART_READ_CHECK_ERR,
-    ECB_UART_READ_TAILER_ERR
-} ecb_uart_read_status_t;
 
 int get_ecb_disconnect_count(void)
 {
@@ -58,7 +49,7 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
 
 int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend)
 {
-    
+
     int index = 0;
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     send_msg[index++] = 0xe6;
@@ -82,7 +73,7 @@ int uart_ecb_send_msg(const unsigned char command, unsigned char *msg, const int
     return uart_send_ecb(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
 }
 
-void send_error_to_cloud(int error_code)
+static void send_error_to_cloud(int error_code)
 {
     unsigned char payload[8] = {0};
     int index = 0;
@@ -137,9 +128,9 @@ static int send_factory_test(void)
     send_msg[index++] = cloud_dev->software_ver[4] - 0x30;
     // 硬件版本
     send_msg[index++] = UART_STORE_HW_VERSION;
-    send_msg[index++] = (cloud_dev->hardware_ver / 100) % 10;
-    send_msg[index++] = (cloud_dev->hardware_ver / 10) % 10;
-    send_msg[index++] = cloud_dev->hardware_ver % 10;
+    send_msg[index++] = cloud_dev->hardware_ver[0] - 0x30;
+    send_msg[index++] = cloud_dev->hardware_ver[2] - 0x30;
+    send_msg[index++] = cloud_dev->hardware_ver[4] - 0x30;
     // MAC地址
     send_msg[index++] = UART_STORE_MAC;
     //wifi mac
@@ -172,7 +163,7 @@ void keypress_local_pro(unsigned char value)
         send_factory_test();
         cJSON *resp = cJSON_CreateObject();
         cJSON_AddNullToObject(resp, "ProductionTest");
-        send_event_uds(resp);
+        send_event_uds(resp, NULL);
     }
     break;
     case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
@@ -188,7 +179,7 @@ void keypress_local_pro(unsigned char value)
         dzlog_info("SteamStart");
         cJSON *resp = cJSON_CreateObject();
         cJSON_AddNullToObject(resp, "SteamStart");
-        send_event_uds(resp);
+        send_event_uds(resp, NULL);
     }
     break;
     case KEYPRESS_LOCAL_FT_BT: /* 整机厂测，蓝牙检测 */
@@ -243,7 +234,7 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     }
     index = i;
 
-    if (index + in_len < ECB_MSG_MIN_LEN)
+    if (in_len - index < ECB_MSG_MIN_LEN)
     {
         *end = index;
         dzlog_error("input len too small");
@@ -256,7 +247,7 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     unsigned char command = in[index + msg_index];
     msg_index += 1;
     int data_len = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    if (data_len > 1024)
+    if (data_len > 512)
     {
         *end = index + 2;
         dzlog_error("input data len error");
@@ -294,12 +285,12 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
     msg_index += 2;
 
     *end = index + msg_index;
-    // if (crc16 != check_sum)
-    // {
-    //     dzlog_error( "data check error");
-    //     ecb_uart_send_nak(ECB_NAK_CHECKSUM);
-    //     return ECB_UART_READ_CHECK_ERR;
-    // }
+    if (crc16 != check_sum)
+    {
+        dzlog_error("data check error");
+        // ecb_uart_send_nak(ECB_NAK_CHECKSUM);
+        // return ECB_UART_READ_CHECK_ERR;
+    }
     //----------------------
     dzlog_info("command:%d", command);
     hdzlog_info((unsigned char *)payload, data_len);
@@ -317,13 +308,6 @@ static int uart_data_parse(const unsigned char *in, const int in_len, int *end)
                 if (payload[i] == 0xf1)
                 {
                     keypress_local_pro(payload[i + 1]);
-                    i += 1;
-                }
-                else if (payload[i] == 0xf9)
-                {
-                    cJSON *resp = cJSON_CreateObject();
-                    cJSON_AddNullToObject(resp, "SteamStart");
-                    send_event_uds(resp);
                     i += 1;
                 }
             }

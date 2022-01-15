@@ -16,7 +16,7 @@ int rk_wifi_cb(RK_WIFI_RUNNING_State_e state)
 
     if (app_wifi_cb != NULL)
     {
-            app_wifi_cb(state);
+        app_wifi_cb(state);
     }
     return 0;
 }
@@ -49,13 +49,18 @@ void wifiInit()
 
     char hostname[16] = {0};
     sprintf(hostname, "X50BCZ_%c%c%c%c", mac[12], mac[13], mac[15], mac[16]);
+    // char cmd[64] = {0};
+    printf("RK_wifi hostname_set:%s\n", hostname);
     if (strcmp(hostname_get, hostname) != 0)
     {
-        printf("RK_wifi hostname_set:%s\n", hostname);
         RK_wifi_set_hostname(hostname);
-        char cmd[64] = {0};
-        sprintf(cmd, "echo %s > /etc/hostname", hostname);
-        system(cmd);
+
+        //     sprintf(cmd, "echo %s > /etc/hostname", hostname);
+        //     system(cmd);
+
+        // sprintf(cmd, "export HOSTNAME=%s", hostname);
+        // system(cmd);
+        // setenv("HOSTNAME", hostname, 1);
     }
 }
 

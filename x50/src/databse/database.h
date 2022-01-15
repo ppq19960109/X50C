@@ -29,7 +29,9 @@ extern "C"
 
     int database_init(void);
     void database_deinit(void);
-
+    int databse_drop_table(const char *table_name);
+    int databse_clear_table(const char *table_name);
+    
     int select_from_table(const char *table_name, int (*select_func)(void *, void *), void *arg);
     int select_seqid_from_table(const char *table_name, const int seqid, int (*select_func)(void *, void *), void *arg);
     int update_key_to_table(const char *table_name, const char *key, const int val, const int id);

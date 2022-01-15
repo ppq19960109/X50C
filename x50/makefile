@@ -23,7 +23,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(ALI_PATH)/include
 CFLAGS += -I$(LOG_PATH)/include
-CFLAGS += -Wall 
+CFLAGS += -Wall #-Werror
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
 endif

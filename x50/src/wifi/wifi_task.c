@@ -190,7 +190,7 @@ static int wiFiReport(int event)
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
 
-    return send_event_uds(root);
+    return send_event_uds(root,NULL);
 }
 
 static int wiFiCallback(int event)

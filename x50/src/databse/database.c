@@ -34,8 +34,24 @@ static const char *sql_delete = "DELETE FROM %s WHERE ID = ?;";
 
 static const char *sql_clear_table = "DELETE FROM %s;";
 static const char *sql_clear_table_seq = "DELETE FROM sqlite_sequence WHERE name = %s;";
+static const char *sql_drop_table = "DROP TABLE %s;";
 
-int databse_Reset(const char *table_name)
+int databse_drop_table(const char *table_name)
+{
+    char buf[128];
+    sprintf(buf, sql_drop_table, table_name);
+
+    char *errMsg = NULL;
+    int rc = sqlite3_exec(sqlHandle.db, buf, NULL, NULL, &errMsg);
+    if (SQLITE_OK != rc)
+    {
+        printf("%s,sqlite3_exec errmsg:%s\n", __func__, errMsg);
+        sqlite3_free(errMsg);
+        return -1;
+    }
+    return 0;
+}
+int databse_clear_table(const char *table_name)
 {
     char buf[128];
     sprintf(buf, sql_clear_table, table_name);

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <sys/reboot.h>
 #include "infra_config.h"
 #include "infra_state.h"
 #include "infra_types.h"
@@ -18,6 +18,7 @@
 #include "linkkit_func.h"
 #include "uart_cloud_task.h"
 #include "POSIXTimer.h"
+#include "database.h"
 
 static timer_t g_ota_timer;
 static enum OTA_TYPE g_ota_state = 0;
@@ -33,6 +34,9 @@ static void linkkit_devrst_evt_handle(iotx_devrst_evt_type_t evt, void *msg)
         EXAMPLE_TRACE("Receive Reset Responst");
         EXAMPLE_TRACE("Msg ID: %d", recv_msg->msgid);
         EXAMPLE_TRACE("Payload: %.*s", recv_msg->payload_len, recv_msg->payload);
+
+        char rst = 0x00;
+        HAL_Kv_Set(LINKKIT_RST, &rst, sizeof(rst), 0);
     }
     break;
 
@@ -41,27 +45,8 @@ static void linkkit_devrst_evt_handle(iotx_devrst_evt_type_t evt, void *msg)
     }
 }
 
-int linkkit_unbind(void)
+int linkkit_dev_reset(void)
 {
-#if 0
-    unsigned char max_retry_cnt = 6;
-
-    if (0 != awss_report_reset())
-    {
-        return -1;
-    }
-    do
-    {
-        if (0 == awss_check_reset())
-        {
-            return 0;
-        }
-        max_retry_cnt--;
-        sleep(1);
-    } while (max_retry_cnt > 0);
-
-    return -1;
-#else
     int res = 0;
     iotx_dev_meta_info_t reset_meta_info;
     memset(&reset_meta_info, 0, sizeof(iotx_dev_meta_info_t));
@@ -74,7 +59,33 @@ int linkkit_unbind(void)
         return -1;
     }
     return res;
-#endif
+}
+
+int linkkit_unbind(void)
+{
+    char rst = 0x01;
+    HAL_Kv_Set(LINKKIT_RST, &rst, sizeof(rst), 0);
+
+    return linkkit_dev_reset();
+}
+
+int linkkit_unbind_check(void)
+{
+    int len = 1;
+    char rst = 0;
+    int ret;
+    ret = HAL_Kv_Get(LINKKIT_RST, &rst, &len);
+    if (ret < 0)
+    {
+        EXAMPLE_TRACE("linkkit_unbind_check %s not exits\n", LINKKIT_RST);
+        return -1;
+    }
+    EXAMPLE_TRACE("linkkit_unbind_check rst:%d", rst);
+    if (rst == 0)
+    {
+        return -1;
+    }
+    return linkkit_dev_reset();
 }
 
 void fota_event_handler(const char *version)
@@ -160,9 +171,12 @@ int download_fota_image(void)
     set_ota_state(OTA_INSTALL_START, NULL);
     // sync();
     system("chmod 777 " otafilename);
-    system("cd /tmp;" otafilename);
-    sync();
+    system("cd /tmp &&" otafilename);
+    databse_drop_table(RECIPE_TABLE_NAME);
+
     set_ota_state(OTA_INSTALL_SUCCESS, NULL);
+    sync();
+    reboot(RB_AUTOBOOT);
     return res;
 }
 
@@ -173,6 +187,7 @@ static void POSIXTimer_cb(union sigval val)
 }
 int linkkit_func_init(void)
 {
+    register_unbind_cb(linkkit_unbind_check);
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     EXAMPLE_TRACE("linkkit_func_init timer:%p", g_ota_timer);
     return 0;

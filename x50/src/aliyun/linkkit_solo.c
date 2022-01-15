@@ -62,11 +62,11 @@ void register_connected_cb(void (*cb)(int))
 {
     connected_cb = cb;
 }
-// int (*bind_cb)(void);
-// void register_bind_cb(int (*cb)())
-// {
-//     bind_cb = cb;
-// }
+int (*unbind_cb)(void);
+void register_unbind_cb(int (*cb)())
+{
+    unbind_cb = cb;
+}
 int get_linkkit_connected_state()
 {
     return g_user_example_ctx.cloud_connected;
@@ -75,9 +75,14 @@ int get_linkkit_connected_state()
 static int user_connected_event_handler(void)
 {
     EXAMPLE_TRACE("Cloud Connected");
+    if (unbind_cb != NULL)
+        unbind_cb();
     g_user_example_ctx.cloud_connected = 1;
     if (connected_cb != NULL)
         connected_cb(1);
+    if (property_report_all_cb != NULL)
+        property_report_all_cb();
+
     return 0;
 }
 
@@ -270,9 +275,6 @@ static int user_state_dev_bind(int ev, const char *msg)
                     {
                         EXAMPLE_TRACE("STATE_BIND Unbind............\n");
                     }
-                    // HAL_Kv_Set("BindState", &bind_flag, 1, 1);
-                    // if(bind_cb!= NULL)
-                    //     bind_cb();
                 }
             }
             cJSON_Delete(root);

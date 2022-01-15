@@ -11,7 +11,7 @@
 #include "device_task.h"
 
 static pthread_mutex_t mutex;
-static char g_send_buf[4096];
+static char g_send_buf[2048];
 static int g_seqid = 0;
 
 unsigned char CheckSum(unsigned char *buf, int len) //和校验算法
@@ -37,7 +37,7 @@ int cJSON_Object_isNull(cJSON *object) //cJSON判断Object是否为空
     return 0;
 }
 
-int send_event_uds(cJSON *send) //uds发送u接口
+int send_event_uds(cJSON *send, const char *type) //uds发送u接口
 {
     pthread_mutex_lock(&mutex);
     if (cJSON_Object_isNull(send))
@@ -47,11 +47,21 @@ int send_event_uds(cJSON *send) //uds发送u接口
         goto fail;
     }
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, TYPE, TYPE_EVENT);
+    if (type == NULL)
+        cJSON_AddStringToObject(root, TYPE, TYPE_EVENT);
+    else
+        cJSON_AddStringToObject(root, TYPE, type);
+
     cJSON_AddItemToObject(root, DATA, send);
     char *json = cJSON_PrintUnformatted(root);
+    if (json == NULL)
+    {
+        dzlog_error("%s,cJSON_PrintUnformatted error", __func__);
+        cJSON_Delete(root);
+        goto fail;
+    }
     int len = strlen(json);
-    dzlog_debug("%d,%s", len, json);
+    printf("cJSON_PrintUnformatted json:%d,%s\n", len, json);
     char *send_buf;
     if (len + 10 > sizeof(g_send_buf))
     {
@@ -69,7 +79,7 @@ int send_event_uds(cJSON *send) //uds发送u接口
     send_buf[5] = len >> 8;
     send_buf[6] = len;
     memcpy(&send_buf[7], json, len);
-    send_buf[7 + len] = 0;
+    send_buf[7 + len] = CheckSum((unsigned char *)&send_buf[2], len + 5);
     send_buf[8 + len] = FRAME_TAIL;
     send_buf[9 + len] = FRAME_TAIL;
 
@@ -130,7 +140,7 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
         ota_resp_set(Data, resp);
         device_resp_set(Data, resp);
     }
-    else //解析GETALL命令
+    else if (strcmp(TYPE_GETALL, Type->valuestring) == 0) //解析GETALL命令
     {
         wifi_resp_getall(Data, resp);
         database_resp_getall(Data, resp);
@@ -138,13 +148,31 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
         ota_resp_getall(Data, resp);
         device_resp_getall(Data, resp);
     }
-    send_event_uds(resp); //发送返回数据
-
+    else //解析HEART命令
+    {
+        cJSON_AddNullToObject(resp, "Response");
+        send_event_uds(resp, TYPE_HEART);
+        goto heart;
+    }
+    send_event_uds(resp, NULL); //发送返回数据
+heart:
     cJSON_Delete(root);
     return 0;
 fail:
     cJSON_Delete(root);
     return -1;
+}
+
+int uds_event_all(void)
+{
+    cJSON *resp = cJSON_CreateObject();
+    wifi_resp_getall(NULL, resp);
+    database_resp_getall(NULL, resp);
+    cloud_resp_getall(NULL, resp);
+    ota_resp_getall(NULL, resp);
+    device_resp_getall(NULL, resp);
+    send_event_uds(resp, NULL);
+    return 0;
 }
 
 static int uds_recv(char *data, unsigned int len) //uds接受回调函数，初始化时注册

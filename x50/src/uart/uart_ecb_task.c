@@ -21,6 +21,7 @@ void ecb_resend_list_del_by_id(const int resend_seq_id)
 
 int uart_send_ecb(unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
 {
+    hdzlog_info(in, in_len);
     if (ecb_fd <= 0)
     {
         dzlog_error("uart_send_ecb fd error\n");
@@ -34,7 +35,6 @@ int uart_send_ecb(unsigned char *in, int in_len, unsigned char resend, unsigned 
             res = 0;
             goto fail;
         }
-        hdzlog_info(in, in_len);
 
         res = write(ecb_fd, in, in_len);
         if (resend)
@@ -123,7 +123,7 @@ void *uart_ecb_task(void *arg)
             }
             if (boot_flag == 0 && disconnect_count < ECB_DISCONNECT_COUNT)
             {
-                ecb_get_timeout = 5 * 60;
+                ecb_get_timeout = 5 * 60 * 2;
             }
             else
             {
@@ -144,7 +144,7 @@ void *uart_ecb_task(void *arg)
             {
                 ecb_get_count = 0;
 
-                uart_read_len = read(ecb_fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf));
+                uart_read_len = read(ecb_fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf) - uart_read_buf_index);
                 if (uart_read_len > 0)
                 {
                     dzlog_warn("uart_read_len:%d\n", uart_read_len);

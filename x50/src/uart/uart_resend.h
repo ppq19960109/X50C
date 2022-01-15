@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "list.h"
 
-#define RESEND_CNT (3)
+#define RESEND_CNT (2)
 #define RESEND_WAIT_TICK (500)
 typedef struct
 {

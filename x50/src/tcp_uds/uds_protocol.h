@@ -11,10 +11,12 @@
 #define TYPE_GET "GET"
 #define TYPE_GETALL "GETALL"
 #define TYPE_EVENT "EVENT"
+#define TYPE_HEART "HEART"
 
 #define DATA "Data"
 
 int uds_protocol_init(void);
 void uds_protocol_deinit(void);
-int send_event_uds(cJSON *send);
+int send_event_uds(cJSON *send, const char *type);
+int uds_event_all(void);
 #endif

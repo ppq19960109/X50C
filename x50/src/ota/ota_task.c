@@ -129,7 +129,7 @@ static int ota_state_event(const int state, void *arg)
     }
     set_attr_report_uds(root, &g_ota_set_attr[0]);
 
-    return send_event_uds(root);
+    return send_event_uds(root,NULL);
 }
 
 static void ota_progress_cb(int precent)
@@ -138,7 +138,7 @@ static void ota_progress_cb(int precent)
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, g_ota_set_attr[2].cloud_key, precent);
 
-    send_event_uds(root);
+    send_event_uds(root,NULL);
 }
 
 // static int APP_bind_event()
@@ -147,7 +147,7 @@ static void ota_progress_cb(int precent)
 //     cJSON *root = cJSON_CreateObject();
 //     set_attr_report_uds(root, &g_ota_set_attr[4]);
 
-//     return send_event_uds(root);
+//     return send_event_uds(root,NULL);
 // }
 int ota_task_init(void)
 {

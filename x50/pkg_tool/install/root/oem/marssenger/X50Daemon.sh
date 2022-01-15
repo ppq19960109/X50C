@@ -1,5 +1,5 @@
 #!/bin/sh
-
+export TZ='Asia/Shanghai'
 function check(){
   count=`ps -ef |grep $1 |grep -v "grep" |wc -l`
   #echo $count

@@ -8,18 +8,6 @@
 #include "linkkit_func.h"
 #include "database.h"
 
-static void *SoftVersion_cb(void *ptr, void *arg)
-{
-    cloud_dev_t *cloud_dev = get_cloud_dev();
-    cJSON *item = cJSON_CreateString(cloud_dev->software_ver);
-    return item;
-}
-static void *HardVersion_cb(void *ptr, void *arg)
-{
-    cloud_dev_t *cloud_dev = get_cloud_dev();
-    cJSON *item = cJSON_CreateString(cloud_dev->software_ver);
-    return item;
-}
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
@@ -66,6 +54,13 @@ static void *QrCode_cb(void *ptr, void *arg)
     cJSON *item = cJSON_CreateString(buf);
     return item;
 }
+static void *UpdateLog_cb(void *ptr, void *arg)
+{
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+
+    cJSON *item = cJSON_CreateString(cloud_dev->update_log);
+    return item;
+}
 
 static void *AfterSalesPhone_cb(void *ptr, void *arg)
 {
@@ -87,22 +82,13 @@ static void *Reset_cb(void *ptr, void *arg)
     // wifiDisconnect();
     // systemRun("wpa_cli remove_network all && wpa_cli save_config");
     // systemRun("wpa_cli reconfigure");
-    // databse_Reset(HISTORY_TABLE_NAME);
-
+    databse_clear_table(HISTORY_TABLE_NAME);
+    linkkit_unbind();
+    uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);
     return item;
 }
 static set_attr_t g_device_set_attr[] = {
-    {
-        cloud_key : "SoftVersion",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-        cb : SoftVersion_cb
-    },
-    {
-        cloud_key : "HardVersion",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-        cb : HardVersion_cb
-    },
     {
         cloud_key : "ProductCategory",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
@@ -137,6 +123,11 @@ static set_attr_t g_device_set_attr[] = {
         cloud_key : "QrCode",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : QrCode_cb
+    },
+    {
+        cloud_key : "UpdateLog",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : UpdateLog_cb
     },
     {
         cloud_key : "AfterSalesPhone",
