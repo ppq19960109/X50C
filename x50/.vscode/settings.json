@@ -69,6 +69,15 @@
         "uart_gesture_task.h": "c",
         "posixtimer.h": "c",
         "signalquit.h": "c",
-        "wifi_provision_api.h": "c"
+        "wifi_provision_api.h": "c",
+        "list": "c",
+        "algorithm": "cpp",
+        "history.h": "c",
+        "history_wrapper.h": "c",
+        "*.tcc": "c",
+        "deque": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "initializer_list": "cpp"
     }
 }
