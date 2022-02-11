@@ -1,25 +1,25 @@
 #include "history.h"
 #include <cstring>
 
-int (*history_select_cb)(history_t history);
-void register_history_select_cb(int (*cb)(history_t history))
+static int (*history_select_cb)(history_t *history, void *arg);
+void register_history_select_cb(int (*cb)(history_t *history, void *arg))
 {
     history_select_cb = cb;
 }
 
-int (*history_insert_cb)(history_t history);
-void register_history_insert_cb(int (*cb)(history_t history))
+static int (*history_insert_cb)(history_t *history);
+void register_history_insert_cb(int (*cb)(history_t *history))
 {
     history_insert_cb = cb;
 }
 
-int (*history_delete_cb)(int id);
+static int (*history_delete_cb)(int id);
 void register_history_delete_cb(int (*cb)(int id))
 {
     history_delete_cb = cb;
 }
 
-int (*history_update_cb)(const int id, const int collect, int timestamp);
+static int (*history_update_cb)(const int id, const int collect, int timestamp);
 void register_history_update_cb(int (*cb)(const int id, const int collect, int timestamp))
 {
     history_update_cb = cb;
@@ -30,12 +30,12 @@ void CookHistory::sortHistory()
     historyList.sort();
 }
 
-void CookHistory::selectHistory()
+void CookHistory::selectHistory(void *arg)
 {
     list<recipes_t>::iterator iter;
     for (iter = historyList.begin(); iter != historyList.end(); ++iter)
     {
-        history_select_cb(iter->history);
+        history_select_cb(&iter->history, arg);
     }
 }
 
@@ -45,7 +45,7 @@ void CookHistory::reportDeleteHistory(int id)
                           { return recipe.history.id == id; });
 }
 
-int CookHistory::compareHistoryCollect(const history_t &single)
+int CookHistory::compareHistoryCollect(const history_t *single)
 {
     list<recipes_t>::iterator iter;
     for (iter = historyList.begin(); iter != historyList.end(); ++iter)
@@ -53,9 +53,9 @@ int CookHistory::compareHistoryCollect(const history_t &single)
         if (iter->history.collect == 0)
             continue;
 
-        if (strcmp(iter->history.dishName, single.dishName) == 0 && strcmp(iter->history.imgUrl, single.imgUrl) == 0 && strcmp(iter->history.details, single.details) == 0 && strcmp(iter->history.cookSteps, single.cookSteps) == 0)
+        if (strcmp(iter->history.dishName, single->dishName) == 0 && strcmp(iter->history.imgUrl, single->imgUrl) == 0 && strcmp(iter->history.details, single->details) == 0 && strcmp(iter->history.cookSteps, single->cookSteps) == 0)
         {
-            iter->history.timestamp = single.timestamp;
+            iter->history.timestamp = single->timestamp;
             return iter->history.id;
         }
     }
@@ -91,15 +91,15 @@ int CookHistory::lastHistoryId(const int collect)
     return id;
 }
 
-int CookHistory::insertHistory(history_t single)
+int CookHistory::insertHistory(history_t *single)
 {
     int ret = -1;
 
-    single.timestamp = std::time(NULL);
+    single->timestamp = std::time(NULL);
     int id = compareHistoryCollect(single);
     if (id >= 0)
     {
-        ret = history_update_cb(id, -1, single.timestamp);
+        ret = history_update_cb(id, -1, single->timestamp);
     }
     else
     {
@@ -115,12 +115,16 @@ int CookHistory::insertHistory(history_t single)
     return ret;
 }
 
-void CookHistory::reportInsertHistory(history_t single)
+void CookHistory::reportInsertHistory(history_t *single, const int sort)
 {
-    recipes_t recipe;
-    recipe.history = single;
-    historyList.push_front(recipe);
-    sortHistory();
+    if (single != NULL)
+    {
+        recipes_t recipe;
+        recipe.history = *single;
+        historyList.push_front(recipe);
+    }
+    if (sort)
+        sortHistory();
 }
 
 int CookHistory::updateHistory(const int id, const int collect)

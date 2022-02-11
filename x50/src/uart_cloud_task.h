@@ -68,6 +68,8 @@ typedef struct
         char *p;
     } value;
 } set_attr_t;
+int cJSON_Object_isNull(cJSON *object);
+int report_msg_all(cJSON *root);
 
 int cloud_init(void);
 void cloud_deinit(void);

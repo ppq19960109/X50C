@@ -1,4 +1,4 @@
-CROSS_COMPILE = #arm-rockchip-linux-gnueabihf-
+CROSS_COMPILE = arm-rockchip-linux-gnueabihf-
 CC = @echo "GCC $@"; $(CROSS_COMPILE)gcc
 CXX = @echo "G++ $@"; $(CROSS_COMPILE)g++
 RM = rm -rf
@@ -24,6 +24,7 @@ LIBS += -Wl,--start-group	\
 
 SRC := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
 SRC += $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
+INC:=$(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.h))
 
 OBJ := $(filter %.o,$(SRC:%.c=%.o))
 OBJ += $(filter %.o,$(SRC:%.cpp=%.o))
@@ -42,7 +43,7 @@ $(TARGET) : $(OBJ)
 	@echo 'SRC:$(SRC)' 
 	@echo 'OBJ:$(OBJ)'
 	$(AR) $@ $(OBJ)
-
+	$(CP) $(INC) $(TOPDIR)
 clean :
 	$(RM) $(TARGET)
 	$(RM) $(OBJ)

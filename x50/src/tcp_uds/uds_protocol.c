@@ -25,18 +25,6 @@ unsigned char CheckSum(unsigned char *buf, int len) //和校验算法
     return ret;
 }
 
-int cJSON_Object_isNull(cJSON *object) //cJSON判断Object是否为空
-{
-    char *json = cJSON_PrintUnformatted(object);
-    if (strlen(json) == 2 && strcmp(json, "{}") == 0)
-    {
-        cJSON_free(json);
-        return 1;
-    }
-    cJSON_free(json);
-    return 0;
-}
-
 int send_event_uds(cJSON *send, const char *type) //uds发送u接口
 {
     pthread_mutex_lock(&mutex);
@@ -127,26 +115,29 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
     if (strcmp(TYPE_GET, Type->valuestring) == 0) //解析GET命令
     {
         wifi_resp_get(Data, resp);
-        database_resp_get(Data, resp);
         cloud_resp_get(Data, resp);
         ota_resp_get(Data, resp);
         device_resp_get(Data, resp);
+        database_resp_get(Data, resp);
     }
     else if (strcmp(TYPE_SET, Type->valuestring) == 0) //解析SET命令
     {
         wifi_resp_set(Data, resp);
-        // database_resp_set(Data, resp);
         cloud_resp_set(Data, resp);
         ota_resp_set(Data, resp);
         device_resp_set(Data, resp);
+        // database_resp_set(Data, resp);
     }
     else if (strcmp(TYPE_GETALL, Type->valuestring) == 0) //解析GETALL命令
     {
         wifi_resp_getall(Data, resp);
-        database_resp_getall(Data, resp);
         cloud_resp_getall(Data, resp);
         ota_resp_getall(Data, resp);
         device_resp_getall(Data, resp);
+
+        cJSON *resp = cJSON_CreateObject();
+        database_resp_getall(Data, resp);
+        send_event_uds(resp, NULL);
     }
     else //解析HEART命令
     {
@@ -214,7 +205,7 @@ int uds_protocol_init(void) //uds协议相关初始化
     wifi_task_init();
     ota_task_init();
     database_init();
-
+    database_task_init();
     register_uds_recv_cb(uds_recv);
     return 0;
 }

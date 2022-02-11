@@ -20,6 +20,27 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "ElcHWVersion",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 2,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 3,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 4,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "SysPower",
             "valueType": 0,
             "funType": 0,
@@ -348,6 +369,13 @@
             "valueType": 0,
             "funType": 1,
             "uartCmd": 90,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 246,
             "uartByteLen": 1
         },
         {

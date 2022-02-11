@@ -11,6 +11,32 @@
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 
+int cJSON_Object_isNull(cJSON *object) //cJSON判断Object是否为空
+{
+    char *json = cJSON_PrintUnformatted(object);
+    if (strlen(json) == 2 && strcmp(json, "{}") == 0)
+    {
+        cJSON_free(json);
+        return 1;
+    }
+    cJSON_free(json);
+    return 0;
+}
+int report_msg_all(cJSON *root)
+{
+    if (cJSON_Object_isNull(root))
+    {
+        cJSON_Delete(root);
+        dzlog_warn("%s,send NULL", __func__);
+        return -1;
+    }
+    char *json = cJSON_PrintUnformatted(root);
+    linkkit_user_post_property(json);
+    cJSON_free(json);
+    send_event_uds(root, NULL);
+    return 0;
+}
+
 cloud_dev_t *get_cloud_dev(void)
 {
     return g_cloud_dev;
@@ -277,11 +303,8 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         else if (strcmp(ptr->cloud_key, "CookbookName") == 0)
         {
             cJSON *resp = cJSON_CreateObject();
-            cJSON_AddItemToObject(resp, ptr->cloud_key, item);
-            char *json = cJSON_PrintUnformatted(resp);
-            linkkit_user_post_property(json);
-            cJSON_free(json);
-            send_event_uds(resp, NULL);
+            cJSON_AddStringToObject(resp, ptr->cloud_key, item->valuestring);
+            report_msg_all(resp);
             return 0;
         }
     }
@@ -342,11 +365,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
         }
     }
 
-    char *json = cJSON_PrintUnformatted(root);
-    linkkit_user_post_property(json); //阿里云平台上报接口
-    cJSON_free(json);
-
-    send_event_uds(root, NULL); //UI上报接口
+    report_msg_all(root);
     // cJSON_Delete(root);
 }
 
@@ -401,6 +420,17 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
     {
         get_attr_report_value(resp, &attr[i]);
     }
+
+    cJSON *root_get = cJSON_CreateObject();
+    cJSON_AddNullToObject(root, "CookHistory");
+    cJSON *resp_db = cJSON_CreateObject();
+    database_resp_get(root_get, resp_db);
+
+    char *json = cJSON_PrintUnformatted(resp_db);
+    linkkit_user_post_property(json);
+    cJSON_free(json);
+    cJSON_Delete(root_get);
+    cJSON_Delete(resp_db);
     return 0;
 }
 
@@ -427,11 +457,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
 
     cJSON *resp_db = cJSON_CreateObject();
     database_resp_set(root, resp_db);
-    char *json = cJSON_PrintUnformatted(resp_db);
-    linkkit_user_post_property(json);
-    cJSON_free(json);
-    send_event_uds(resp_db, NULL);
-
+    report_msg_all(resp_db);
     pthread_mutex_unlock(&mutex);
     return 0;
 }

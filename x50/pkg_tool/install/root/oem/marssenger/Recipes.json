@@ -3,42 +3,392 @@
     "recipes": [
         {
             "seqid": 0,
+            "dishName": "蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/Vegetables/蒜蓉粉丝娃娃菜.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":8}]",
+            "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
+            "cookType": 0,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 1,
+            "dishName": "香菇酿肉",
+            "imgUrl": "recipes/Vegetables/香菇酿肉.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":20}]",
+            "details": "用料:\n新鲜香菇150g,五花肉末100g,生粉5g,生抽5g,蚝油8g,料酒6g,鸡精3g,枸杞3g\n步骤:\n1、猪肉末加入生粉、生抽、蚝油、料酒、鸡精,往同一方向搅拌均匀\n2、香菇洗净切根,在根部放上适量肉末\n3、在酿好的肉末上放上枸杞1粒\n4、装盘放入蒸箱下层开始烹饪",
+            "cookType": 0,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 2,
+            "dishName": "蒜香茄子",
+            "imgUrl": "recipes/Vegetables/蒜香茄子.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":100,\"time\":15},{\"device\":0,\"Number\":2,\"mode\":36,\"temp\":100,\"time\":5}]",
+            "details": "用料:\n长茄子1根,洋葱1/4个,小葱2根,大蒜半头,白糖5g,盐2g,油15g,孜然粉2g,椒盐粉2g,辣椒粉2g\n步骤:\n1、茄子去蒂对半切开并划几刀放盘中\n2、洋葱、蒜切碎后与油、盐、糖拌匀制成蒜泥,小葱切葱花备用\n3、将茄子放入蒸烤箱启动烹饪\n4、蒸好取出,将蒜泥均匀的铺在茄子上\n5、将茄子放在铺好锡纸的烤盘内,再次放入蒸烤箱中烤制\n6、出箱后撒上孜然粉、辣椒粉、椒盐粉、葱花食用",
+            "cookType": 2,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 3,
+            "dishName": "肉沫冬瓜",
+            "imgUrl": "recipes/Vegetables/肉沫冬瓜.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":12}]",
+            "details": "用料:\n冬瓜500g,香菇40g,五花肉50g,香葱2根,蚝油5g,盐2g\n步骤:\n1、五花肉、香菇洗净,剁碎放入盐、蚝油调味,冬瓜去皮切薄片\n2、冬瓜片均匀放入浅盘,表面铺上肉末\n3、烤箱预热后,放入蛋挞\n4、放入蒸烤箱中烹饪,完成后撒上香葱末",
+            "cookType": 0,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 4,
+            "dishName": "桂花蜂蜜烤南瓜",
+            "imgUrl": "recipes/Vegetables/桂花蜂蜜烤南瓜.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":200,\"time\":20}]",
+            "details": "用料:\n老南瓜600g,蜂蜜5g,黑椒碎3g\n步骤:\n1、南瓜洗净切块放入蒸烤箱中启动烹饪\n2、蜂蜜与桂花酱混合,调制成酱料\n3、完成烹饪后取出南瓜刷上酱料即可食用",
+            "cookType": 1,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 5,
+            "dishName": "肉末山药",
+            "imgUrl": "recipes/Vegetables/肉末山药.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":15,\"time\":120}]",
+            "details": "用料:\n山药300g,香菇1个,精五花肉末50g,香葱2根,耗油5g,鸡蛋清1个,生抽少许,胡椒粉少许,鸡精少许\n步骤:\n1、肉末放入蚝油、生抽、鸡蛋清调味备用,山药切1cm薄片\n2、山药片均匀放入浅盘,表面铺上肉末\n3、放入蒸烤箱中,点击菜谱,选择对应菜单启动烹饪\n4、完成后撒上香葱末即可食用",
+            "cookType": 0,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 6,
+            "dishName": "腊肉蒸芋艿",
+            "imgUrl": "recipes/Vegetables/腊肉蒸芋艿.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":18,\"time\":100}]",
+            "details": "用料:\n腊肉100g,芋艿300g,猪油适量,盐少许,葱花适量\n步骤:\n1、按照所需食材准备好材料\n2、芋艿洗净去皮,切块,铺上腊肉片,加少许猪油,盐,装盘\n3、放入蒸箱,在屏幕上找到对应的菜谱,点击启动按键即可开启烹饪\n4、烹饪完成后取出撒葱花即可享受美味了",
+            "cookType": 0,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 7,
+            "dishName": "烤豆腐",
+            "imgUrl": "recipes/Vegetables/烤豆腐.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":200,\"time\":20}]",
+            "details": "用料:\n冬瓜500g,香菇40g,五花肉50g,香葱2根,蚝油5g,盐2g\n步骤:\n1、五花肉、香菇洗净,剁碎放入盐、蚝油调味,冬瓜去皮切薄片\n2、冬瓜片均匀放入浅盘,表面铺上肉末\n3、烤箱预热后,放入蛋挞\n4、放入蒸烤箱中烹饪,完成后撒上香葱末",
+            "cookType": 1,
+            "recipeType": 1,
+            "cookPos": 0
+        },
+        {
+            "seqid": 8,
+            "dishName": "泰式火山排骨",
+            "imgUrl": "recipes/Meat/泰式火山排骨.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":30},{\"device\":0,\"Number\":2,\"mode\":1,\"temp\":100,\"time\":20}]",
+            "details": "用料:\n猪肋排4根,线椒5根,罗勒1把(约20片),薄荷0.5把(约10片),香菜0.5把(约10片),小米辣2个,洋葱0.5个,青柠1个\n步骤:\n1、猪肋排抹上盐放入箱内点击运行\n2、听到提示音后开门铺上线椒继续烹饪\n3、完成后倒出排骨汁,放入切成末的配料,加入鱼露,酱油,糖,青柠汁拌匀成料汁备用\n4、撕开排骨,淋上料汁即可食用",
+            "cookType": 2,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 9,
+            "dishName": "叉烧烤仔排",
+            "imgUrl": "recipes/Meat/叉烧烤仔排.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":35,\"temp\":20,\"time\":180}]",
+            "details": "用料:\n仔排400g,葱姜蒜适量,食用油10g,盐2g,叉烧酱适量,老抽、料酒少许\n步骤:\n1、按照所需食准备好材料\n2、小排切段,洗净,沥干水分,加入葱段,姜片,蒜片,料酒,叉烧酱,(老抽少许上色),腌制30分钟\n3、仔排去杂物,放入烤架,放入预热好的烤箱,启动程序\n4、烤20分钟后,当界面出现提示刷蜂蜜时,将排骨翻面两面刷蜂蜜,继续烤制\n5、完成后取出,即可食用",
+            "cookType": 1,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 10,
+            "dishName": "烤羊排",
+            "imgUrl": "recipes/Meat/烤羊排.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":40,\"temp\":180,\"time\":35}]",
+            "details": "用料:\n羊排(条状)600g,辣酱10g,孜然粉5g,盐3g\n步骤:\n1、羊排洗净后沥干水用辣酱、孜然粉、盐腌制20分钟\n2、羊排装入垫有锡纸的烤盘\n3、烤盘放入蒸烤箱中间层启动烹饪",
+            "cookType": 1,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 11,
+            "dishName": "蜜烤鸡翅",
+            "imgUrl": "recipes/Meat/蜜烤鸡翅.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":190,\"time\":25}]",
+            "details": "用料:\n全鸡翅3只,洋葱半个,胡萝卜半根,柠檬半个,小土豆4个,番茄酱40g,盐3g,生抽10ml,海鲜酱40g,蜂蜜20ml,辣椒粉1g,胡椒粉1g\n步骤:\n1、土豆去皮切块,胡萝卜切块,洋葱切片\n2、土豆、胡萝卜、洋葱打底后放上鸡翅,依次放入番茄酱、蜂蜜、生抽、盐、辣椒粉、海鲜酱、胡椒粉抓匀后挤上柠檬汁腌制1小时\n3、烤箱预热到200℃\n4、鸡翅放入蒸烤箱中间层启动烹饪",
+            "cookType": 1,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 12,
+            "dishName": "什锦烧烤",
+            "imgUrl": "recipes/Meat/叉烧烤仔排.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":38,\"temp\":180,\"time\":13},{\"device\":0,\"Number\":2,\"mode\":36,\"temp\":170,\"time\":3}]",
+            "details": "用料:\n牛肉1块,青椒1个,红椒1个,白洋葱0.5个,鸡腿3只,培根4条,芦笋3根,香菇6个,盐3g,辣椒面3g,孜然粉5g,孜然粒5g,黑胡椒3g,橄榄油3g\n步骤:\n1、鸡腿去骨后和牛肉、红椒、青椒、洋葱一起切成大小相似的块状,香菇切花刀\n2、培根卷上去皮切好的芦笋条\n3、鸡肉、牛肉和蔬菜依次串好肉串\n4、肉串撒上调味料放入蒸烤箱启动烹饪",
+            "cookType": 2,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 13,
+            "dishName": "叉烧肉",
+            "imgUrl": "recipes/Meat/叉烧肉.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":180,\"time\":13},{\"device\":0,\"Number\":2,\"mode\":35,\"temp\":180,\"time\":10}]",
+            "details": "用料:\n牛肉1块,青椒1个,红椒1个,白洋葱0.5个,鸡腿3只,培根4条,芦笋3根,香菇6个,盐3g,辣椒面3g,孜然粉5g,孜然粒5g,黑胡椒3g,橄榄油3g\n步骤:\n1、鸡腿去骨后和牛肉、红椒、青椒、洋葱一起切成大小相似的块状,香菇切花刀\n2、培根卷上去皮切好的芦笋条\n3、鸡肉、牛肉和蔬菜依次串好肉串\n4、肉串撒上调味料放入蒸烤箱启动烹饪",
+            "cookType": 2,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 14,
+            "dishName": "豆豉蒸排骨",
+            "imgUrl": "recipes/Meat/豆豉蒸排骨.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":20}]",
+            "details": "用料:\n排骨800g,豆豉10g,白糖3g,料酒5g,油5g,盐2g,白胡椒粉1g,淀粉5g,生姜5g,蒜蓉1g\n步骤:\n1、小排洗净沥干水分,生姜切片,加入白糖、油放在冰箱中腌制3小时\n2、从冰箱中取出后加盐、白胡椒粉、豆豉、蒜蓉和料酒拌匀后腌制15分钟\n3、将腌制好的排骨放入蒸烤箱启动烹饪",
+            "cookType": 0,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 15,
+            "dishName": "烤牛排",
+            "imgUrl": "recipes/Meat/烤牛排.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":35,\"temp\":230,\"time\":6}]",
+            "details": "用料:\n牛排200g,盐1g,黄油10g,红酒20g,黑胡椒碎2g,迷迭香2g\n步骤:\n1、牛排双面捶打至松软,将黄油融化备用\n2、牛排表面涂抹黄油后放入红酒、黑胡椒碎、盐、迷迭香腌制20-40分钟\n3、烤箱预热200℃\n4、将腌制好的牛排放到烤盘中启动烹饪",
+            "cookType": 1,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 16,
+            "dishName": "芝士焗牛肉",
+            "imgUrl": "recipes/Meat/芝士焗牛肉.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":10},{\"device\":0,\"Number\":2,\"mode\":38,\"temp\":180,\"time\":15},{\"device\":0,\"Number\":3,\"mode\":35,\"temp\":180,\"time\":5}]",
+            "details": "用料:\n芝士1勺,黄油1勺,面粉0.5勺,牛奶300ml,牛肉1块,洋葱0.5个,西兰花0.5朵,迷迭香2支\n步骤:\n1、牛肉、西兰花切块,蘑菇切片,洋葱切末,牛肉用盐、黑胡椒腌制10分钟\n2、所有蔬菜放入蒸箱蒸10分钟\n3、锅中倒入橄榄油放入洋葱炒香倒入牛肉,炒至变色断生盛出备用\n4、黄油融化加面粉、牛奶、芝士、盐调味\n5、蔬菜打底放上牛肉,倒入黄油汁,铺上马苏里拉,撒上迷迭香碎、胡椒碎放入烤箱",
+            "cookType": 2,
+            "recipeType": 2,
+            "cookPos": 0
+        },
+        {
+            "seqid": 17,
+            "dishName": "清蒸鲈鱼",
+            "imgUrl": "recipes/Aquaculture/清蒸鲈鱼.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":10}]",
+            "details": "用料:\n鲈鱼1条,青蒜50g,姜10g,盐3g,猪油10g,蒸鱼豉油10g\n步骤:\n1、鲈鱼处理好后洗净沥干,两面划刀\n2、用盐摸遍鱼身内外,腌制15分钟\n3、鱼肚内塞上姜、蒜,鱼身上也放些,并倒上料酒\n4、鱼盘放入蒸烤箱中启动烹饪",
+            "cookType": 0,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 18,
+            "dishName": "蒜蓉粉丝扇贝",
+            "imgUrl": "recipes/Aquaculture/蒜蓉粉丝扇贝.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":3}]",
+            "details": "用料:\n粉丝25g,扇贝8个,大蒜10g,小葱10g,盐3g,蒸鱼鼓油5ml,姜10g\n步骤:\n1、扇贝肉取出洗净,粉丝温水泡软,花椒,葱花,切丝备用\n2、蒜切碎 下油锅炒香,倒出调入盐和蒸鱼鼓油\n3、扇贝壳放上粉丝,贝壳肉,淋上蒜蓉油\n4、放入蒸箱蒸好后,撒上葱花和红椒,即可",
+            "cookType": 0,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 19,
+            "dishName": "蒜蓉粉丝虾",
+            "imgUrl": "recipes/Aquaculture/蒜蓉粉丝虾.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":5}]",
+            "details": "用料:\n粉丝100g,大虾400g,蒜4瓣,葱2根,小米辣6个,料酒1勺,盐3g,油4勺,蒸鱼鼓油2勺\n步骤:\n1、开虾背去虾线,粉丝温水泡软\n2、葱,蒜,椒切碎,加料酒,蒸鱼鼓油,盐,糖调成料汁,倒入虾上\n3、蒸箱预热后放入运行,完成后撒上红椒,葱滚上热油,即可食用",
+            "cookType": 0,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 20,
+            "dishName": "清蒸大闸蟹",
+            "imgUrl": "recipes/Aquaculture/清蒸大闸蟹.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":15}]",
+            "details": "用料:\n大闸蟹6只,葱2根,姜4g,蒜5瓣,醋30g,糖2g,芝麻油10g,生抽20g\n步骤:\n1、姜蒜切碎,倒入生抽,醋混成酱汁\n2、大闸蟹洗净,肚皮朝上放入蒸盘\n3、蒸至蟹壳呈红色,取出后解绳装盘",
+            "cookType": 0,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 21,
+            "dishName": "烤花蛤",
+            "imgUrl": "recipes/Aquaculture/烤花蛤.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":10,\"time\":180}]",
+            "details": "用料:\n花蛤500g,蒜泥50g,蚝油、生抽适量,葱花、胡椒粉少许\n步骤:\n1、按照所需食材准备好材料\n2、起锅水烧开,放入花蛤,5秒捞起晾干水份,倒入垫好锡纸的烤架备用\n3、起锅烧油,倒入蒜泥,加入蚝油、生抽、胡椒粉炒至酱料成淡黄色,将炒好的酱料均匀撒至花蛤上\n4、在屏幕上找到对应菜谱,启动烤箱,烤箱预热好后将花蛤放置第三层\n5、完成后,装盘撒上葱花即可食用",
+            "cookType": 1,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 22,
+            "dishName": "剁椒鱼头",
+            "imgUrl": "recipes/Aquaculture/剁椒鱼头.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":25}]",
+            "details": "用料:\n鱼头1500g,剁椒60g,葱8g,姜20g,盐3g,蒸鱼豉油30g,白糖10g,蚝油20g,料酒20g\n步骤:\n1、鱼头清理好后,劈成2半,倒入1勺酱油,1勺料酒,1勺蚝油,用盐抹匀腌制10分钟\n2、剁椒放入葱,姜,蚝油,1勺生抽,1勺醋,1勺白糖,少许胡椒粉,少许盐调制成酱料\n3、鱼头装盘,铺上酱料,放入蒸箱开启运行\n4、出锅后,倒入热油(可辣椒油,花椒,八角调制)完成",
+            "cookType": 0,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 23,
+            "dishName": "烤鲈鱼",
+            "imgUrl": "recipes/Aquaculture/烤鲈鱼.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":10,\"time\":180}]",
+            "details": "用料:\n鲈鱼500g,洋葱2个,料酒50g,盐10g,白胡椒粉15g,葱姜蒜适量,孜然粉、辣椒粉少许\n步骤:\n1、处理干净鱼后,肚皮划刀,背部对半切开,加入盐、料酒、姜片、白胡椒粉、孜然粉、葱段抹开,腌制15分钟\n2、取烤架用锡纸包裹好,刷油,平铺放入腌制好的鲈鱼,表面刷适量油\n3、选择相应菜单,点击运行按键,烤箱开始运行 烤箱预热好后将烤架放在第二层开始烹饪\n4、烤至表面金黄,烹饪完成后开箱撒入孜然粉、辣椒粉、葱花装盘,即可食用",
+            "cookType": 1,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 24,
+            "dishName": "烤秋刀鱼",
+            "imgUrl": "recipes/Aquaculture/烤秋刀鱼.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":10,\"time\":180}]",
+            "details": "用料:\n秋刀鱼4条,柠檬片1片,葱姜适量,孜然粉、辣椒粉少许,食用油、料酒、盐少许\n步骤:\n1、秋刀鱼杀好洗净,背部改花刀,加入料酒,葱姜,盐,辣椒粉,孜然粉,柠檬片汁水,腌制5分钟\n2、烤箱预热后,将鱼放入垫好锡纸的烤盘中,鱼表面刷少许食用油,开启运行\n3、完成后,装盘食用",
+            "cookType": 1,
+            "recipeType": 3,
+            "cookPos": 0
+        },
+        {
+            "seqid": 25,
+            "dishName": "蔓越莓曲奇饼干",
+            "imgUrl": "recipes/Baking/蔓越莓曲奇饼干.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":15,\"time\":170}]",
+            "details": "用料:\n黄油120g,糖粉70g,鸡蛋1个,蔓越莓60g,低筋面粉200g\n步骤:\n1、黄油,糖粉搅拌均匀,分3次加入蛋液逐步加入面粉拌匀(避免过渡搅拌,导致起筋)\n2、倒入磨碎的蔓越莓,拌匀\n3、放入U型模具中,冷冻后切片,0.5厘米厚\n4、选择相应菜单,点击运行,开启烹饪\n5、预热后,垫好油纸,放入烤盘烘培至表面金黄",
+            "cookType": 1,
+            "recipeType": 5,
+            "cookPos": 0
+        },
+        {
+            "seqid": 26,
+            "dishName": "葡式蛋挞",
+            "imgUrl": "recipes/Baking/葡式蛋挞.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":22,\"time\":200}]",
+            "details": "用料:\n牛奶140g,细砂糖30g,鸡蛋2个,炼乳15g,奶油120g,蛋挞皮12个,草莓/黄桃等馅料\n步骤:\n1、糖,牛奶,蛋液,奶油,搅拌过筛成蛋挞液\n2、烤盘垫好油纸,放入蛋挞皮,加入草莓,黄桃,蓝莓等馅料,倒入蛋挞液,9分满\n3、烤箱预热后,放入蛋挞\n4、表面出现明显焦糖斑后出炉",
+            "cookType": 1,
+            "recipeType": 5,
+            "cookPos": 0
+        },
+        {
+            "seqid": 27,
+            "dishName": "戚风蛋糕",
+            "imgUrl": "recipes/Baking/戚风蛋糕.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":35,\"time\":150}]",
+            "details": "用料:\n低筋面粉50g,玉米淀粉6g,牛奶40g,鸡蛋3个,白砂糖20g,植物油40g(6寸材料)\n步骤:\n1、蛋清和蛋黄分离,蛋清用打出泡沫,分3次加入砂糖搅拌,直至成为尖角凝固状待用(蛋白)\n2、蛋黄,牛奶,植物油,白砂糖搅拌均匀,在加入面粉和淀粉,继续拌匀成糊状(蛋黄)\n3、取1/3的蛋白加入蛋黄糊中,翻伴均匀,在倒入剩余蛋白,搅拌均匀(从底向上翻伴,不要画圈)\n4、完成的蛋糕糊倒入模具中,7分满从10厘米处轻摔2~3次,排出气泡\n5、放入预热好的烤箱第3层,完成后倒扣冷却2小时,即可食用",
+            "cookType": 1,
+            "recipeType": 5,
+            "cookPos": 0
+        },
+        {
+            "seqid": 28,
+            "dishName": "巧克力马芬",
+            "imgUrl": "recipes/Baking/巧克力马芬.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":36,\"temp\":25,\"time\":170}]",
+            "details": "用料:\n低筋面粉120g,牛奶80g,黄油50g,鸡蛋1个,耐高温巧克力豆40g,黑巧克力80g,白砂糖30g,泡打粉4g\n步骤:\n1、按照所需食材准备好材料,黄油软化后用电动打蛋器加细砂糖打发至蓬松发白\n2、鸡蛋打散,分3次加入鸡蛋液,每次加入后都要搅打均匀后再加入下一次,防止鸡蛋和黄油分离\n3、把黑巧克力隔水融化后加入牛奶搅拌均匀,打发好的黄油里加入巧克力牛奶也搅打均匀\n4、筛入低筋面粉和泡打粉,用电动打蛋器搅拌至无干粉、细腻状态,勿绕圈搅拌,防止起筋\n5、在面糊中加入耐热巧克力豆,预留一些做表面装饰用\n6、面糊装进裱花袋中,在装有纸杯的模具中挤入面糊,8分满即可\n7、表面撒一些耐热巧克力豆\n8、在菜单中找到对应程序启动,烤箱预热好后放入烤箱,烤好后取出即可食用",
+            "cookType": 1,
+            "recipeType": 5,
+            "cookPos": 0
+        },
+        {
+            "seqid": 29,
             "dishName": "月饼",
-            "imgUrl": "recipes/Baking/满头(2).png",
-            "cookSteps": "[{\"device\":0,\"mode\":3,\"temp\":210,\"time\":13}]",
+            "imgUrl": "recipes/Baking/月饼.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":35,\"temp\":210,\"time\":13}]",
             "details": "用料:\n面粉200g,转化糖浆140g,枧水4g,蛋黄2个,豆沙馅800g\n步骤:\n1、枧水,转化糖浆,花生油,拌成粘稠状加入中筋面粉,拌匀。盖上保鲜模静置1小时\n2、咸蛋黄烤箱180度烤8分钟待用\n3、用莲蓉包裹好蛋黄4、用饼皮包裹好馅料,表面滚一层面粉\n5、模具成型,刷一层蛋黄液,放入烤箱6、选择相应菜单,点击运行,开启烹饪",
             "cookType": 1,
             "recipeType": 5,
             "cookPos": 0
         },
         {
-            "seqid": 1,
-            "dishName": "蔓越莓曲奇饼干",
-            "imgUrl": "recipes/Baking/满头.png",
-            "cookSteps": "[{\"device\":0,\"mode\":4,\"temp\":15,\"time\":170}]",
-            "details": "用料:\n黄油120g,糖粉70g,鸡蛋1个,蔓越莓60g,低筋面粉200g\n步骤:\n1、黄油,糖粉搅拌均匀,分3次加入蛋液逐步加入面粉拌匀（避免过渡搅拌,导致起筋）\n2、倒入磨碎的蔓越莓,拌匀\n3、放入U型模具中,冷冻后切片,0.5厘米厚\n4、选择相应菜单,点击运行,开启烹饪\n5、预热后,垫好油纸,放入烤盘烘培至表面金黄",
+            "seqid": 30,
+            "dishName": "香甜馒头",
+            "imgUrl": "recipes/Pastry/香甜馒头.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":15}]",
+            "details": "用料:\n中筋面粉500g,酵母5g,清水275g\n步骤:\n1、酵母融入1/3清水中,搅拌静至10分钟,倒入面粉中,加入清水,用筷子搅拌成絮状\n2、用手揉面至表面光滑,放入箱内38度发酵1小时到2倍大,取出揉面排气,直到切开无大气孔\n3、面团搓成长条状,切成等量馒头状,放入有余温的蒸箱,二次发酵 30分钟后\n4、选择相应菜单,点击运行,开启烹饪",
+            "cookType": 0,
+            "recipeType": 4,
+            "cookPos": 0
+        },
+        {
+            "seqid": 31,
+            "dishName": "香菇肉包",
+            "imgUrl": "recipes/Pastry/香菇肉包.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":15}]",
+            "details": "用料:\n面粉200g,猪肉馅100g,香菇200g,酵母3g,清水80g,酱油3g,料酒2g,老抽2g,蚝油2g,葱姜蒜\n步骤:\n1、酵母加温水化开,和好面放入蒸箱发酵\n2、肉馅加入酱油,料酒,老抽,蚝油,葱姜蒜拌匀\n3、发酵好的面,排气后搓成包子皮,包上馅料,做出褶子\n4、选择相应菜单,点击运行,开启烹饪",
+            "cookType": 0,
+            "recipeType": 4,
+            "cookPos": 0
+        },
+        {
+            "seqid": 32,
+            "dishName": "柳叶蒸饺",
+            "imgUrl": "recipes/Pastry/柳叶蒸饺.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":15}]",
+            "details": "用料:\n面粉200g,猪肉馅100g,娃娃菜200g,清水50g,盐2g,白糖3g,料酒2g,老抽2g,芝麻油2g,鸡蛋清1个,葱1根,姜4片\n步骤:\n1、肉馅:肉馅加入料酒,老抽,盐,白糖,鸡蛋清,葱姜分3次加水搅拌均匀,加入芝麻油拌匀后备用\n2、面皮:面粉加温水揉成面团,静置15分钟醒发,面团切块擀成饺子皮,包馅,放入蒸箱\n3、选择相应菜单,点击运行,开启烹饪",
+            "cookType": 0,
+            "recipeType": 4,
+            "cookPos": 0
+        },
+        {
+            "seqid": 33,
+            "dishName": "速冻面食",
+            "imgUrl": "recipes/Pastry/速冻面食.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":30}]",
+            "details": "用料:\n速冻的面食\n步骤:\n1、在蒸盘上垫上油纸,刷上一层食用油\n2、放入面食后,选择菜单后,点击设备运行\n3、蒸好取出",
+            "cookType": 0,
+            "recipeType": 4,
+            "cookPos": 0
+        },
+        {
+            "seqid": 34,
+            "dishName": "糯米点心",
+            "imgUrl": "recipes/Pastry/糯米点心.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":15}]",
+            "details": "用料:\n糯米粉100g,玉米淀粉25g,白糖40g,大豆油30g,清水160g,熟黄豆粉30g,红豆沙100g\n步骤:\n1、将糯米粉、玉米淀粉白糖、大豆油加清水混合成无颗粒的粉浆\n2、将粉浆盖保鲜膜放在有孔蒸盘上,放入蒸烤箱中间层\n3、选择相应菜单,点击运行,开启烹饪\n4、烹饪完成后取出,在料理台上撒上黄豆粉,待面团温热时将面团放在黄豆粉上擀成长方形\n5、将红豆沙均匀的抹在面皮上,从一边卷起在外层撒上黄豆粉,用小刀切成适当小块",
+            "cookType": 0,
+            "recipeType": 4,
+            "cookPos": 0
+        },
+        {
+            "seqid": 35,
+            "dishName": "五谷丰登",
+            "imgUrl": "recipes/Others/五谷丰登.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":1,\"temp\":100,\"time\":30}]",
+            "details": "用料:\n玉米,芋头,紫薯,山药,南瓜土豆,花生\n步骤:\n1、食材洗净处理后,擦干水份放入蒸笼中\n2、放入蒸盘,找到对应菜单开启运行\n3、完成后即可食用",
+            "cookType": 0,
+            "recipeType": 6,
+            "cookPos": 0
+        },
+        {
+            "seqid": 36,
+            "dishName": "鸡蛋羹",
+            "imgUrl": "recipes/Others/鸡蛋羹.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":2,\"temp\":120,\"time\":10}]",
+            "details": "用料:\n鸡蛋2个,生抽3g,麻油2g,香葱1根\n步骤:\n1、鸡蛋打散加入食盐,温水拌匀\n2、蛋液过筛2~3次\n3、碗口包上保鲜膜,牙签扎几个小孔\n4、预热后放入蒸烤箱\n5、出锅后撒上葱花和少许生抽、麻油",
+            "cookType": 0,
+            "recipeType": 6,
+            "cookPos": 0
+        },
+        {
+            "seqid": 37,
+            "dishName": "红薯布丁",
+            "imgUrl": "recipes/Others/红薯布丁.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":40,\"temp\":40,\"time\":105}]",
+            "details": "用料:\n红薯250g,牛奶150g,鸡蛋100g,淡奶油130g,糖50g,蓝莓、坚果、薄荷少许\n步骤:\n1、洗净的红薯放入蒸烤箱,选择普通蒸模式100度蒸12分钟\n2、蒸熟后的红薯去皮,粗略捣成泥,取250g\n3、将红薯泥、鸡蛋、砂糖、牛奶、奶油、肉桂粉加入搅拌机\n4、中高速搅拌均匀成红薯布丁液\n5、红薯布丁液倒入布丁碗中,最多7分满即可。略震一下,去除布丁液中的大气泡\n6、选择智慧菜谱预热完成后,将布丁杯碗放入,开始运行",
             "cookType": 1,
-            "recipeType": 5,
+            "recipeType": 6,
             "cookPos": 0
         },
         {
-            "seqid": 2,
-            "dishName": "戚风蛋糕",
-            "imgUrl": "recipes/Baking/满头(1).png",
-            "cookSteps": "[{\"device\":0,\"mode\":4,\"temp\":35,\"time\":150},{\"device\":0,\"mode\":4,\"temp\":40,\"time\":150},{\"device\":0,\"mode\":4,\"temp\":45,\"time\":150}]",
-            "details": "用料:\n低筋面粉50g,玉米淀粉6g,牛奶40g,鸡蛋3个,白砂糖20g,植物油40g（6寸材料）\n步骤:\n1、蛋清和蛋黄分离,蛋清用打出泡沫,分3次加入砂糖搅拌,直至成为尖角凝固状待用（蛋白）\n2、蛋黄,牛奶,植物油,白砂糖搅拌均匀,在加入面粉和淀粉,继续拌匀成糊状（蛋黄）\n3、取1/3的蛋白加入蛋黄糊中,翻伴均匀,在倒入剩余蛋白,搅拌均匀（从底向上翻伴,不要画圈）\n4、完成的蛋糕糊倒入模具中,7分满从10厘米处轻摔2~3次,排出气泡\n5、放入预热好的烤箱第3层完成后倒扣冷却2小时,即可食用",
-            "cookType": 2,
-            "recipeType": 5,
-            "cookPos": 0
-        },
-        {
-            "seqid": 3,
-            "dishName": "葡式蛋挞",
-            "imgUrl": "recipes/Baking/组 1.png",
-            "cookSteps": "[{\"device\":0,\"mode\":4,\"temp\":22,\"time\":200}]",
-            "details": "用料:\n牛奶140g,细砂糖30g,鸡蛋2个,炼乳15g,奶油120g,蛋挞皮12个,草莓/黄桃等馅料\n步骤:\n1、糖,牛奶,蛋液,奶油,搅拌过筛成蛋挞液\n2、烤盘垫好油纸,放入蛋挞皮,加入草莓,黄桃,蓝莓等馅料,倒入蛋挞液,9分满\n3、烤箱预热后,放入蛋挞\n4、表面出现明显焦糖斑后出炉",
-            "cookType": 2,
-            "recipeType": 5,
+            "seqid": 38,
+            "dishName": "烤红薯",
+            "imgUrl": "recipes/Others/烤红薯.png",
+            "cookSteps": "[{\"device\":0,\"Number\":1,\"mode\":40,\"temp\":180,\"time\":30}]",
+            "details": "用料:\n红薯\n步骤:\n1、红薯洗净,表面水分擦干\n2、垫上锡纸,预热后,放入烤架\n3、烤至红薯渗出糖汁即可",
+            "cookType": 1,
+            "recipeType": 6,
             "cookPos": 0
         }
     ]

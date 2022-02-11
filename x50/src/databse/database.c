@@ -15,7 +15,7 @@ static const char *create_table =
     "CREATE TABLE %s(\
     ID INTEGER PRIMARY KEY AUTOINCREMENT,\
     SEQID INTEGER UNIQUE NOT NULL,\
-    DISHNAME TEXT NOT NULL,\
+    DISHNAME TEXT UNIQUE NOT NULL,\
     IMGURL TEXT,\
     DETAILS TEXT,\
     COOKSTEPS TEXT NOT NULL,\
@@ -26,6 +26,7 @@ static const char *create_table =
     COOKPOS INTEGER);";
 
 static const char *sql_select_seqid = "SELECT * FROM %s WHERE SEQID = ?;";
+static const char *sql_select_dishname = "SELECT * FROM %s WHERE DISHNAME = ?;";
 // static const char *sql_select_id_seqid = "SELECT ID,SEQID FROM %s;";
 static const char *sql_select = "SELECT * FROM %s;";
 static const char *sql_insert_replace = "INSERT OR REPLACE INTO %s VALUES (NULL,?,?,?,?,?,?,?,?,?,?);";
@@ -230,6 +231,45 @@ int select_seqid_from_table(const char *table_name, const int seqid, int (*selec
     }
 
     return sqlite3_finalize(stmt);
+}
+
+int select_dishname_from_table(const char *table_name, const char *dishname, void *arg)
+{
+    int ret = -1;
+    char buf[128];
+    sprintf(buf, sql_select_dishname, table_name);
+
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(sqlHandle.db, buf, -1, &stmt, NULL);
+    if (SQLITE_OK != rc)
+    {
+        printf("%s,sqlite3_prepare_v2:%s\n", __func__, sqlite3_errmsg(sqlHandle.db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+    sqlite3_bind_text(stmt, 1, dishname, strlen(dishname), NULL);
+    recipes_t *recipes = (recipes_t *)arg;
+    
+    if (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        //一列一列地去读取每一条记录 1表示列
+        recipes->id = sqlite3_column_int(stmt, 0);
+        recipes->seqid = sqlite3_column_int(stmt, 1);
+        strcpy(recipes->dishName, (const char *)sqlite3_column_text(stmt, 2));
+        strcpy(recipes->imgUrl, (const char *)sqlite3_column_text(stmt, 3));
+        strcpy(recipes->details, (const char *)sqlite3_column_text(stmt, 4));
+        strcpy(recipes->cookSteps, (const char *)sqlite3_column_text(stmt, 5));
+        recipes->timestamp = sqlite3_column_int(stmt, 6);
+        recipes->collect = sqlite3_column_int(stmt, 7);
+        recipes->cookType = sqlite3_column_int(stmt, 8);
+        recipes->recipeType = sqlite3_column_int(stmt, 9);
+        recipes->cookPos = sqlite3_column_int(stmt, 10);
+
+        printf("id:%d dishName:%s imgUrl:%s cookSteps:%s\n", recipes->id, recipes->dishName, recipes->imgUrl,recipes->cookSteps);
+        ret = 0;
+    }
+    sqlite3_finalize(stmt);
+    return ret;
 }
 
 static int databse_create_table(const char *table_name)

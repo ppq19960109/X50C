@@ -3,13 +3,13 @@
 
 static CookHistory cookHistory;
 
-int wrapper_insertHistory(history_t history)
+int wrapper_insertHistory(history_t *history)
 {
     return cookHistory.insertHistory(history);
 }
-void wrapper_reportInsertHistory(history_t history)
+void wrapper_reportInsertHistory(history_t *history, const int sort)
 {
-    cookHistory.reportInsertHistory(history);
+    cookHistory.reportInsertHistory(history, sort);
 }
 void wrapper_reportDeleteHistory(int id)
 {
@@ -24,7 +24,7 @@ void wrapper_reportUpdateHistory(const int id, const int seqid, const int collec
     cookHistory.reportUpdateHistory(id, seqid, collect, timestamp);
 }
 
-void wrapper_selectHistory()
+void wrapper_selectHistory(void *arg)
 {
-    cookHistory.selectHistory();
+    cookHistory.selectHistory(arg);
 }
