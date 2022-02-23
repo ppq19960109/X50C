@@ -44,16 +44,17 @@ struct recipes_t
 class CookHistory
 {
 public:
+    void clearHistory();
     void sortHistory();
-    void selectHistory(void* arg);
+    void selectHistory(void *arg);
     void reportDeleteHistory(int id);
-    int compareHistoryCollect(const history_t* single);
+    int compareHistoryCollect(const history_t *single);
     int getHistoryCount();
     int lastHistoryId(const int collect);
-    int insertHistory(history_t* single);
-    void reportInsertHistory(history_t* single, const int sort);
-    int updateHistory(const int id, const int collect);
-    void reportUpdateHistory(const int id, const int seqid, const int collect, int timestamp);
+    int insertHistory(history_t *single);
+    void reportInsertHistory(history_t *single, const int sort);
+    int updateHistory(history_t *history);
+    void reportUpdateHistory(history_t *history);
     list<recipes_t> historyList;
 };
 

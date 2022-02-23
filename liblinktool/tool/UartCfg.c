@@ -15,13 +15,17 @@
 /**
  ** 串口配置
  **/
-int uart_init(const char *device, unsigned int baudrate, enum UART_DATABIT databit, enum UART_PARITY parity, enum UART_STOPBIT stopbit, enum UART_FLOWCTRL flowCtrl)
+int uart_init(const char *device, unsigned int baudrate, enum UART_DATABIT databit, enum UART_PARITY parity, enum UART_STOPBIT stopbit, enum UART_FLOWCTRL flowCtrl, enum UART_BLOCKING blocking)
 {
     struct termios old_cfg, new_cfg = {0};
     speed_t speed;
 
     /* 打开串口终端 */
-    int fd = open(device, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    int flag = O_RDWR | O_NOCTTY;
+    if (blocking == BLOCKING_NONBLOCK)
+        flag |= O_NONBLOCK;
+
+    int fd = open(device, flag);
     if (0 > fd)
     {
         fprintf(stderr, "open error: %s: %s\n", device, strerror(errno));

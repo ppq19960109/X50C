@@ -18,67 +18,68 @@
 #include "tcp.h"
 #include "select_tcp_server.h"
 
-static struct Select_Tcp_Server_Event select_Tcp_Server;
-static struct Select_Tcp_Server_Event select_Tcp_Client[SELECT_TCP_MAX_CLIENT];
+struct Select_Server_Event select_server_event;
+static struct App_Select_Client_Tcp app_select_client_Tcp_Server;
+static struct App_Select_Client_Tcp app_select_client_Tcp_Client[SELECT_TCP_MAX_CLIENT];
 
-void select_tcp_server_send(char *data, unsigned short len)
+void app_select_client_tcp_server_send(char *data, unsigned short len)
 {
-    pthread_mutex_lock(&select_Tcp_Server.mutex);
+    pthread_mutex_lock(&app_select_client_Tcp_Server.mutex);
     int i;
     for (i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
     {
-        send(select_Tcp_Client[i].select_Event.fd, data, len, 0);
+        send(app_select_client_Tcp_Client[i].select_client_event.fd, data, len, 0);
     }
-    pthread_mutex_unlock(&select_Tcp_Server.mutex);
+    pthread_mutex_unlock(&app_select_client_Tcp_Server.mutex);
 }
 
-static int select_server_recv_cb(void *arg)
+static int app_select_server_recv_cb(void *arg)
 {
-    struct Select_Server_Event *event=(struct Select_Server_Event *)arg;
-    struct Select_Tcp_Server_Event *tcp_event = container_of(event, struct Select_Tcp_Server_Event, select_Event);
-    tcp_event->recv_len = recv(event->fd, tcp_event->recv_buf, sizeof(tcp_event->recv_buf), 0); //读取客户端发过来的数据
+    struct Select_Client_Event *client_event = (struct Select_Client_Event *)arg;
+    struct App_Select_Client_Tcp *app_select_tcp = container_of(client_event, struct App_Select_Client_Tcp, select_client_event);
+    app_select_tcp->recv_len = recv(client_event->fd, app_select_tcp->recv_buf, sizeof(app_select_tcp->recv_buf), 0); //读取客户端发过来的数据
 
-    if (tcp_event->recv_len <= 0)
+    if (app_select_tcp->recv_len <= 0)
     {
-        printf("recv[fd=%d] error[%d]:%s\n", event->fd, errno, strerror(errno));
+        printf("recv[fd=%d] error[%d]:%s\n", client_event->fd, errno, strerror(errno));
 
-        del_select_server_event(event);
-        close(event->fd);
-        event->fd = 0;
-        if (tcp_event->disconnect_cb != NULL)
-            tcp_event->disconnect_cb();
+        delete_select_client_event(&select_server_event,client_event);
+        close(client_event->fd);
+        client_event->fd = 0;
+        if (app_select_tcp->disconnect_cb != NULL)
+            app_select_tcp->disconnect_cb();
 
         return -1;
     }
     else
     {
-        tcp_event->recv_buf[tcp_event->recv_len] = '\0'; //手动添加字符串结束标记
-        // printf("socket[%d]: %d,%s\n", fd, tcp_event->recv_len , tcp_event->recv_buf);
-        if (tcp_event->recv_cb != NULL)
-            tcp_event->recv_cb(tcp_event->recv_buf, tcp_event->recv_len);
+        app_select_tcp->recv_buf[app_select_tcp->recv_len] = '\0'; //手动添加字符串结束标记
+        printf("%s,[%d]: %d\n", __func__, client_event->fd, app_select_tcp->recv_len);
+        if (app_select_tcp->recv_cb != NULL)
+            app_select_tcp->recv_cb(app_select_tcp->recv_buf, app_select_tcp->recv_len);
     }
     return 0;
 }
 
-static int add_select_tcp_client_event(int cfd)
+static int app_add_select_tcp_client_event(int cfd)
 {
     int i;
     for (i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
     {
-        if (select_Tcp_Client[i].select_Event.fd == 0)
+        if (app_select_client_Tcp_Client[i].select_client_event.fd == 0)
         {
-            select_Tcp_Client[i].select_Event.fd = cfd;
-            select_Tcp_Client[i].select_Event.read_cb = select_server_recv_cb;
-            select_Tcp_Client[i].recv_cb = select_Tcp_Server.recv_cb;
-            select_Tcp_Client[i].connect_cb = select_Tcp_Server.connect_cb;
-            select_Tcp_Client[i].disconnect_cb = select_Tcp_Server.disconnect_cb;
-            if (add_select_server_event(&select_Tcp_Client[i].select_Event) < 0)
+            app_select_client_Tcp_Client[i].select_client_event.fd = cfd;
+            app_select_client_Tcp_Client[i].select_client_event.read_cb = app_select_server_recv_cb;
+            app_select_client_Tcp_Client[i].recv_cb = app_select_client_Tcp_Server.recv_cb;
+            app_select_client_Tcp_Client[i].connect_cb = app_select_client_Tcp_Server.connect_cb;
+            app_select_client_Tcp_Client[i].disconnect_cb = app_select_client_Tcp_Server.disconnect_cb;
+            if (add_select_server_event(&app_select_client_Tcp_Client[i].select_client_event) < 0)
             {
-                select_Tcp_Client[i].select_Event.fd = 0;
+                app_select_client_Tcp_Client[i].select_client_event.fd = 0;
                 return -1;
             }
-            if (select_Tcp_Client[i].connect_cb != NULL)
-                select_Tcp_Client[i].connect_cb();
+            if (app_select_client_Tcp_Client[i].connect_cb != NULL)
+                app_select_client_Tcp_Client[i].connect_cb();
         }
     }
     if (i == SELECT_MAX_CLIENT)
@@ -88,16 +89,16 @@ static int add_select_tcp_client_event(int cfd)
     return 0;
 }
 
-static int select_server_accetp_cb(void *arg)
+static int app_select_server_accetp_cb(void *arg)
 {
-    struct Select_Server_Event *event=(struct Select_Server_Event *)arg;
-    // struct Select_Tcp_Server_Event *tcp_event = container_of(event, struct Select_Tcp_Server_Event, select_Event);
+    struct Select_Client_Event *client_event = (struct Select_Client_Event *)arg;
+    // struct App_Select_Client_Tcp *app_select_tcp = container_of(client_event, struct App_Select_Client_Tcp, select_client_event);
     int res;
     struct sockaddr cin;
     socklen_t clen = sizeof(cin);
 
     int cfd;
-    if ((cfd = accept(event->fd, (struct sockaddr *)&cin, &clen)) == -1)
+    if ((cfd = accept(client_event->fd, (struct sockaddr *)&cin, &clen)) == -1)
     {
         if (errno != EAGAIN && errno != EINTR)
         {
@@ -107,7 +108,7 @@ static int select_server_accetp_cb(void *arg)
         return -1;
     }
 
-    res = add_select_tcp_client_event(cfd);
+    res = app_add_select_tcp_client_event(cfd);
     if (res < 0)
     {
         close(cfd);
@@ -115,36 +116,36 @@ static int select_server_accetp_cb(void *arg)
     return res;
 }
 
-void select_tcp_server_init(void)
+void app_select_tcp_server_init(void)
 {
-    pthread_mutex_init(&select_Tcp_Server.mutex, NULL);
+    pthread_mutex_init(&app_select_client_Tcp_Server.mutex, NULL);
     for (int i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
     {
-        pthread_mutex_init(&select_Tcp_Client[i].mutex, NULL);
+        pthread_mutex_init(&app_select_client_Tcp_Client[i].mutex, NULL);
     }
 }
 
-void select_tcp_server_deinit(void)
+void app_select_tcp_server_deinit(void)
 {
     for (int i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
     {
-        pthread_mutex_destroy(&select_Tcp_Client[i].mutex);
+        pthread_mutex_destroy(&app_select_client_Tcp_Client[i].mutex);
     }
-    pthread_mutex_destroy(&select_Tcp_Server.mutex);
+    pthread_mutex_destroy(&app_select_client_Tcp_Server.mutex);
 }
 
-void select_tcp_server_task()
+void app_select_tcp_server_task()
 {
-    select_server_init();
-    select_tcp_server_init();
+    select_server_init(&select_server_event);
+    app_select_tcp_server_init();
     int fd;
-    select_Tcp_Server.select_Event.fd = tcpServerListen(&fd, "127.0.0.1", 8888, SELECT_TCP_MAX_CLIENT);
-    select_Tcp_Server.select_Event.read_cb = select_server_accetp_cb;
-    select_Tcp_Server.recv_cb = NULL;
-    select_Tcp_Server.connect_cb = NULL;
-    select_Tcp_Server.disconnect_cb = NULL;
-    add_select_server_event(&select_Tcp_Server.select_Event);
-    select_server_task(200);
-    select_tcp_server_deinit();
-    select_server_deinit();
+    app_select_client_Tcp_Server.select_client_event.fd = tcpServerListen(&fd, "127.0.0.1", 8888, SELECT_TCP_MAX_CLIENT);
+    app_select_client_Tcp_Server.select_client_event.read_cb = app_select_server_accetp_cb;
+    app_select_client_Tcp_Server.recv_cb = NULL;
+    app_select_client_Tcp_Server.connect_cb = NULL;
+    app_select_client_Tcp_Server.disconnect_cb = NULL;
+    add_select_server_event(&select_server_event,&app_select_client_Tcp_Server.select_client_event);
+    select_server_task(&select_server_event, 200);
+    select_server_deinit(&select_server_event);
+    app_select_tcp_server_deinit();
 }

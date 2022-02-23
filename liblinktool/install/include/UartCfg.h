@@ -36,5 +36,11 @@ enum UART_FLOWCTRL
     FLOWCTRL_SOFTWARE,
 };
 
-int uart_init(const char *device, enum UART_BAUDRATE baudrate, enum UART_DATABIT databit, enum UART_PARITY parity, enum UART_STOPBIT stopbit, enum UART_FLOWCTRL flowCtrl);
+enum UART_BLOCKING
+{
+    BLOCKING_BLOCK = 0,
+    BLOCKING_NONBLOCK,
+};
+
+int uart_init(const char *device, enum UART_BAUDRATE baudrate, enum UART_DATABIT databit, enum UART_PARITY parity, enum UART_STOPBIT stopbit, enum UART_FLOWCTRL flowCtrl, enum UART_BLOCKING blocking);
 #endif

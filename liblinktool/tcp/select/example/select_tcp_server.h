@@ -10,7 +10,7 @@ typedef int (*Recv_cb)(char *data, unsigned int len);
 typedef int (*Disconnect_cb)(void);
 typedef int (*Connect_cb)(void);
 
-struct Select_Tcp_Server_Event
+struct App_Select_Client_Tcp
 {
     void *arg; //指向自己结构体指针
 
@@ -22,7 +22,8 @@ struct Select_Tcp_Server_Event
     Connect_cb connect_cb;
 
     pthread_mutex_t mutex;
-    struct Select_Server_Event select_Event;
+
+    struct Select_Client_Event select_client_event;
 };
-void select_tcp_server_send(char *data, unsigned short len);
+void app_select_client_tcp_server_send(char *data, unsigned short len);
 #endif

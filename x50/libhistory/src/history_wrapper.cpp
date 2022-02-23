@@ -2,7 +2,10 @@
 #include "history.h"
 
 static CookHistory cookHistory;
-
+void wrapper_clearHistory(void)
+{
+    cookHistory.clearHistory();
+}
 int wrapper_insertHistory(history_t *history)
 {
     return cookHistory.insertHistory(history);
@@ -15,13 +18,13 @@ void wrapper_reportDeleteHistory(int id)
 {
     cookHistory.reportDeleteHistory(id);
 }
-int wrapper_updateHistory(const int id, const int collect)
+int wrapper_updateHistory(history_t *history)
 {
-    return cookHistory.updateHistory(id, collect);
+    return cookHistory.updateHistory(history);
 }
-void wrapper_reportUpdateHistory(const int id, const int seqid, const int collect, int timestamp)
+void wrapper_reportUpdateHistory(history_t *history)
 {
-    cookHistory.reportUpdateHistory(id, seqid, collect, timestamp);
+    cookHistory.reportUpdateHistory(history);
 }
 
 void wrapper_selectHistory(void *arg)

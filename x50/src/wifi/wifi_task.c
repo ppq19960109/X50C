@@ -1,9 +1,9 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "tcp_uds_server.h"
+#include "uds_tcp_server.h"
 
-#include "uart_cloud_task.h"
+#include "cloud_platform_task.h"
 #include "wifi_task.h"
 #include "rkwifi.h"
 #include "linkkit_solo.h"

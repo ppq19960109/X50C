@@ -1,12 +1,12 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "tcp_uds_server.h"
+#include "uds_tcp_server.h"
 
-#include "uart_cloud_task.h"
+#include "cloud_platform_task.h"
 #include "device_task.h"
 #include "linkkit_func.h"
-#include "database.h"
+#include "database_task.h"
 
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
@@ -82,7 +82,7 @@ static void *Reset_cb(void *ptr, void *arg)
     // wifiDisconnect();
     // systemRun("wpa_cli remove_network all && wpa_cli save_config");
     // systemRun("wpa_cli reconfigure");
-    databse_clear_table(HISTORY_TABLE_NAME);
+    database_task_reinit();
     linkkit_unbind();
     uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);

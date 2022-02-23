@@ -12,6 +12,11 @@
         HAL_Printf("\033[0m\r\n");                              \
     } while (0)
 
+#define PRODUCT_KEY "ProductKey"
+#define PRODUCT_SECRET "ProductSecret"
+#define DEVICE_NAME "DeviceName"
+#define DEVICE_SECRET "DeviceSecret"
+
 void linkkit_user_post_property(const char *property_payload);
 void linkkit_user_post_event(char *event_id, char *event_payload);
 
@@ -20,6 +25,7 @@ void register_property_report_all_cb(int (*cb)());
 void register_service_request_event_cb(int (*cb)(const int, const char *, const int, const char *, const int, char **, int *));
 void register_connected_cb(void (*cb)(int));
 void register_unbind_cb(int (*cb)());
+void register_dynreg_device_secret_cb(int (*cb)(const char *));
 
 void register_fota_event_handler_cb(void (*cb)(char*));
 int get_linkkit_connected_state();

@@ -19,12 +19,16 @@ void register_history_delete_cb(int (*cb)(int id))
     history_delete_cb = cb;
 }
 
-static int (*history_update_cb)(const int id, const int collect, int timestamp);
-void register_history_update_cb(int (*cb)(const int id, const int collect, int timestamp))
+static int (*history_update_cb)(history_t *history);
+void register_history_update_cb(int (*cb)(history_t *history))
 {
     history_update_cb = cb;
 }
 
+void CookHistory::clearHistory()
+{
+    historyList.clear();
+}
 void CookHistory::sortHistory()
 {
     historyList.sort();
@@ -99,7 +103,9 @@ int CookHistory::insertHistory(history_t *single)
     int id = compareHistoryCollect(single);
     if (id >= 0)
     {
-        ret = history_update_cb(id, -1, single->timestamp);
+        history_t history = {0};
+        history.timestamp = single->timestamp;
+        ret = history_update_cb(&history);
     }
     else
     {
@@ -127,45 +133,57 @@ void CookHistory::reportInsertHistory(history_t *single, const int sort)
         sortHistory();
 }
 
-int CookHistory::updateHistory(const int id, const int collect)
+int CookHistory::updateHistory(history_t *single)
 {
     int ret = -1;
-
     int lastId = -1;
-    if (collect)
+
+    list<recipes_t>::iterator iter = std::find_if(historyList.begin(), historyList.end(), [=](recipes_t recipe)
+                                                  { return recipe.history.id == single->id; });
+    if (iter == historyList.end())
     {
-        if (historyList.size() - getHistoryCount() >= MAX_COLLECT)
+        return -1;
+    }
+    if (single->collect >= 0)
+    {
+        if (single->collect != iter->history.collect)
         {
-            lastId = lastHistoryId(1);
+            if (historyList.size() - getHistoryCount() >= MAX_COLLECT)
+            {
+                lastId = lastHistoryId(1);
+            }
+        }
+        else
+        {
+            if (getHistoryCount() >= MAX_HISTORY)
+            {
+                lastId = lastHistoryId(0);
+            }
+        }
+
+        if (lastId >= 0 && lastId != single->id)
+        {
+            ret = history_delete_cb(single->id);
         }
     }
-    else
-    {
-        if (getHistoryCount() >= MAX_HISTORY)
-        {
-            lastId = lastHistoryId(0);
-        }
-    }
-    if (lastId >= 0 && lastId != id)
-    {
-        ret = history_delete_cb(id);
-    }
-    ret = history_update_cb(id, collect, -1);
+    ret = history_update_cb(single);
     return ret;
 }
 
-void CookHistory::reportUpdateHistory(const int id, const int seqid, const int collect, int timestamp)
+void CookHistory::reportUpdateHistory(history_t *single)
 {
     list<recipes_t>::iterator iter;
     for (iter = historyList.begin(); iter != historyList.end(); ++iter)
     {
-        if (iter->history.id == id)
+        if (iter->history.id == single->id)
         {
-            iter->history.seqid = seqid;
-            if (collect >= 0)
-                iter->history.collect = collect;
-            if (timestamp >= 0)
-                iter->history.timestamp = timestamp;
+            iter->history.seqid = single->seqid;
+            if (single->collect >= 0)
+                iter->history.collect = single->collect;
+            if (single->timestamp > 0)
+                iter->history.timestamp = single->timestamp;
+            if (strlen(single->dishName) > 0)
+                strcpy(iter->history.dishName, single->dishName);
             break;
         }
     }

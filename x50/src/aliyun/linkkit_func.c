@@ -16,7 +16,7 @@
 
 #include "linkkit_solo.h"
 #include "linkkit_func.h"
-#include "uart_cloud_task.h"
+#include "cloud_platform_task.h"
 #include "POSIXTimer.h"
 #include "database.h"
 
@@ -51,6 +51,8 @@ int linkkit_dev_reset(void)
     iotx_dev_meta_info_t reset_meta_info;
     memset(&reset_meta_info, 0, sizeof(iotx_dev_meta_info_t));
     get_linkkit_dev_quad(reset_meta_info.product_key, NULL, reset_meta_info.device_name, NULL);
+    if (strlen(reset_meta_info.product_key) == 0 || strlen(reset_meta_info.device_name) == 0)
+        return -1;
 
     res = IOT_DevReset_Report(&reset_meta_info, linkkit_devrst_evt_handle, NULL);
     if (res < 0)

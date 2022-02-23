@@ -30,7 +30,7 @@
 // char g_product_secret[IOTX_PRODUCT_SECRET_LEN + 1] = "oE99dmyBcH5RAWE3";
 // char g_device_name[IOTX_DEVICE_NAME_LEN + 1] = "X50_test1";
 // char g_device_secret[IOTX_DEVICE_SECRET_LEN + 1] = "5fe43d0b7a6b2928c4310cc0d5fcb4b6";
-static iotx_linkkit_dev_meta_info_t master_meta_info;
+static iotx_linkkit_dev_meta_info_t master_meta_info = {0};
 
 typedef struct
 {
@@ -67,6 +67,12 @@ void register_unbind_cb(int (*cb)())
 {
     unbind_cb = cb;
 }
+int (*dynreg_device_secret_cb)(const char *);
+void register_dynreg_device_secret_cb(int (*cb)(const char *))
+{
+    dynreg_device_secret_cb = cb;
+}
+
 int get_linkkit_connected_state()
 {
     return g_user_example_ctx.cloud_connected;
@@ -335,6 +341,8 @@ static int user_cloud_error_handler(const int code, const char *data, const char
 static int dynreg_device_secret(const char *device_secret)
 {
     EXAMPLE_TRACE("device secret: %s", device_secret);
+    if (dynreg_device_secret_cb != NULL)
+        dynreg_device_secret_cb(device_secret);
     return 0;
 }
 
@@ -389,7 +397,7 @@ int linkkit_main(const char *product_key, const char *product_secret, const char
     EXAMPLE_TRACE("product_key:%s", master_meta_info.product_key);
     EXAMPLE_TRACE("product_secret:%s", master_meta_info.product_secret);
     EXAMPLE_TRACE("device_name:%s", master_meta_info.device_name);
-    EXAMPLE_TRACE("device_secret:%s", master_meta_info.device_secret);
+    EXAMPLE_TRACE("device_secret:%s\n", master_meta_info.device_secret);
     IOT_SetLogLevel(IOT_LOG_DEBUG);
 
     /* Register Callback */

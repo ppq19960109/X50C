@@ -1,9 +1,9 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "tcp_uds_server.h"
+#include "uds_tcp_server.h"
 
-#include "uart_cloud_task.h"
+#include "cloud_platform_task.h"
 #include "database_task.h"
 #include "database.h"
 
@@ -93,27 +93,33 @@ static int wrapper_histroy_select_cb(history_t *recipe, void *arg)
     return 0;
 }
 
-static int wrapper_history_update_cb(const int id, const int collect, int timestamp)
+static int wrapper_history_update_cb(history_t *history)
 {
     cJSON *root = cJSON_CreateObject();
     cJSON *UpdateHistory = cJSON_AddObjectToObject(root, "UpdateHistory");
-    cJSON_AddNumberToObject(UpdateHistory, "id", id);
-    if (collect >= 0)
+    cJSON_AddNumberToObject(UpdateHistory, "id", history->id);
+    if (history->collect >= 0)
     {
-        update_key_to_table(HISTORY_TABLE_NAME, "collect", collect, id);
-        cJSON_AddNumberToObject(UpdateHistory, "collect", collect);
+        update_key_to_table(HISTORY_TABLE_NAME, "collect", history->collect, history->id);
+        cJSON_AddNumberToObject(UpdateHistory, "collect", history->collect);
     }
-    if (timestamp >= 0)
+    if (history->timestamp > 0)
     {
-        update_key_to_table(HISTORY_TABLE_NAME, "timestamp", timestamp, id);
-        cJSON_AddNumberToObject(UpdateHistory, "timestamp", timestamp);
+        update_key_to_table(HISTORY_TABLE_NAME, "timestamp", history->timestamp, history->id);
+        cJSON_AddNumberToObject(UpdateHistory, "timestamp", history->timestamp);
     }
-    update_key_to_table(HISTORY_TABLE_NAME, "seqid", g_history_seqid + 1, id);
+    if (strlen(history->dishName) > 0)
+    {
+        update_key_string_table(HISTORY_TABLE_NAME, "dishName", history->dishName, history->id);
+        cJSON_AddStringToObject(UpdateHistory, "dishName", history->dishName);
+    }
+    update_key_to_table(HISTORY_TABLE_NAME, "seqid", g_history_seqid + 1, history->id);
     cJSON_AddNumberToObject(UpdateHistory, "seqid", g_history_seqid + 1);
     ++g_history_seqid;
+    history->seqid = g_history_seqid;
     dzlog_info("history_update_cb:g_history_seqid:%d\n", g_history_seqid);
-    report_msg_all(root);
-    wrapper_reportUpdateHistory(id, g_history_seqid, collect, timestamp);
+    report_msg_all_platform(root);
+    wrapper_reportUpdateHistory(history);
     return 0;
 }
 
@@ -124,7 +130,7 @@ static int wrapper_history_delete_cb(int id)
 
     delete_row_from_table(HISTORY_TABLE_NAME, id);
     wrapper_reportDeleteHistory(id);
-    report_msg_all(array);
+    report_msg_all_platform(array);
     return 0;
 }
 
@@ -137,7 +143,7 @@ static int wrapper_history_insert_cb(history_t *history)
     cJSON *InsertHistory = cJSON_AddObjectToObject(root, "InsertHistory");
     select_seqid_from_table(HISTORY_TABLE_NAME, g_history_seqid + 1, histroy_select_seqid_func, InsertHistory);
     if (!cJSON_Object_isNull(InsertHistory))
-        report_msg_all(root);
+        report_msg_all_platform(root);
     return 0;
 }
 
@@ -186,16 +192,25 @@ static void *UpdateHistory_cb(void *ptr, void *arg)
     if (NULL == arg)
         return NULL;
     cJSON *item = (cJSON *)arg;
-
+    recipes_t recipe = {0};
     cJSON *id = cJSON_GetObjectItem(item, "id");
     if (id == NULL)
         return NULL;
 
+    recipe.collect = -1;
+    if (cJSON_HasObjectItem(item, "dishName"))
+    {
+        cJSON *dishName = cJSON_GetObjectItem(item, "dishName");
+        strcpy(recipe.dishName, dishName->valuestring);
+    }
     if (cJSON_HasObjectItem(item, "collect"))
     {
         cJSON *collect = cJSON_GetObjectItem(item, "collect");
-        wrapper_updateHistory(id->valueint, collect->valueint);
+        recipe.collect = collect->valueint;
     }
+    recipe.id = id->valueint;
+
+    wrapper_updateHistory((history_t *)&recipe);
     return NULL;
 }
 
@@ -285,11 +300,30 @@ void cook_history(cJSON *root)
     if (cJSON_HasObjectItem(root, "CookbookName") && cJSON_HasObjectItem(root, "CookbookParam"))
     {
         cJSON *CookbookName = cJSON_GetObjectItem(root, "CookbookName");
-        if (select_dishname_from_table(RECIPE_TABLE_NAME, CookbookName->valuestring, &recipe) < 0)
+        if (select_dishname_from_table(RECIPE_TABLE_NAME, CookbookName->valuestring, &recipe) >= 0)
         {
-            goto fail;
+            goto recipe;
         }
-        goto recipe;
+        arrayItem = cJSON_GetObjectItem(root, "CookbookParam");
+        arraySize = cJSON_GetArraySize(arrayItem);
+        for (i = 0; i < arraySize; ++i)
+        {
+            arraySub = cJSON_GetArrayItem(arrayItem, i);
+            if (arraySub == NULL)
+                continue;
+            cJSON *cookStep = cJSON_CreateObject();
+            cJSON_AddItemToArray(cookSteps, cookStep);
+
+            Mode = cJSON_GetObjectItem(arraySub, "Mode");
+            Temp = cJSON_GetObjectItem(arraySub, "Temp");
+            Timer = cJSON_GetObjectItem(arraySub, "Timer");
+            cJSON_AddNumberToObject(cookStep, "mode", Mode->valueint);
+            cJSON_AddNumberToObject(cookStep, "time", Timer->valueint);
+            cJSON_AddNumberToObject(cookStep, "temp", Temp->valueint);
+            cJSON_AddNumberToObject(cookStep, "number", i + 1);
+            sprintf(&recipe.dishName[strlen(recipe.dishName)], "%s-", leftWorkModeFun(Mode->valueint));
+        }
+        recipe.dishName[strlen(recipe.dishName) - 1] = 0;
     }
     else if (cJSON_HasObjectItem(root, "MultiStageContent"))
     {
@@ -333,7 +367,7 @@ void cook_history(cJSON *root)
         recipe.cookPos = 1;
         cJSON *cookStep = cJSON_CreateObject();
         cJSON_AddItemToArray(cookSteps, cookStep);
-        
+
         cJSON *RStOvSetTimer = cJSON_GetObjectItem(root, "RStOvSetTimer");
         cJSON *RStOvSetTemp = cJSON_GetObjectItem(root, "RStOvSetTemp");
         cJSON_AddNumberToObject(cookStep, "mode", 0);
@@ -380,6 +414,12 @@ int database_histroy_select_cb(void *data, void *arg)
     }
     return 0;
 }
+void database_task_reinit(void)
+{
+    wrapper_clearHistory();
+    databse_clear_table(HISTORY_TABLE_NAME);
+}
+
 int database_task_init(void)
 {
     register_history_select_cb(wrapper_histroy_select_cb);

@@ -23,13 +23,14 @@ extern "C"
     void register_history_select_cb(int (*cb)(history_t *history, void *arg));
     void register_history_insert_cb(int (*cb)(history_t *history));
     void register_history_delete_cb(int (*cb)(int id));
-    void register_history_update_cb(int (*cb)(const int id, const int collect, int timestamp));
+    void register_history_update_cb(int (*cb)(history_t *history));
+    void wrapper_clearHistory(void);
     void wrapper_selectHistory(void *arg);
     void wrapper_reportDeleteHistory(int id);
     int wrapper_insertHistory(history_t *history);
     void wrapper_reportInsertHistory(history_t *history, const int sort);
-    int wrapper_updateHistory(const int id, const int collect);
-    void wrapper_reportUpdateHistory(const int id, const int seqid, const int collect, int timestamp);
+    int wrapper_updateHistory(history_t *history);
+    void wrapper_reportUpdateHistory(history_t *history);
 #ifdef __cplusplus
 };
 #endif

@@ -17,31 +17,28 @@
 
 #include "select_server.h"
 
-static struct Select_Server_Event *select_server_event[SELECT_MAX_CLIENT] = {0};
-static fd_set rfds, wfds, efds, r_copy_fds;
-static int maxfd = 0;
-static int select_client_num = 0;
-static int runing = 0;
-void select_server_init(void)
+void select_server_init(struct Select_Server_Event *server_event)
 {
-    runing = 1;
-    FD_ZERO(&rfds);
-    FD_ZERO(&r_copy_fds);
+    server_event->runing = 1;
+    FD_ZERO(&server_event->rfds);
+    FD_ZERO(&server_event->wfds);
+    FD_ZERO(&server_event->efds);
+    FD_ZERO(&server_event->r_copy_fds);
 }
 
-void select_server_deinit(void)
+void select_server_deinit(struct Select_Server_Event *server_event)
 {
-    runing = 0;
+    server_event->runing = 0;
 }
 
-int add_select_server_event(struct Select_Server_Event *event)
+int add_select_client_event(struct Select_Server_Event *server_event, struct Select_Client_Event *client_event)
 {
     int i;
     for (i = 0; i < SELECT_MAX_CLIENT; ++i)
     {
-        if (select_server_event[i] == NULL)
+        if (server_event->select_client_event[i] == NULL)
         {
-            select_server_event[i] = event;
+            server_event->select_client_event[i] = client_event;
             break;
         }
     }
@@ -51,86 +48,90 @@ int add_select_server_event(struct Select_Server_Event *event)
         return -1;
     }
 
-    FD_SET(event->fd, &r_copy_fds);
+    FD_SET(client_event->fd, &server_event->r_copy_fds);
 
-    if (event->fd > maxfd)
+    if (client_event->fd > server_event->maxfd)
     {
-        maxfd = event->fd;
+        server_event->maxfd = client_event->fd;
     }
-    printf("%s,fd:%d maxfd:%d\n", __func__, event->fd, maxfd);
-    printf("%s,select_client_num:%d\n", __func__, ++select_client_num);
+    printf("%s,fd:%d maxfd:%d\n", __func__, client_event->fd, server_event->maxfd);
+    printf("%s,select_client_num:%d\n", __func__, ++server_event->select_client_num);
     return 0;
 }
 
-void del_select_server_event(struct Select_Server_Event *event)
+void delete_select_client_event(struct Select_Server_Event *server_event, struct Select_Client_Event *client_event)
 {
     int i;
     for (i = 0; i < SELECT_MAX_CLIENT; ++i)
     {
-        if (select_server_event[i] != NULL && select_server_event[i] == event)
+        if (server_event->select_client_event[i] != NULL && server_event->select_client_event[i] == client_event)
         {
-            printf("%s,fd:%d \n", __func__, event->fd);
-            if (FD_ISSET(event->fd, &r_copy_fds))
+            printf("%s,fd:%d \n", __func__, client_event->fd);
+            if (FD_ISSET(client_event->fd, &server_event->r_copy_fds))
             {
-                FD_CLR(event->fd, &r_copy_fds);
+                FD_CLR(client_event->fd, &server_event->r_copy_fds);
             }
-            select_server_event[i] = NULL;
+            server_event->select_client_event[i] = NULL;
             break;
         }
     }
-    printf("%s,select_client_num:%d\n", __func__, --select_client_num);
+    printf("%s,select_client_num:%d\n", __func__, --server_event->select_client_num);
 }
 
-static void select_fd_check(struct Select_Server_Event *event)
+static void select_client_fd_check(struct Select_Server_Event *server_event, struct Select_Client_Event *client_event)
 {
-    if (FD_ISSET(event->fd, &rfds))
+    if (FD_ISSET(client_event->fd, &server_event->rfds))
     {
-        if (event->read_cb != NULL)
-            event->read_cb(event);
+        if (client_event->read_cb != NULL)
+            client_event->read_cb(client_event);
     }
-    if (FD_ISSET(event->fd, &wfds))
+    if (FD_ISSET(client_event->fd, &server_event->wfds))
     {
-        if (event->write_cb != NULL)
-            event->write_cb(event);
+        if (client_event->write_cb != NULL)
+            client_event->write_cb(client_event);
     }
-    if (FD_ISSET(event->fd, &efds))
+    if (FD_ISSET(client_event->fd, &server_event->efds))
     {
-        if (event->except_cb != NULL)
-            event->except_cb(event);
+        if (client_event->except_cb != NULL)
+            client_event->except_cb(client_event);
     }
 }
 
-void *select_server_task(int time_out)
+void *select_server_task(struct Select_Server_Event *server_event, int time_out)
 {
     int i;
     int n;
     struct timeval timeout;
     int sec = time_out / 1000;
     int usec = (time_out % 1000) * 1000;
-    while (runing)
+    while (server_event->runing)
     {
         timeout.tv_sec = sec;
         timeout.tv_usec = usec;
-        rfds = r_copy_fds;
-        n = select(maxfd + 1, &rfds, NULL, NULL, &timeout);
+        server_event->rfds = server_event->r_copy_fds;
+        n = select(server_event->maxfd + 1, &server_event->rfds, NULL, NULL, &timeout);
         if (n < 0)
         {
             perror("select error");
+            if (server_event->error_cb != NULL)
+                server_event->error_cb((void *)n);
             continue;
         }
         else if (n == 0) // 没有准备就绪的文件描述符  就进入下一次循环
         {
             // printf("select timeout\n");
+            if (server_event->timeout_cb != NULL)
+                server_event->timeout_cb((void *)n);
             continue;
         }
         else
         {
-            printf("select success\n");
+            // printf("select success\n");
             for (i = 0; i < SELECT_MAX_CLIENT; ++i)
             {
-                if (select_server_event[i] != NULL)
+                if (server_event->select_client_event[i] != NULL)
                 {
-                    select_fd_check(select_server_event[i]);
+                    select_client_fd_check(server_event, server_event->select_client_event[i]);
                 }
             }
         }

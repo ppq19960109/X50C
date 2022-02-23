@@ -3,6 +3,7 @@
 
 #include "cJSON.h"
 int database_task_init(void);
+void database_task_reinit(void);
 int database_resp_get(cJSON *root,cJSON *resp);
 int database_resp_getall(cJSON *root,cJSON *resp);
 int database_resp_set(cJSON *root,cJSON *resp);
