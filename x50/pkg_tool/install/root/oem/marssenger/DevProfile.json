@@ -209,13 +209,6 @@
             "uartByteLen": 2
         },
         {
-            "cloudKey": "LStOvOperation",
-            "valueType": 0,
-            "funType": 2,
-            "uartCmd": 65,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "LStOvDoorState",
             "valueType": 0,
             "funType": 1,
@@ -286,6 +279,13 @@
             "funType": 0,
             "uartCmd": 80,
             "uartByteLen": 4
+        },
+        {
+            "cloudKey": "LStOvOperation",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 65,
+            "uartByteLen": 1
         },
         {
             "cloudKey": "RStOvState",

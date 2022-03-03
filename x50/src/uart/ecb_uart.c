@@ -174,11 +174,11 @@ static int ecb_timeout_cb(void)
     }
     if (boot_flag == 0 && disconnect_count < ECB_DISCONNECT_COUNT)
     {
-        ecb_get_timeout = 3 * 60 * 2;
+        ecb_get_timeout = 10 * 60 * 5;
     }
     else
     {
-        ecb_get_timeout = 3 * 3;
+        ecb_get_timeout = 10 * 3;
     }
     if (++ecb_get_count > ecb_get_timeout)
     {

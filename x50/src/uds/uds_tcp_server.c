@@ -151,7 +151,7 @@ void *uds_tcp_server_task(void *arg) //uds任务
     app_select_client_Tcp_Server.connect_cb = uds_connect;
     app_select_client_Tcp_Server.disconnect_cb = uds_disconnect;
     add_select_client_event(&select_server_event, &app_select_client_Tcp_Server.select_client_event); //添加uds server fd进select
-    select_server_task(&select_server_event, 400);
+    select_server_task(&select_server_event, 200);
 
     uds_tcp_server_close();
     return NULL;

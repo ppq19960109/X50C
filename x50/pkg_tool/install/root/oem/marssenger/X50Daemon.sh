@@ -13,7 +13,8 @@ function check(){
 
 while true
 do
-    sleep 30
+    sleep 10
     check X50app
     check X50QML
+    sleep 20
 done

@@ -596,6 +596,7 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
     }
     int i;
     cloud_dev_t *cloud_dev = (cloud_dev_t *)malloc(sizeof(cloud_dev_t));
+    memset(cloud_dev, 0, sizeof(cloud_dev_t));
     cloud_dev->attr_len = arraySize;
     cloud_dev->attr = (cloud_attr_t *)malloc(sizeof(cloud_attr_t) * cloud_dev->attr_len);
     memset(cloud_dev->attr, 0, sizeof(cloud_attr_t) * cloud_dev->attr_len);
@@ -793,13 +794,13 @@ void *cloud_task(void *arg) //云端任务
             else
             {
                 dzlog_warn("curl_http_get_quad is fail");
-                sleep(4);
+                sleep(2);
             }
         }
         else
         {
             dzlog_warn("no Internet...");
-            sleep(4);
+            sleep(2);
         }
     } while (1);
 #else

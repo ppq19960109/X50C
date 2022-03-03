@@ -13,6 +13,11 @@ static void *WifiState_cb(void *ptr, void *arg)
     dzlog_warn("WifiState_cb");
     set_attr_t *attr = (set_attr_t *)ptr;
     attr->value.n = getWifiRunningState();
+
+    // if (attr->value.n == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
+    // {
+    //     attr->value.n = RK_WIFI_State_DISCONNECTED;
+    // }
     cJSON *item = cJSON_CreateNumber(attr->value.n);
     return item;
 }
@@ -190,15 +195,16 @@ static int wiFiReport(int event)
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
 
-    return send_event_uds(root,NULL);
+    return send_event_uds(root, NULL);
 }
 
 static int wiFiCallback(int event)
 {
-    if (event == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
-    {
-        return -1;
-    }
+    // if (event == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
+    // {
+    //     // wiFiReport(RK_WIFI_State_CONNECTFAILED);
+    //     return -1;
+    // }
 
     return wiFiReport(event);
 }

@@ -30,7 +30,7 @@ void *uart_task(void *arg)
 
     if (select_uart_timeout_cb != NULL)
         select_server_event.timeout_cb = select_uart_timeout_cb;
-    select_server_task(&select_server_event, 400);
+    select_server_task(&select_server_event, 200);
 
     ecb_uart_deinit();
     gesture_uart_deinit();

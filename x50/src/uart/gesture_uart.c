@@ -16,7 +16,7 @@ static timer_t g_gesture_heart_timer;
 static int fd = 0;
 static pthread_mutex_t lock;
 static unsigned char gesture_error_status = 0;
-static unsigned char gesture_sync_time_start = 0;
+static unsigned char gesture_sync_time_flag = 0;
 
 static struct Select_Client_Event select_client_event;
 
@@ -90,29 +90,25 @@ int gesture_send_msg(unsigned char whole_show, unsigned char sync, unsigned char
     return gesture_uart_send(msg, index);
 }
 
-static void *gesture_time_sync_task(void *arg)
-{
-    dzlog_info("gesture_time_sync....................\n");
-    systemRun("ntpdate pool.ntp.org && hwclock -w");
-    // sleep(1);
-    time_t systemTime;
-    time(&systemTime);
-    struct tm *local_tm = localtime(&systemTime);
-    gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min);
-
-    return NULL;
-}
-
 static void gesture_sync_time_cb(int state)
 {
     dzlog_info("gesture_sync_time_cb:%d\n", state);
     if (state)
     {
-        if (gesture_sync_time_start)
+        time_t systemTime;
+        time(&systemTime);
+
+        dzlog_info("gesture sync time:%ld\n", systemTime);
+        if (systemTime < 1640966400) //2022-01-01 00:00:00
         {
-            pthread_t tid;
-            pthread_create(&tid, NULL, gesture_time_sync_task, NULL);
-            pthread_detach(tid);
+            gesture_sync_time_flag = 1;
+            gesture_send_msg(0, 1, 0xff, 0xff);
+        }
+        else
+        {
+            gesture_sync_time_flag = 0;
+            struct tm *local_tm = localtime(&systemTime);
+            gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min);
         }
     }
     else
@@ -274,14 +270,18 @@ static void gesture_POSIXTimer_cb(union sigval val)
     dzlog_warn("gesture_POSIXTimer_cb timeout:%d", val.sival_int);
     if (val.sival_int == 1)
     {
-        gesture_sync_time_start = 1;
         gesture_sync_time();
     }
     else if (val.sival_int == 2)
     {
         if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
         {
-            gesture_send_msg(0, 1, 0xff, 0xff);
+            if (gesture_sync_time_flag > 0)
+            {
+                gesture_sync_time_cb(1);
+            }
+            else
+                gesture_send_msg(0, 1, 0xff, 0xff);
         }
         else
         {
@@ -335,7 +335,7 @@ void gesture_uart_init(void)
     gesture_send_msg(1, 0, 0, 0);
 
     g_gesture_timer = POSIXTimerCreate(1, gesture_POSIXTimer_cb);
-    POSIXTimerSet(g_gesture_timer, 1 * 60 * 60, 20);
+    POSIXTimerSet(g_gesture_timer, 1 * 60 * 60, 60);
     g_gesture_heart_timer = POSIXTimerCreate(2, gesture_POSIXTimer_cb);
     POSIXTimerSet(g_gesture_heart_timer, 25, 25);
 
