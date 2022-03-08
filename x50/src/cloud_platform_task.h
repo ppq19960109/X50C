@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "1.0.2"
+#define SOFTER_VER "1.0.3"
 
 #define UART_CMD_MULTISTAGE_SET (77)
 #define UART_CMD_MULTISTAGE_STATE (78)
@@ -51,6 +51,7 @@ typedef struct
     char after_sales_phone[16];
     char hardware_ver[6];
     char software_ver[6];
+    char cook_name[64];
     char remind[3][48];
     char update_log[1024];
     cloud_attr_t *attr;
@@ -91,5 +92,5 @@ cloud_dev_t *get_cloud_dev(void);
 // unsigned char get_BuzControl(void);
 unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
-void get_dev_version(char *hardware_ver, char *software_ver);
+int get_software_version(char *software_ver);
 #endif

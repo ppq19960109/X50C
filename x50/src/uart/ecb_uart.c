@@ -89,6 +89,8 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
                 resend->send_data = (unsigned char *)in;
 
             // resend->fd = fd;
+            if (resend->send_len >= 4)
+                resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
             resend->resend_cnt = RESEND_CNT;
             resend->resend_cb = ecb_uart_resend_cb;
             resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);

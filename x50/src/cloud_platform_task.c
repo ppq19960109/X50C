@@ -8,7 +8,9 @@
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
+#include "POSIXTimer.h"
 
+static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 
@@ -85,6 +87,13 @@ unsigned int get_ErrorCode(void)
     }
     return 0;
 }
+static void POSIXTimer_cb(union sigval val)
+{
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddStringToObject(resp, "CookbookName", g_cloud_dev->cook_name);
+    report_msg_all_platform(resp);
+}
+
 int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回调函数，并拼包
 {
     if (root == NULL)
@@ -182,11 +191,17 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                 {
                     item = cJSON_CreateString(g_cloud_dev->software_ver);
                 }
-                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0)
+                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0 || strcmp("ElcHWVersion", ptr->cloud_key) == 0)
                 {
                     char buf[6];
                     sprintf(buf, "%d.%d", *ptr->value >> 4, *ptr->value & 0x0f);
                     item = cJSON_CreateString(buf);
+                }
+                else if (strcmp("WifiMac", ptr->cloud_key) == 0)
+                {
+                    char mac[16];
+                    getNetworkMac(ETH_NAME, mac, sizeof(mac), "");
+                    item = cJSON_CreateString(mac);
                 }
                 else
                 {
@@ -302,13 +317,6 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             }
             dzlog_warn("get_attr_set_value %s:%d %d", ptr->cloud_key, ptr->uart_byte_len, index);
         }
-        else if (strcmp(ptr->cloud_key, "CookbookName") == 0)
-        {
-            cJSON *resp = cJSON_CreateObject();
-            cJSON_AddStringToObject(resp, ptr->cloud_key, item->valuestring);
-            report_msg_all_platform(resp);
-            return 0;
-        }
     }
     else
     {
@@ -323,6 +331,12 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
+            if (strcmp(ptr->cloud_key, "CookbookName") == 0)
+            {
+                strcpy(g_cloud_dev->cook_name, item->valuestring);
+                POSIXTimerSet(cook_name_timer, 0, 1);
+                return 0;
+            }
             memcpy(&out[1], item->valuestring, strlen(item->valuestring));
             goto end;
         }
@@ -647,17 +661,19 @@ fail:
     cJSON_Delete(root);
     return NULL;
 }
-
-void get_dev_version(char *hardware_ver, char *software_ver) //获取软件版本号
+int get_software_version(char *software_ver) //获取软件版本号
 {
-    if (hardware_ver)
-        strcpy(hardware_ver, g_cloud_dev->hardware_ver);
-    if (software_ver)
-        strcpy(software_ver, g_cloud_dev->software_ver);
+    if (software_ver == NULL)
+        return 0;
+    strcpy(software_ver, g_cloud_dev->software_ver);
+    return strlen(software_ver);
 }
 
+void register_version_cb(int (*cb)(char *));
 int cloud_init(void) //初始化
 {
+    register_version_cb(get_software_version);
+    cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     pthread_mutex_init(&mutex, NULL);
 
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
@@ -688,6 +704,11 @@ void cloud_deinit(void) //反初始化
     free(g_cloud_dev->attr);
     free(g_cloud_dev);
     dzlog_warn("cloud_deinit...........\n");
+    if (cook_name_timer != NULL)
+    {
+        POSIXTimerDelete(cook_name_timer);
+        cook_name_timer = NULL;
+    }
     pthread_mutex_destroy(&mutex);
 }
 size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)

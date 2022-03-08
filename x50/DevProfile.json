@@ -13,6 +13,13 @@
             "uartByteLen": 0
         },
         {
+            "cloudKey": "WifiMac",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 0,
+            "uartByteLen": 0
+        },
+        {
             "cloudKey": "ElcSWVersion",
             "valueType": 2,
             "funType": 1,
@@ -373,7 +380,7 @@
         },
         {
             "cloudKey": "CookbookName",
-            "valueType": 3,
+            "valueType": 2,
             "funType": 2,
             "uartCmd": 0,
             "uartByteLen": 0

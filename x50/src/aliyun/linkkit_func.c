@@ -94,7 +94,7 @@ void fota_event_handler(const char *version)
 {
     char buffer[64] = {0};
     POSIXTimerSet(g_ota_timer, 0, 0);
-    get_dev_version(NULL, buffer);
+    get_software_version(buffer);
     if (strcmp(version, buffer) == 0)
     {
         EXAMPLE_TRACE("fota_event_handler Firmware Version the same");
@@ -134,7 +134,7 @@ int request_fota_image(void)
 {
     int res = 0;
     char buffer[64] = {0};
-    get_dev_version(NULL, buffer);
+    get_software_version(buffer);
     int buffer_length = strlen(buffer);
     EXAMPLE_TRACE("request_fota_image:%s,%d", buffer, buffer_length);
     set_ota_state(OTA_IDLE, NULL);

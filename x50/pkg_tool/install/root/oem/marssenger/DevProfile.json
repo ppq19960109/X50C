@@ -373,7 +373,7 @@
         },
         {
             "cloudKey": "CookbookName",
-            "valueType": 3,
+            "valueType": 2,
             "funType": 2,
             "uartCmd": 0,
             "uartByteLen": 0

@@ -125,13 +125,24 @@ void HAL_Reboot(void)
         perror("HAL_Reboot failed");
     }
 }
-
+static int (*version_cb)(char *);
+void register_version_cb(int (*cb)(char *))
+{
+    version_cb = cb;
+}
 int HAL_GetFirmwareVersion(char *version)
 {
+    if(version_cb!=NULL)
+    {
+        version_cb(version);
+    }
+    else
+    {
     int len = strlen(_firmware_version);
     memset(version, 0x0, IOTX_FIRMWARE_VER_LEN);
     strncpy(version, _firmware_version, IOTX_FIRMWARE_VER_LEN);
     version[len] = '\0';
+    }
     return strlen(version);
 }
 
