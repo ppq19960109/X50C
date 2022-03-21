@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     }
     dzlog_info("main start");
 
-    pthread_t uart_tid;
+    pthread_t cloud_tid;
     pthread_t uds_tid;
 
     registerQuitCb(main_quit); //注册退出信号回调
@@ -46,16 +46,17 @@ int main(int argc, char **argv)
     uds_protocol_init(); //uds相关初始化
     cloud_init();        //阿里云相关初始化
 
-    pthread_create(&uart_tid, NULL, uart_task, NULL); //电控板线程启动
-    pthread_detach(uart_tid);
+    pthread_create(&cloud_tid, NULL, cloud_task, NULL); //阿里云线程启动
+    pthread_detach(cloud_tid);
 
     pthread_create(&uds_tid, NULL, uds_tcp_server_task, NULL); //UI uds通信线程启动
     pthread_detach(uds_tid);
-    cloud_task(NULL); //阿里云线程启动
+
+    uart_task(NULL);
     // while (1)
     // {
     //     sleep(1);
     // }
     main_quit();
-    // pthread_join(uart_tid,NULL);
+    // pthread_join(cloud_tid,NULL);
 }

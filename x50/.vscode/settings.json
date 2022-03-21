@@ -113,6 +113,9 @@
         "database_task.h": "c",
         "uart_cloud_task.h": "c",
         "regex": "c",
-        "uds_tcp_server.h": "c"
+        "uds_tcp_server.h": "c",
+        "types.h": "c",
+        "cloud_platform_task.h": "c",
+        "dev_reset_api.h": "c"
     }
 }

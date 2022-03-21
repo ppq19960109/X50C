@@ -3,4 +3,5 @@
 
 void gesture_uart_init(void);
 void gesture_uart_deinit(void);
+void gesture_auto_sync_time_alarm(int alarm);
 #endif

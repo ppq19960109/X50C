@@ -13,6 +13,13 @@
             "uartByteLen": 0
         },
         {
+            "cloudKey": "WifiMac",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 0,
+            "uartByteLen": 0
+        },
+        {
             "cloudKey": "ElcSWVersion",
             "valueType": 2,
             "funType": 1,
@@ -226,21 +233,21 @@
             "cloudKey": "MultiStageContent",
             "valueType": 3,
             "funType": 2,
-            "uartCmd": 77,
+            "uartCmd": 76,
             "uartByteLen": 13
         },
         {
             "cloudKey": "CookbookParam",
             "valueType": 3,
             "funType": 2,
-            "uartCmd": 77,
+            "uartCmd": 76,
             "uartByteLen": 13
         },
         {
             "cloudKey": "MultiStageState",
             "valueType": 3,
             "funType": 1,
-            "uartCmd": 78,
+            "uartCmd": 77,
             "uartByteLen": 3,
             "struct": [
                 {
@@ -376,7 +383,7 @@
             "valueType": 2,
             "funType": 2,
             "uartCmd": 0,
-            "uartByteLen": 0
+            "uartByteLen": 64
         }
     ],
     "event": [],

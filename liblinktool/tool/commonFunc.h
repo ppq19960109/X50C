@@ -14,6 +14,7 @@ extern "C"
     void readFileList(const char *path, int (*readFileFunc)(const char *));
     void *get_dev_profile(const char *path, void *input, const char *modelId, void *(*func)(void *, const char *));
     long *stol(const char *str, int base, long *out);
+    unsigned long long int *stoull(const char *str, int base, unsigned long long int *out);
     double *stod(const char *str, double *out);
     int findStrIndex(const char *key, char *const *array, const int arrayLen);
     int findStrnIndex(const char *key, const int n, char *const *array, const int arrayLen);

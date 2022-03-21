@@ -8,10 +8,11 @@
 #include "database.h"
 
 #include "history_wrapper.h"
+#include "linkkit_ota.h"
 
-int g_history_seqid = 0;
-char *leftWorkMode[] = {"未设定", "经典蒸", "高温蒸", "热风烧烤", "上下加热", "立体热风", "蒸汽烤", "空气炸", "保温烘干"};
-int leftWorkModeNumber[] = {0, 1, 2, 35, 36, 38, 40, 42, 72};
+static int g_history_seqid = 0;
+static char *leftWorkMode[] = {"未设定", "经典蒸", "高温蒸", "热风烧烤", "上下加热", "立体热风", "蒸汽烤", "空气炸", "保温烘干"};
+static int leftWorkModeNumber[] = {0, 1, 2, 35, 36, 38, 40, 42, 72};
 
 char *leftWorkModeFun(int n)
 {
@@ -71,6 +72,23 @@ int histroy_select_seqid_func(void *data, void *arg)
         g_history_seqid = recipe->seqid;
     }
     return 0;
+}
+
+int select_for_cookbookID(int cookbookID, char *name, int name_len)
+{
+    cJSON *root = cJSON_CreateObject();
+    select_seqid_from_table(RECIPE_TABLE_NAME, cookbookID, histroy_select_seqid_func, root);
+    if (cJSON_Object_isNull(root))
+        goto fail;
+    cJSON *dishName = cJSON_GetObjectItem(root, "dishName");
+    if (dishName == NULL)
+        goto fail;
+    strncpy(name, dishName->valuestring, name_len);
+    cJSON_Delete(root);
+    return 0;
+fail:
+    cJSON_Delete(root);
+    return -1;
 }
 
 static int wrapper_histroy_select_cb(history_t *recipe, void *arg)
@@ -414,6 +432,12 @@ int database_histroy_select_cb(void *data, void *arg)
     }
     return 0;
 }
+
+static void databse_ota_complete_cb_cb(void)
+{
+    databse_drop_table(RECIPE_TABLE_NAME);
+}
+
 void database_task_reinit(void)
 {
     wrapper_clearHistory();
@@ -422,6 +446,7 @@ void database_task_reinit(void)
 
 int database_task_init(void)
 {
+    register_ota_complete_cb(databse_ota_complete_cb_cb);
     register_history_select_cb(wrapper_histroy_select_cb);
     register_history_insert_cb(wrapper_history_insert_cb);
     register_history_delete_cb(wrapper_history_delete_cb);

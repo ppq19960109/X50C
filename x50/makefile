@@ -12,7 +12,7 @@ SRC_DIRS := $(shell find src -maxdepth 3 -type d)
 
 LINKTOOL_PATH:=liblinktool
 ALI_PATH:=libalink
-LOG_PATH:=libzlog
+# LOG_PATH:=libzlog
 HISTORY_PATH:=libhistory
 
 CFLAGS += $(addprefix -I , $(SRC_DIRS))
@@ -24,7 +24,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/tcp
 CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(ALI_PATH)/include
-CFLAGS += -I$(LOG_PATH)/include
+# CFLAGS += -I$(LOG_PATH)/include
 CFLAGS += -I$(HISTORY_PATH)
 CFLAGS += -Wall #-Werror
 ifdef DEBUG
@@ -33,7 +33,7 @@ endif
 
 LDFLAGS += -L$(LINKTOOL_PATH)/lib
 LDFLAGS += -L$(ALI_PATH)/lib
-LDFLAGS += -L$(LOG_PATH)/lib
+# LDFLAGS += -L$(LOG_PATH)/lib
 LDFLAGS += -L$(HISTORY_PATH)
 LDFLAGS += -L$(TOPDIR)
 

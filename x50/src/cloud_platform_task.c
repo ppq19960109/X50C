@@ -87,10 +87,28 @@ unsigned int get_ErrorCode(void)
     }
     return 0;
 }
+
+cloud_attr_t *get_attr_ptr(const char *name)
+{
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if (strcmp(name, attr[i].cloud_key) == 0)
+        {
+            return &attr[i];
+        }
+    }
+    return NULL;
+}
 static void POSIXTimer_cb(union sigval val)
 {
+    cloud_attr_t *attr = get_attr_ptr("CookbookName");
+    if (attr == NULL)
+        return;
     cJSON *resp = cJSON_CreateObject();
-    cJSON_AddStringToObject(resp, "CookbookName", g_cloud_dev->cook_name);
+    cJSON_AddStringToObject(resp, "CookbookName", attr->value);
     report_msg_all_platform(resp);
 }
 
@@ -132,7 +150,7 @@ int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) //调用相关
 
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
-    if (ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT)
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || strlen(ptr->cloud_key) == 0)
     {
         return -1;
     }
@@ -171,8 +189,45 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
-            // if (strcmp("SysPower", ptr->cloud_key) == 0)
-            //     cloud_val = 1;
+            if (strcmp("LStOvState", ptr->cloud_key) == 0)
+            {
+                if (cloud_val == 4)
+                {
+                    linkkit_user_post_event("LCookPush", NULL);
+                }
+            }
+            else if (strcmp("RStOvState", ptr->cloud_key) == 0)
+            {
+                if (cloud_val == 4)
+                {
+                    linkkit_user_post_event("RCookPush", NULL);
+                }
+            }
+            else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
+            {
+                cJSON *resp = cJSON_CreateObject();
+                cJSON_AddNumberToObject(resp, "FaultCode", cloud_val);
+                char *json = cJSON_PrintUnformatted(resp);
+                linkkit_user_post_event("ErrorPush", json);
+                cJSON_free(json);
+                cJSON_Delete(resp);
+            }
+            else if (strcmp(ptr->cloud_key, "CookbookID") == 0)
+            {
+                if (cloud_val > 0)
+                {
+                    cloud_attr_t *attr = get_attr_ptr("CookbookName");
+                    if (attr != NULL && attr->value != NULL && strlen(attr->value) == 0)
+                    {
+                        if (select_for_cookbookID(cloud_val, attr->value, attr->uart_byte_len) == 0)
+                        {
+                            cJSON *resp = cJSON_CreateObject();
+                            cJSON_AddStringToObject(resp, "CookbookName", attr->value);
+                            report_msg_all_platform(resp);
+                        }
+                    }
+                }
+            }
             item = cJSON_CreateNumber(cloud_val);
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
@@ -333,7 +388,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         {
             if (strcmp(ptr->cloud_key, "CookbookName") == 0)
             {
-                strcpy(g_cloud_dev->cook_name, item->valuestring);
+                strcpy(ptr->value, item->valuestring);
                 POSIXTimerSet(cook_name_timer, 0, 1);
                 return 0;
             }
@@ -370,6 +425,14 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
             {
                 if (value[i] == attr[j].uart_cmd)
                 {
+                    if (strcmp("ErrorCodeShow", attr[j].cloud_key) == 0)
+                    {
+                        if (*attr[j].value == value[i + 1])
+                        {
+                            dzlog_debug("ErrorCodeShow repeat....");
+                            continue;
+                        }
+                    }
                     memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
                     dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
                     hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
@@ -661,18 +724,9 @@ fail:
     cJSON_Delete(root);
     return NULL;
 }
-int get_software_version(char *software_ver) //获取软件版本号
-{
-    if (software_ver == NULL)
-        return 0;
-    strcpy(software_ver, g_cloud_dev->software_ver);
-    return strlen(software_ver);
-}
 
-void register_version_cb(int (*cb)(char *));
 int cloud_init(void) //初始化
 {
-    register_version_cb(get_software_version);
     cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     pthread_mutex_init(&mutex, NULL);
 
@@ -825,7 +879,7 @@ void *cloud_task(void *arg) //云端任务
         }
     } while (1);
 #else
-    linkkit_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret);
+    linkkit_init(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
 #endif
     return NULL;
 }

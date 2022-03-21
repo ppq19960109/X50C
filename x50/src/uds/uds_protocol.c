@@ -223,7 +223,6 @@ int uds_protocol_init(void) //uds协议相关初始化
 void uds_protocol_deinit(void) //uds协议相关反初始化
 {
     uds_tcp_server_task_deinit();
-    ota_task_deinit();
     database_deinit();
     pthread_mutex_destroy(&mutex);
 }

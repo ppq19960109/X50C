@@ -177,10 +177,28 @@ long *stol(const char *str, int base, long *out)
     errno = 0;
     char *endptr;
     long val = strtol(str, &endptr, base);
-    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0))
+    if ((errno == ERANGE) || (errno != 0 && val == 0))
     {
         perror("strtol error");
         printf("strtol endptr:%s,%ld\n", endptr, val);
+        return NULL;
+    }
+    if (out != NULL)
+    {
+        *out = val;
+    }
+    return out;
+}
+
+unsigned long long int *stoull(const char *str, int base, unsigned long long int *out)
+{
+    errno = 0;
+    char *endptr;
+    unsigned long long int val = strtoull(str, &endptr, base);
+    if (errno != 0)
+    {
+        perror("stoull error");
+        printf("stoull endptr:%s,%lld\n", endptr, val);
         return NULL;
     }
     if (out != NULL)

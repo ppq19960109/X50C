@@ -10,6 +10,7 @@
 #include "dynreg_api.h"
 #include "coap_api.h"
 #include "dev_model_api.h"
+#include "alcs_api.h"
 #include "dev_reset_api.h"
 #include "wifi_provision_api.h"
 #include "dev_sign_api.h"

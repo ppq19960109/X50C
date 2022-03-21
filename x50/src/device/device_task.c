@@ -5,8 +5,9 @@
 
 #include "cloud_platform_task.h"
 #include "device_task.h"
-#include "linkkit_func.h"
+#include "linkkit_reset.h"
 #include "database_task.h"
+#include "gesture_uart.h"
 
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
@@ -88,6 +89,13 @@ static void *Reset_cb(void *ptr, void *arg)
     cJSON *item = cJSON_CreateNumber(1);
     return item;
 }
+
+static void *Alarm_cb(void *ptr, void *arg)
+{
+    gesture_auto_sync_time_alarm(1);
+    return NULL;
+}
+
 static set_attr_t g_device_set_attr[] = {
     {
         cloud_key : "ProductCategory",
@@ -143,6 +151,11 @@ static set_attr_t g_device_set_attr[] = {
         cloud_key : "Reset",
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : Reset_cb
+    },
+    {
+        cloud_key : "Alarm",
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
+        cb : Alarm_cb
     },
 };
 static const int attr_len = sizeof(g_device_set_attr) / sizeof(g_device_set_attr[0]);

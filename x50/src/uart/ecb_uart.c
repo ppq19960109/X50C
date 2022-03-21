@@ -148,11 +148,12 @@ static int ecb_recv_cb(void *arg)
     uart_read_len = read(fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf) - uart_read_buf_index);
     if (uart_read_len > 0)
     {
-        dzlog_warn("uart_read_len:%d\n", uart_read_len);
         uart_read_buf_index += uart_read_len;
+        dzlog_warn("uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        hdzlog_info(uart_read_buf, uart_read_buf_index);
+        dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        // hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;
 }
@@ -174,19 +175,20 @@ static int ecb_timeout_cb(void)
     {
         boot_flag = 0;
     }
+
     if (boot_flag == 0 && disconnect_count < ECB_DISCONNECT_COUNT)
     {
-        ecb_get_timeout = 10 * 60 * 5;
+        ecb_get_timeout = 3 * 60 * 5;
     }
     else
     {
-        ecb_get_timeout = 10 * 3;
+        ecb_get_timeout = 3 * 5;
     }
     if (++ecb_get_count > ecb_get_timeout)
     {
         ecb_get_count = 0;
-        // ecb_uart_msg_get();
-        // dzlog_warn("select timeout:ecb_uart_msg_get\n");
+        ecb_uart_msg_get();
+        dzlog_warn("select timeout:ecb_uart_msg_get\n");
     }
     // dzlog_warn("select timeout:%ld\n", timeout.tv_usec);
     return 0;
@@ -221,4 +223,5 @@ void ecb_uart_init(void)
     select_client_event.except_cb = ecb_except_cb;
 
     add_select_client_uart(&select_client_event);
+    ecb_uart_msg_get();
 }

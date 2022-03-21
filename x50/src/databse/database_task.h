@@ -7,4 +7,5 @@ void database_task_reinit(void);
 int database_resp_get(cJSON *root,cJSON *resp);
 int database_resp_getall(cJSON *root,cJSON *resp);
 int database_resp_set(cJSON *root,cJSON *resp);
+int select_for_cookbookID(int cookbookID, char *name, int name_len);
 #endif

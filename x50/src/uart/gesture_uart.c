@@ -7,7 +7,8 @@
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "cloud_platform_task.h"
-
+#include "uds_protocol.h"
+#include "linkkit_solo.h"
 #define GESTURE_ERROR (20)
 
 static timer_t g_gesture_timer;
@@ -16,8 +17,7 @@ static timer_t g_gesture_heart_timer;
 static int fd = 0;
 static pthread_mutex_t lock;
 static unsigned char gesture_error_status = 0;
-static unsigned char gesture_sync_time_flag = 0;
-
+static unsigned char gesture_alarm_status = 0;
 static struct Select_Client_Event select_client_event;
 
 static unsigned short msg_verify(const unsigned char *data, int len)
@@ -66,12 +66,14 @@ int gesture_uart_send(unsigned char *in, int in_len)
 // aa 01 08 01 01 00 00 4a ff
 // aa 01 08 01 09 ff ff 44 fd
 // aa 01 08 01 01 ff ff 4c fd
-int gesture_send_msg(unsigned char whole_show, unsigned char sync, unsigned char hour, unsigned char minute)
+int gesture_send_msg(unsigned char whole_show, unsigned char sync, unsigned char hour, unsigned char minute, int alarm)
 {
     unsigned char data1 = 0;
     data1 |= (1 << 0);
     if (sync)
         data1 |= (1 << 3);
+    if (alarm)
+        data1 |= (1 << 4);
     if (whole_show)
         data1 |= (1 << 2);
 
@@ -89,10 +91,9 @@ int gesture_send_msg(unsigned char whole_show, unsigned char sync, unsigned char
     msg[index++] = verify >> 8;
     return gesture_uart_send(msg, index);
 }
-
-static void gesture_sync_time_cb(int state)
+static void gesture_sync_time_and_alarm(int state, int alarm)
 {
-    dzlog_info("gesture_sync_time_cb:%d\n", state);
+    dzlog_info("gesture_sync_time_and_alarm:%d,%d\n", state, alarm);
     if (state)
     {
         time_t systemTime;
@@ -101,20 +102,23 @@ static void gesture_sync_time_cb(int state)
         dzlog_info("gesture sync time:%ld\n", systemTime);
         if (systemTime < 1640966400) //2022-01-01 00:00:00
         {
-            gesture_sync_time_flag = 1;
-            gesture_send_msg(0, 1, 0xff, 0xff);
+            gesture_send_msg(0, 1, 0xff, 0xff, alarm);
         }
         else
         {
-            gesture_sync_time_flag = 0;
             struct tm *local_tm = localtime(&systemTime);
-            gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min);
+            gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min, alarm);
         }
     }
     else
     {
-        gesture_send_msg(0, 0, 0, 0);
+        gesture_send_msg(0, 0, 0, 0, alarm);
     }
+}
+
+static void gesture_sync_time_cb(int state)
+{
+    gesture_sync_time_and_alarm(state, 0);
 }
 void gesture_send_error_cloud(int error_code, int clear)
 {
@@ -142,15 +146,15 @@ void gesture_send_error_cloud(int error_code, int clear)
     }
     send_data_to_cloud(payload, index);
 }
-static void gesture_sync_time(void)
+void gesture_auto_sync_time_alarm(int alarm)
 {
     if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
     {
-        gesture_sync_time_cb(1);
+        gesture_sync_time_and_alarm(1, alarm);
     }
     else
     {
-        gesture_sync_time_cb(0);
+        gesture_sync_time_and_alarm(0, alarm);
     }
 }
 
@@ -215,7 +219,7 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
             if (++gesture_recv_error > 4)
             {
                 gesture_recv_error = 0;
-                gesture_sync_time();
+                gesture_auto_sync_time_alarm(0);
             }
         }
         else
@@ -223,15 +227,35 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
             gesture_recv_error = 0;
         }
 
-        if (data1 & (1 << 4))
+        if (data1 & (1 << 4)) //右挥标志位
         {
             msg[msg_len++] = 0xfa;
             msg[msg_len++] = 0x01;
         }
-        else if (data1 & (1 << 5))
+        else if (data1 & (1 << 5)) //左挥标志位
         {
             msg[msg_len++] = 0xfa;
             msg[msg_len++] = 0x02;
+        }
+        if (data1 & (1 << 6)) //闹钟提示标志位
+        {
+            if (gesture_alarm_status == 0)
+            {
+                cJSON *resp = cJSON_CreateObject();
+                cJSON_AddNumberToObject(resp, "Alarm", 1);
+                send_event_uds(resp, NULL);
+                gesture_alarm_status = 1;
+            }
+        }
+        else
+        {
+            if (gesture_alarm_status == 1)
+            {
+                cJSON *resp = cJSON_CreateObject();
+                cJSON_AddNumberToObject(resp, "Alarm", 0);
+                send_event_uds(resp, NULL);
+                gesture_alarm_status = 0;
+            }
         }
 
         if (data2 == 0x13)
@@ -270,29 +294,24 @@ static void gesture_POSIXTimer_cb(union sigval val)
     dzlog_warn("gesture_POSIXTimer_cb timeout:%d", val.sival_int);
     if (val.sival_int == 1)
     {
-        gesture_sync_time();
+        gesture_auto_sync_time_alarm(0);
     }
     else if (val.sival_int == 2)
     {
         if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
         {
-            if (gesture_sync_time_flag > 0)
-            {
-                gesture_sync_time_cb(1);
-            }
-            else
-                gesture_send_msg(0, 1, 0xff, 0xff);
+            gesture_send_msg(0, 1, 0xff, 0xff, 0);
         }
         else
         {
-            gesture_send_msg(0, 0, 0, 0);
+            gesture_send_msg(0, 0, 0, 0, 0);
         }
     }
 }
 
 static int gesture_recv_cb(void *arg)
 {
-    static unsigned char uart_read_buf[128];
+    static unsigned char uart_read_buf[256];
     int uart_read_len;
     static int uart_read_buf_index = 0;
 
@@ -300,12 +319,28 @@ static int gesture_recv_cb(void *arg)
     if (uart_read_len > 0)
     {
         uart_read_buf_index += uart_read_len;
+        dzlog_warn("uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, gesture_uart_parse_msg);
-        hdzlog_info(uart_read_buf, uart_read_buf_index);
+        dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        // hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;
 }
+
+static void gesture_link_timestamp_cb(const char *timestamp)
+{
+    time_t time;
+    unsigned long long int val = 0;
+    if (stoull(timestamp, 10, &val) == NULL)
+        return;
+    time = val / 1000;
+    dzlog_warn("gesture_link_timestamp_cb:%lld,%ld", val, time);
+
+    struct tm *local_tm = localtime(&time);
+    gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min, 0);
+}
+
 void gesture_uart_deinit(void)
 {
     POSIXTimerDelete(g_gesture_timer);
@@ -332,7 +367,8 @@ void gesture_uart_init(void)
 
     pthread_mutex_init(&lock, NULL);
     register_wifi_connected_cb(gesture_sync_time_cb);
-    gesture_send_msg(1, 0, 0, 0);
+    register_link_timestamp_cb(gesture_link_timestamp_cb);
+    gesture_send_msg(1, 0, 0, 0, 0);
 
     g_gesture_timer = POSIXTimerCreate(1, gesture_POSIXTimer_cb);
     POSIXTimerSet(g_gesture_timer, 1 * 60 * 60, 60);

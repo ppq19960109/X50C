@@ -253,6 +253,30 @@ int HAL_GetFirmwareVersion(char *version)
 
 /**
  *
+ * 函数 HAL_Kv_Del() 需要SDK的使用者针对SDK将运行的硬件平台填充实现, 供SDK调用
+ * ---
+ * Interface of HAL_Kv_Del() requires to be implemented by user of SDK, according to target device platform
+ *
+ * 如果需要参考如何实现函数 HAL_Kv_Del(), 可以查阅SDK移植到 Ubuntu Linux 上时的示例代码
+ * ---
+ * If you need guidance about how to implement HAL_Kv_Del, you can check its reference implementation for Ubuntu platform
+ *
+ * https://code.aliyun.com/linkkit/c-sdk/blob/v3.0.1/wrappers/os/ubuntu/HAL_KV_linux.c
+ *
+ *
+ * 注意! HAL_XXX() 系列的函数虽然有阿里提供的对应参考实现, 但不建议您不做任何修改/检视的应用于您的商用设备!
+ * 
+ * 注意! 参考示例实现仅用于解释各个 HAL_XXX() 系列函数的语义!
+ * 
+ */
+int HAL_Kv_Del(const char *key)
+{
+	return (int)1;
+}
+
+
+/**
+ *
  * 函数 HAL_Kv_Get() 需要SDK的使用者针对SDK将运行的硬件平台填充实现, 供SDK调用
  * ---
  * Interface of HAL_Kv_Get() requires to be implemented by user of SDK, according to target device platform

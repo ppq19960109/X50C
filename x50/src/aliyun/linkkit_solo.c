@@ -22,14 +22,11 @@
 #ifdef ATM_ENABLED
 #include "at_api.h"
 #endif
-// #include "wifi_provision_api.h"
-#include "linkkit_solo.h"
-#include "linkkit_func.h"
 
-// char g_product_key[IOTX_PRODUCT_KEY_LEN + 1] = "a1YTZpQDGwn";
-// char g_product_secret[IOTX_PRODUCT_SECRET_LEN + 1] = "oE99dmyBcH5RAWE3";
-// char g_device_name[IOTX_DEVICE_NAME_LEN + 1] = "X50_test1";
-// char g_device_secret[IOTX_DEVICE_SECRET_LEN + 1] = "5fe43d0b7a6b2928c4310cc0d5fcb4b6";
+#include "linkkit_solo.h"
+#include "linkkit_ota.h"
+#include "linkkit_reset.h"
+
 static iotx_linkkit_dev_meta_info_t master_meta_info = {0};
 
 typedef struct
@@ -42,6 +39,11 @@ typedef struct
 
 static user_example_ctx_t g_user_example_ctx;
 
+void (*link_timestamp_cb)(const char *);
+void register_link_timestamp_cb(void (*cb)(const char *))
+{
+    link_timestamp_cb = cb;
+}
 int (*property_set_event_cb)(const int, const char *, const int);
 void register_property_set_event_cb(int (*cb)(const int, const char *, const int))
 {
@@ -62,33 +64,24 @@ void register_connected_cb(void (*cb)(int))
 {
     connected_cb = cb;
 }
-int (*unbind_cb)(void);
-void register_unbind_cb(int (*cb)())
-{
-    unbind_cb = cb;
-}
 int (*dynreg_device_secret_cb)(const char *);
 void register_dynreg_device_secret_cb(int (*cb)(const char *))
 {
     dynreg_device_secret_cb = cb;
 }
 
-int get_linkkit_connected_state()
-{
-    return g_user_example_ctx.cloud_connected;
-}
 /** cloud connected event callback */
 static int user_connected_event_handler(void)
 {
     EXAMPLE_TRACE("Cloud Connected");
-    if (unbind_cb != NULL)
-        unbind_cb();
     g_user_example_ctx.cloud_connected = 1;
+    linkkit_unbind_check();
+
     if (connected_cb != NULL)
         connected_cb(1);
     if (property_report_all_cb != NULL)
         property_report_all_cb();
-
+    IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_TIMESTAMP, NULL, 0);
     return 0;
 }
 
@@ -168,8 +161,9 @@ static int user_service_request_event_handler(const int devid, const char *servi
 
 static int user_timestamp_reply_event_handler(const char *timestamp)
 {
-    EXAMPLE_TRACE("Current Timestamp: %s", timestamp);
-
+    EXAMPLE_TRACE("Current Timestamp:%s", timestamp);
+    if (link_timestamp_cb != NULL)
+        link_timestamp_cb(timestamp);
     return 0;
 }
 
@@ -182,17 +176,14 @@ static int user_fota_event_handler(int type, const char *version)
     /* 0 - new firmware exist, query the new firmware */
     if (type == 0)
     {
-        EXAMPLE_TRACE("user_fota_event_handler New Firmware Version: %s,%d", version, strlen(version));
-        // if (get_ota_state() == OTA_IDLE)
-        // {
-        fota_event_handler(version);
-        // }
-        // else
-        // {
-        //     fota_event_handler(version);
-        //     download_fota_image();
-        //     // IOT_Linkkit_Query(EXAMPLE_MASTER_DEVID, ITM_MSG_QUERY_FOTA_DATA, (unsigned char *)buffer, buffer_length);
-        // }
+        int ota_state = get_ota_state();
+        EXAMPLE_TRACE("user_fota_event_handler New Firmware Version: %s,%d ota_state:%d", version, strlen(version), ota_state);
+
+        if (ota_state == OTA_IDLE || ota_state == OTA_NO_FIRMWARE || ota_state == OTA_DOWNLOAD_FAIL || ota_state == OTA_INSTALL_FAIL)
+        {
+            // fota_event_handler(version);
+            download_fota_image();
+        }
     }
 
     return 0;
@@ -348,11 +339,16 @@ static int dynreg_device_secret(const char *device_secret)
 
 static int user_sdk_state_dump(int ev, const char *msg)
 {
-    EXAMPLE_TRACE("received state: -0x%04X(%s)\n", -ev, msg);
+    // EXAMPLE_TRACE("received state: -0x%04X(%s)\n", -ev, msg);
     return 0;
 }
 
-void get_linkkit_dev_quad(char *product_key, char *product_secret, char *device_name, char *device_secret)
+int get_linkkit_connected_state()
+{
+    return g_user_example_ctx.cloud_connected;
+}
+
+void get_linkkit_quad(char *product_key, char *product_secret, char *device_name, char *device_secret)
 {
     if (product_key)
         strcpy(product_key, master_meta_info.product_key);
@@ -363,17 +359,11 @@ void get_linkkit_dev_quad(char *product_key, char *product_secret, char *device_
     if (device_secret)
         strcpy(device_secret, master_meta_info.device_secret);
 }
-void linkkit_close(void)
-{
 
-    EXAMPLE_TRACE("linkkit_close..............................");
-    g_user_example_ctx.linkkit_runing = 0;
-}
-int linkkit_main(const char *product_key, const char *product_secret, const char *device_name, const char *device_secret)
+int linkkit_main(void)
 {
     int res = 0;
-
-    int domain_type = 0, dynamic_register = 0, post_reply_need = 0, fota_timeout = 30;
+    int domain_type = 0, dynamic_register = 0, post_reply_need = 0, fota_timeout = 300;
 
 #ifdef ATM_ENABLED
     if (IOT_ATM_Init() < 0)
@@ -382,22 +372,8 @@ int linkkit_main(const char *product_key, const char *product_secret, const char
         return -1;
     }
 #endif
-
     memset(&g_user_example_ctx, 0, sizeof(user_example_ctx_t));
 
-    memset(&master_meta_info, 0, sizeof(iotx_linkkit_dev_meta_info_t));
-    // memcpy(master_meta_info.product_key, g_product_key, strlen(g_product_key));
-    // memcpy(master_meta_info.product_secret, g_product_secret, strlen(g_product_secret));
-    // memcpy(master_meta_info.device_name, g_device_name, strlen(g_device_name));
-    // memcpy(master_meta_info.device_secret, g_device_secret, strlen(g_device_secret));
-    strcpy(master_meta_info.product_key, product_key);
-    strcpy(master_meta_info.product_secret, product_secret);
-    strcpy(master_meta_info.device_name, device_name);
-    strcpy(master_meta_info.device_secret, device_secret);
-    EXAMPLE_TRACE("product_key:%s", master_meta_info.product_key);
-    EXAMPLE_TRACE("product_secret:%s", master_meta_info.product_secret);
-    EXAMPLE_TRACE("device_name:%s", master_meta_info.device_name);
-    EXAMPLE_TRACE("device_secret:%s\n", master_meta_info.device_secret);
     IOT_SetLogLevel(IOT_LOG_DEBUG);
 
     /* Register Callback */
@@ -475,4 +451,25 @@ int linkkit_main(const char *product_key, const char *product_secret, const char
     IOT_SetLogLevel(IOT_LOG_NONE);
 
     return 0;
+}
+void linkkit_close(void)
+{
+    linkkit_ota_deinit();
+    g_user_example_ctx.linkkit_runing = 0;
+}
+
+int linkkit_init(const char *product_key, const char *product_secret, const char *device_name, const char *device_secret, const char *version)
+{
+    memset(&master_meta_info, 0, sizeof(iotx_linkkit_dev_meta_info_t));
+
+    strcpy(master_meta_info.product_key, product_key);
+    strcpy(master_meta_info.product_secret, product_secret);
+    strcpy(master_meta_info.device_name, device_name);
+    strcpy(master_meta_info.device_secret, device_secret);
+    EXAMPLE_TRACE("product_key:%s", master_meta_info.product_key);
+    EXAMPLE_TRACE("product_secret:%s", master_meta_info.product_secret);
+    EXAMPLE_TRACE("device_name:%s", master_meta_info.device_name);
+    EXAMPLE_TRACE("device_secret:%s\n", master_meta_info.device_secret);
+    linkkit_ota_init(version);
+    return linkkit_main();
 }

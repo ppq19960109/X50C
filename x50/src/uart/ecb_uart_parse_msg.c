@@ -1,6 +1,6 @@
 #include "main.h"
 
-#include "linkkit_func.h"
+#include "linkkit_reset.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "uart_resend.h"
@@ -17,8 +17,10 @@ int ecb_disconnect_count(void)
 static void ecb_send_error_cloud(int error_code)
 {
     unsigned char payload[8] = {0};
-    int index = 0;
-    int code = 1 << (error_code - 1);
+    int index = 0, code = 0;
+    if (error_code > 0)
+        code = 1 << (error_code - 1);
+        
     payload[index++] = 0x0a;
     payload[index++] = code >> 24;
     payload[index++] = code >> 16;
@@ -223,10 +225,6 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_GETACK)
     {
-        if (get_ack_count >= ECB_DISCONNECT_COUNT)
-        {
-            ecb_send_error_cloud(0);
-        }
         get_ack_count = 0;
         // ecb_resend_list_del_by_id(seq_id);
         send_data_to_cloud(payload, data_len);

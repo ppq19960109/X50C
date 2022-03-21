@@ -9,10 +9,10 @@
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "1.0.3"
+#define SOFTER_VER "1.0.4"
 
-#define UART_CMD_MULTISTAGE_SET (77)
-#define UART_CMD_MULTISTAGE_STATE (78)
+#define UART_CMD_MULTISTAGE_SET (76)
+#define UART_CMD_MULTISTAGE_STATE (77)
 
 enum LINK_VALUE_TYPE
 {
@@ -51,7 +51,6 @@ typedef struct
     char after_sales_phone[16];
     char hardware_ver[6];
     char software_ver[6];
-    char cook_name[64];
     char remind[3][48];
     char update_log[1024];
     cloud_attr_t *attr;
@@ -92,5 +91,5 @@ cloud_dev_t *get_cloud_dev(void);
 // unsigned char get_BuzControl(void);
 unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
-int get_software_version(char *software_ver);
+
 #endif

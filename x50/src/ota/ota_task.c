@@ -5,7 +5,7 @@
 
 #include "cloud_platform_task.h"
 #include "ota_task.h"
-#include "linkkit_func.h"
+#include "linkkit_ota.h"
 #include "linkkit_solo.h"
 
 static void *OTAState_cb(void *ptr, void *arg)
@@ -42,16 +42,6 @@ static void *OTANewVersion_cb(void *ptr, void *arg)
     return item;
 }
 
-// static void *APPBind_cb(void *ptr, void *arg)
-// {
-//     char buffer[2]={0};
-//     int buffer_len = sizeof(buffer);
-//     HAL_Kv_Get("BindState", buffer, &buffer_len);
-
-//     cJSON *item = cJSON_CreateNumber(buffer[0]);
-//     return item;
-// }
-
 static set_attr_t g_ota_set_attr[] = {
     {
         cloud_key : "OTAState",
@@ -75,11 +65,6 @@ static set_attr_t g_ota_set_attr[] = {
         cb : OTANewVersion_cb,
         value : {p : NewVersion}
     },
-    // {
-    //     cloud_key : "APPBind",
-    //     fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-    //     cb : APPBind_cb,
-    // },
 };
 static const int attr_len = sizeof(g_ota_set_attr) / sizeof(g_ota_set_attr[0]);
 static set_attr_t *attr = g_ota_set_attr;
@@ -141,23 +126,9 @@ static void ota_progress_cb(int precent)
     send_event_uds(root,NULL);
 }
 
-// static int APP_bind_event()
-// {
-//     dzlog_info("APP_bind_event");
-//     cJSON *root = cJSON_CreateObject();
-//     set_attr_report_uds(root, &g_ota_set_attr[4]);
-
-//     return send_event_uds(root,NULL);
-// }
 int ota_task_init(void)
 {
-    // register_bind_cb(APP_bind_event);
     register_ota_state_cb(ota_state_event);
     register_dm_fota_download_percent_cb(ota_progress_cb);
-    linkkit_func_init();
     return 0;
-}
-void ota_task_deinit(void)
-{
-    linkkit_func_deinit();
 }
