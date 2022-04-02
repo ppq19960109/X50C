@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "1.0.4"
+#define SOFTER_VER "1.0.6"
 
 #define UART_CMD_MULTISTAGE_SET (76)
 #define UART_CMD_MULTISTAGE_STATE (77)
@@ -91,5 +91,5 @@ cloud_dev_t *get_cloud_dev(void);
 // unsigned char get_BuzControl(void);
 unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
-
+signed char get_HoodSpeed(void);
 #endif

@@ -5,8 +5,15 @@
 #include "uart_resend.h"
 #include "uart_task.h"
 
+enum msg_get_time_t
+{
+    MSG_GET_SHORT_TIME = 3 * 5,
+    MSG_GET_LONG_TIME = 3 * 30 * 5,
+    MSG_HEART_TIME = 15 * 5,
+};
+
 static unsigned short ecb_seq_id = 0;
-static int ecb_get_count = 0;
+static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
 
 static int fd = 0;
@@ -112,13 +119,15 @@ int ecb_uart_resend_cb(const unsigned char *in, int in_len)
     return ecb_uart_send(in, in_len, 0, 0);
 }
 
-int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend)
+int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id)
 {
     int index = 0;
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     send_msg[index++] = 0xe6;
     send_msg[index++] = 0xe6;
-    unsigned short seq_id = ecb_seq_id++;
+    if (seq_id < 0)
+        seq_id = ecb_seq_id++;
+
     send_msg[index++] = seq_id >> 8;
     send_msg[index++] = seq_id & 0xff;
     send_msg[index++] = command;
@@ -143,8 +152,6 @@ static int ecb_recv_cb(void *arg)
     int uart_read_len;
     static int uart_read_buf_index = 0;
 
-    ecb_get_count = 0;
-
     uart_read_len = read(fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf) - uart_read_buf_index);
     if (uart_read_len > 0)
     {
@@ -165,32 +172,35 @@ static int ecb_except_cb(void *arg)
 
 static int ecb_timeout_cb(void)
 {
-    static int ecb_get_timeout = 0;
-    static unsigned char boot_flag = 1;
-
     resend_list_each(&ECB_LIST_RESEND);
 
-    unsigned char disconnect_count = ecb_disconnect_count();
-    if (boot_flag > 0 && disconnect_count == 0)
+    static int ecb_msg_get_timeout = MSG_GET_SHORT_TIME;
+
+    int msg_get_status = ecb_uart_msg_get(false);
+
+    if (ecb_msg_get_timeout == MSG_GET_SHORT_TIME && ECB_UART_CONNECTED == msg_get_status)
     {
-        boot_flag = 0;
+        ecb_msg_get_timeout = MSG_GET_LONG_TIME;
+    }
+    else if (ecb_msg_get_timeout == MSG_GET_LONG_TIME && ECB_UART_DISCONNECT == msg_get_status)
+    {
+        ecb_msg_get_timeout = MSG_GET_SHORT_TIME;
     }
 
-    if (boot_flag == 0 && disconnect_count < ECB_DISCONNECT_COUNT)
+    if (++ecb_msg_get_count > ecb_msg_get_timeout)
     {
-        ecb_get_timeout = 3 * 60 * 5;
+        ecb_msg_get_count = 0;
+        ecb_uart_msg_get(true);
+        dzlog_warn("ecb_uart_msg_get\n");
     }
-    else
+    if (ecb_uart_heart_timeout(false) < MSG_HEART_TIME)
     {
-        ecb_get_timeout = 3 * 5;
+        if (ecb_uart_heart_timeout(true) == MSG_HEART_TIME)
+        {
+            send_error_to_cloud(POWER_BOARD_ERROR_CODE);
+        }
     }
-    if (++ecb_get_count > ecb_get_timeout)
-    {
-        ecb_get_count = 0;
-        ecb_uart_msg_get();
-        dzlog_warn("select timeout:ecb_uart_msg_get\n");
-    }
-    // dzlog_warn("select timeout:%ld\n", timeout.tv_usec);
+
     return 0;
 }
 
@@ -200,11 +210,11 @@ void ecb_uart_deinit(void)
     pthread_mutex_destroy(&lock);
 }
 /*********************************************************************************
-  *Function:  ecb_uart_init
-  *Description： ecb任务函数
-  *Input:  
-  *Return:
-**********************************************************************************/
+ *Function:  ecb_uart_init
+ *Description： ecb任务函数
+ *Input:
+ *Return:
+ **********************************************************************************/
 void ecb_uart_init(void)
 {
     fd = uart_init("/dev/ttyS0", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
@@ -223,5 +233,5 @@ void ecb_uart_init(void)
     select_client_event.except_cb = ecb_except_cb;
 
     add_select_client_uart(&select_client_event);
-    ecb_uart_msg_get();
+    ecb_uart_msg_get(true);
 }

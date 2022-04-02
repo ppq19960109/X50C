@@ -7,20 +7,16 @@
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
 
-static int get_ack_count = 0;
+static int msg_get_timeout_count = 0;
+static int ecb_heart_count = 0;
 
-int ecb_disconnect_count(void)
-{
-    return get_ack_count;
-}
-
-static void ecb_send_error_cloud(int error_code)
+void send_error_to_cloud(int error_code)
 {
     unsigned char payload[8] = {0};
     int index = 0, code = 0;
     if (error_code > 0)
         code = 1 << (error_code - 1);
-        
+
     payload[index++] = 0x0a;
     payload[index++] = code >> 24;
     payload[index++] = code >> 16;
@@ -31,24 +27,48 @@ static void ecb_send_error_cloud(int error_code)
     send_data_to_cloud(payload, index);
 }
 
-int ecb_uart_msg_get(void)
+int ecb_uart_msg_get(bool increase)
 {
-    if (get_ack_count <= ECB_DISCONNECT_COUNT)
-        ++get_ack_count;
-    if (get_ack_count == ECB_DISCONNECT_COUNT)
+    if (increase)
     {
-        ecb_send_error_cloud(9);
+        if (msg_get_timeout_count <= ECB_UART_DISCONNECT_COUNT)
+            ++msg_get_timeout_count;
+        if (msg_get_timeout_count == ECB_UART_DISCONNECT_COUNT)
+        {
+            // send_error_to_cloud(POWER_BOARD_ERROR_CODE);
+        }
+        return ecb_uart_send_msg(ECB_UART_COMMAND_GET, NULL, 0, 0, -1);
     }
-    return ecb_uart_send_msg(ECB_UART_COMMAND_GET, NULL, 0, 0);
+    else
+    {
+        if (msg_get_timeout_count >= ECB_UART_DISCONNECT_COUNT)
+            return ECB_UART_DISCONNECT;
+        else if (msg_get_timeout_count == 0)
+        {
+            return ECB_UART_CONNECTED;
+        }
+        return ECB_UART_CONNECTINT;
+    }
+}
+int ecb_uart_heart_timeout(bool increase)
+{
+    if (increase)
+        return ++ecb_heart_count;
+    else
+        return ecb_heart_count;
 }
 
 int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len)
 {
-    return ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1);
+    return ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
 }
-int ecb_uart_send_nak(unsigned char error_code)
+int ecb_uart_send_ack(int seq_id)
 {
-    return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0);
+    return ecb_uart_send_msg(ECB_UART_COMMAND_ACK, NULL, 0, 0, seq_id);
+}
+int ecb_uart_send_nak(unsigned char error_code, int seq_id)
+{
+    return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0, seq_id);
 }
 
 int ecb_uart_send_factory(ft_ret_t ret)
@@ -56,7 +76,7 @@ int ecb_uart_send_factory(ft_ret_t ret)
     unsigned char send[2] = {0};
     send[0] = UART_STORE_FT_RESULT;
     send[1] = ret;
-    return ecb_uart_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send), 1);
+    return ecb_uart_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send), 1, -1);
 }
 
 void keypress_local_pro(unsigned char value)
@@ -156,7 +176,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     int data_len = in[index + msg_index] * 256 + in[index + msg_index + 1];
     if (data_len > 512)
     {
-        *end = index + 2;
+        *end = index + 1;
         dzlog_error("input data len error");
         return ECB_UART_READ_LEN_ERR;
     }
@@ -167,7 +187,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     {
         if (in[in_len - 1] == 0x6e && in[in_len - 2] == 0x6e)
         {
-            *end = index + 2;
+            *end = index + 1;
             dzlog_error("input data len error2");
             return ECB_UART_READ_LEN_ERR;
         }
@@ -182,7 +202,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     {
         *end = index + msg_index + 2 + 2;
         dzlog_error("no tailer was detected");
-        ecb_uart_send_nak(ECB_NAK_TAILER);
+        ecb_uart_send_nak(ECB_NAK_TAILER, seq_id);
         return ECB_UART_READ_TAILER_ERR;
     }
     unsigned short crc16 = CRC16_MAXIM(&in[index + 2], msg_index - 2);
@@ -195,7 +215,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (crc16 != check_sum)
     {
         dzlog_error("data check error");
-        // ecb_uart_send_nak(ECB_NAK_CHECKSUM);
+        // ecb_uart_send_nak(ECB_NAK_CHECKSUM,seq_id);
         // return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
@@ -203,7 +223,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     hdzlog_info((unsigned char *)payload, data_len);
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {
-        ecb_uart_send_msg(ECB_UART_COMMAND_ACK, NULL, 0, 0);
+        ecb_uart_send_ack(seq_id);
         if (command == ECB_UART_COMMAND_EVENT)
         {
             send_data_to_cloud(payload, data_len);
@@ -223,9 +243,14 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         {
         }
     }
+    else if (command == ECB_UART_COMMAND_HEART)
+    {
+        ecb_heart_count = 0;
+        ecb_uart_send_ack(seq_id);
+    }
     else if (command == ECB_UART_COMMAND_GETACK)
     {
-        get_ack_count = 0;
+        msg_get_timeout_count = 0;
         // ecb_resend_list_del_by_id(seq_id);
         send_data_to_cloud(payload, data_len);
     }
@@ -235,7 +260,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else
     {
-        ecb_uart_send_nak(ECB_NAK_COMMAND_UNKNOWN);
+        ecb_uart_send_nak(ECB_NAK_COMMAND_UNKNOWN, seq_id);
     }
 
     return ECB_UART_READ_VALID;
@@ -243,14 +268,15 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
 
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *))
 {
-    int index = 0;
+    int index = 0, end;
     int msg_len = *in_len;
     ecb_uart_read_status_t status;
     for (;;)
     {
-        dzlog_info("index:%d,msg_len:%d", index, msg_len);
-        status = func(&in[index], msg_len, &index);
-        msg_len -= index;
+        dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
+        status = func(&in[index], msg_len, &end);
+        msg_len -= end;
+        index += end;
 
         if (status == ECB_UART_READ_VALID || status == ECB_UART_READ_CHECK_ERR || status == ECB_UART_READ_TAILER_ERR || status == ECB_UART_READ_LEN_ERR)
         {
@@ -273,14 +299,14 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
             break;
         }
     }
-    index = *in_len - msg_len;
+    // index = *in_len - msg_len;
 
-    dzlog_info("last move index:%d,msg_len:%d", index, msg_len);
+    // dzlog_info("last move index:%d,msg_len:%d", index, msg_len);
     if (msg_len <= 0)
     {
         msg_len = 0;
     }
-    else if (index > 0)
+    else
     {
         memmove(in, &in[index], msg_len);
     }

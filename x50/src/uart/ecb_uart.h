@@ -10,5 +10,5 @@ void ecb_uart_init(void);
 void ecb_uart_deinit(void);
 
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy);
-int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend);
+int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id);
 #endif

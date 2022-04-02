@@ -100,7 +100,7 @@ static void gesture_sync_time_and_alarm(int state, int alarm)
         time(&systemTime);
 
         dzlog_info("gesture sync time:%ld\n", systemTime);
-        if (systemTime < 1640966400) //2022-01-01 00:00:00
+        if (systemTime < 1640966400) // 2022-01-01 00:00:00
         {
             gesture_send_msg(0, 1, 0xff, 0xff, alarm);
         }
@@ -227,15 +227,23 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
             gesture_recv_error = 0;
         }
 
-        if (data1 & (1 << 4)) //右挥标志位
+        if (data1 & (1 << 5)) //右挥标志位
         {
-            msg[msg_len++] = 0xfa;
-            msg[msg_len++] = 0x01;
+            char speed = get_HoodSpeed();
+            if (speed >= 0 && speed < 3)
+            {
+                msg[msg_len++] = 0x31;
+                msg[msg_len++] = ++speed;
+            }
         }
-        else if (data1 & (1 << 5)) //左挥标志位
+        else if (data1 & (1 << 4)) //左挥标志位
         {
-            msg[msg_len++] = 0xfa;
-            msg[msg_len++] = 0x02;
+            char speed = get_HoodSpeed();
+            if (speed > 0)
+            {
+                msg[msg_len++] = 0x31;
+                msg[msg_len++] = --speed;
+            }
         }
         if (data1 & (1 << 6)) //闹钟提示标志位
         {
@@ -280,7 +288,7 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
             gesture_send_error_cloud(GESTURE_ERROR, 1);
         }
         if (msg_len > 0)
-            ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1);
+            ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
         // hour = in[index + 6];
         // minute = in[index + 7];
     }
@@ -332,7 +340,7 @@ static void gesture_link_timestamp_cb(const char *timestamp)
 {
     time_t time;
     unsigned long long int val = 0;
-    if (stoull(timestamp, 10, &val) == NULL)
+    if (stoull(timestamp, 10, &val) == NULL) // strtoull
         return;
     time = val / 1000;
     dzlog_warn("gesture_link_timestamp_cb:%lld,%ld", val, time);
@@ -348,13 +356,13 @@ void gesture_uart_deinit(void)
     close(fd);
     pthread_mutex_destroy(&lock);
 }
-//ntpdate pool.ntp.org
+// ntpdate pool.ntp.org
 /*********************************************************************************
-  *Function:  uart_ecb_task
-  *Description： 手势任务函数，接收手势控制板的数据并处理
-  *Input:  
-  *Return:
-**********************************************************************************/
+ *Function:  uart_ecb_task
+ *Description： 手势任务函数，接收手势控制板的数据并处理
+ *Input:
+ *Return:
+ **********************************************************************************/
 void gesture_uart_init(void)
 {
     fd = uart_init("/dev/ttyS3", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_BLOCK);

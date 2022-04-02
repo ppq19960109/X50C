@@ -286,6 +286,10 @@ void linkkit_user_post_property(const char *property_payload)
     int res = 0;
     if (property_payload == NULL)
         return;
+    if (g_user_example_ctx.cloud_connected == 0)
+        return;
+    if (get_ota_state() == OTA_DOWNLOAD_START)
+        return;
     EXAMPLE_TRACE("user_post_property:%s", property_payload);
 
     res = IOT_Linkkit_Report(EXAMPLE_MASTER_DEVID, ITM_MSG_POST_PROPERTY,
@@ -298,6 +302,10 @@ void linkkit_user_post_event(char *event_id, char *event_payload)
 {
     int res = 0;
     if (event_id == NULL)
+        return;
+    if (g_user_example_ctx.cloud_connected == 0)
+        return;
+    if (get_ota_state() == OTA_DOWNLOAD_START)
         return;
     EXAMPLE_TRACE("Post Event %s,%s", event_id, event_payload);
 

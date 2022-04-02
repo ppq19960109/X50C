@@ -14,7 +14,7 @@ static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 
-int cJSON_Object_isNull(cJSON *object) //cJSON判断Object是否为空
+int cJSON_Object_isNull(cJSON *object) // cJSON判断Object是否为空
 {
     char *json = cJSON_PrintUnformatted(object);
     if (strlen(json) == 2 && strcmp(json, "{}") == 0)
@@ -102,14 +102,39 @@ cloud_attr_t *get_attr_ptr(const char *name)
     }
     return NULL;
 }
+
+signed char get_HoodSpeed(void)
+{
+    cloud_attr_t *attr = get_attr_ptr("HoodSpeed");
+    if (attr == NULL)
+    {
+        return -1;
+    }
+    return *(attr->value);
+}
+// #define SOFT_TEST
+#ifdef SOFT_TEST
+static char *cloud_set_json = NULL;
+#endif
 static void POSIXTimer_cb(union sigval val)
 {
+#ifndef SOFT_TEST
+    // if (val.sival_int == 0)
+    // {
     cloud_attr_t *attr = get_attr_ptr("CookbookName");
     if (attr == NULL)
         return;
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddStringToObject(resp, "CookbookName", attr->value);
     report_msg_all_platform(resp);
+    // }
+#else
+    if (cloud_set_json == NULL)
+        return;
+    linkkit_user_post_property(cloud_set_json);
+    cJSON_free(cloud_set_json);
+    cloud_set_json = NULL;
+#endif
 }
 
 int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回调函数，并拼包
@@ -389,7 +414,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             if (strcmp(ptr->cloud_key, "CookbookName") == 0)
             {
                 strcpy(ptr->value, item->valuestring);
-                POSIXTimerSet(cook_name_timer, 0, 1);
+                // POSIXTimerSet(cook_name_timer, 0, 1);
                 return 0;
             }
             memcpy(&out[1], item->valuestring, strlen(item->valuestring));
@@ -434,9 +459,17 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
                         }
                     }
                     memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
-                    dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
-                    hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                    // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                    // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
                     get_attr_report_value(root, &attr[j]);
+                    if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
+                    {
+                        cloud_attr_t *ptr = get_attr_ptr("CookbookName");
+                        if (ptr != NULL)
+                        {
+                            get_attr_report_value(root, ptr);
+                        }
+                    }
                     i += attr[j].uart_byte_len;
                     break;
                 }
@@ -542,8 +575,13 @@ static int recv_data_from_cloud(const int devid, const char *value, const int va
         return -1;
     }
     cloud_resp_set(root, NULL);
-
+#ifndef SOFT_TEST
     cJSON_Delete(root);
+#else
+    cloud_set_json = cJSON_PrintUnformatted(root);
+    POSIXTimerSet(cook_name_timer, 0, 1);
+    send_event_uds(root, NULL);
+#endif
     return 0;
 }
 int save_device_secret(const char *device_secret)

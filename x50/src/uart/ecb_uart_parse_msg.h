@@ -2,7 +2,7 @@
 #define _ECB_UART_PARSE_H_
 
 #define ECB_MSG_MIN_LEN (11)
-
+#include <stdbool.h>
 typedef enum
 {
     ECB_UART_READ_VALID = 0,
@@ -20,6 +20,7 @@ typedef enum
     ECB_UART_COMMAND_EVENT,
     ECB_UART_COMMAND_KEYPRESS,
     ECB_UART_COMMAND_STORE,
+    ECB_UART_COMMAND_HEART = 0X0C,
     ECB_UART_COMMAND_GETACK = 0X0d,
     ECB_UART_COMMAND_ACK,
     ECB_UART_COMMAND_NAK,
@@ -83,15 +84,30 @@ typedef enum
     UART_STORE_CMD_SRC,          /* 指令来源 */
 } ecb_uart_store_type_t;
 
+enum uart_error_code_t
+{
+    POWER_BOARD_ERROR_CODE = 9,
+    COMMUNICATION_BOARD_ERROR_CODE = 11,
+};
+
+enum ecb_uart_status_t
+{
+    ECB_UART_CONNECTED = 0,
+    ECB_UART_CONNECTINT,
+    ECB_UART_DISCONNECT,
+
+    ECB_UART_DISCONNECT_COUNT = 4,
+};
+
 #define WIFI_TEST_SSID "moduletest" /* 厂测SSID */
 #define WIFI_TEST_PASSWD "58185818" /* 厂测PSK */
 
-#define ECB_DISCONNECT_COUNT (5)
-int ecb_disconnect_count(void);
+int ecb_uart_heart_timeout(bool increase);
+int ecb_uart_msg_get(bool increase);
 
-int ecb_uart_msg_get(void);
 int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len);
 int ecb_uart_send_factory(ft_ret_t ret);
+void send_error_to_cloud(int error_code);
 
 int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *));

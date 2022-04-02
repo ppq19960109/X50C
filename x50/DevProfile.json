@@ -104,17 +104,17 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "RStoveTimingOpera",
-            "valueType": 0,
-            "funType": 2,
-            "uartCmd": 22,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "RStoveTimingSet",
             "valueType": 0,
             "funType": 0,
             "uartCmd": 23,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStoveTimingOpera",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 22,
             "uartByteLen": 1
         },
         {
@@ -142,7 +142,7 @@
             "cloudKey": "HoodOffLeftTime",
             "valueType": 0,
             "funType": 1,
-            "uartCmd": 51,
+            "uartCmd": 52,
             "uartByteLen": 1
         },
         {
@@ -344,13 +344,6 @@
             "uartByteLen": 2
         },
         {
-            "cloudKey": "RStOvOperation",
-            "valueType": 0,
-            "funType": 2,
-            "uartCmd": 81,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "RStOvDoorState",
             "valueType": 0,
             "funType": 1,
@@ -362,6 +355,20 @@
             "valueType": 0,
             "funType": 1,
             "uartCmd": 90,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvMode",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 91,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvOperation",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 81,
             "uartByteLen": 1
         },
         {
@@ -381,7 +388,7 @@
         {
             "cloudKey": "CookbookName",
             "valueType": 2,
-            "funType": 2,
+            "funType": 0,
             "uartCmd": 0,
             "uartByteLen": 64
         }

@@ -2,7 +2,7 @@
     "RecipesVersion": "1.1",
     "recipes": [
         {
-            "seqid": 0,
+            "seqid": 100,
             "dishName": "蒜蓉粉丝娃娃菜",
             "imgUrl": "recipes/Vegetables/蒜蓉粉丝娃娃菜.png",
             "cookSteps": "[{\"device\":0,\"number\":1,\"mode\":2,\"temp\":120,\"time\":8}]",
