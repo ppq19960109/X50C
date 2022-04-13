@@ -200,11 +200,11 @@ static int wiFiReport(int event)
 
 static int wiFiCallback(int event)
 {
-    // if (event == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
-    // {
-    //     // wiFiReport(RK_WIFI_State_CONNECTFAILED);
-    //     return -1;
-    // }
+    if (event == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
+    {
+        // wiFiReport(RK_WIFI_State_CONNECTFAILED);
+        return -1;
+    }
 
     return wiFiReport(event);
 }

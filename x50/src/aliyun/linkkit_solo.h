@@ -1,6 +1,6 @@
 #ifndef __LINKKIT_SOLO_H_
 #define __LINKKIT_SOLO_H_
-
+#include "infra_config.h"
 #define EXAMPLE_MASTER_DEVID (0)
 #define EXAMPLE_YIELD_TIMEOUT_MS (200)
 
@@ -27,7 +27,10 @@ void register_connected_cb(void (*cb)(int));
 void register_dynreg_device_secret_cb(int (*cb)(const char *));
 void register_link_timestamp_cb(void (*cb)(const char *));
 void register_fota_event_handler_cb(void (*cb)(char*));
-
+#ifdef DEV_BIND_ENABLED
+void register_token_state_cb(void (*cb)(int));
+int get_token_state(void);
+#endif
 int linkkit_init(const char *product_key, const char *product_secret, const char *device_name, const char *device_secret, const char *version);
 void linkkit_close(void);
 

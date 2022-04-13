@@ -1,13 +1,12 @@
 /*
  * Copyright (C) 2015-2018 Alibaba Group Holding Limited
  */
-#include "infra_config.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include "infra_config.h"
 #include "infra_state.h"
 #include "infra_types.h"
 #include "infra_defs.h"
@@ -18,7 +17,7 @@
 #include "dev_model_api.h"
 #include "wrappers.h"
 #include "cJSON.h"
-
+#include "bind_api.h"
 #ifdef ATM_ENABLED
 #include "at_api.h"
 #endif
@@ -35,6 +34,7 @@ typedef struct
     int cloud_connected;
     int master_initialized;
     int linkkit_runing;
+    int token_state;
 } user_example_ctx_t;
 
 static user_example_ctx_t g_user_example_ctx;
@@ -229,16 +229,45 @@ static int user_cota_event_handler(int type, const char *config_id, int config_s
 }
 
 #ifdef DEV_BIND_ENABLED
+
 static int user_dev_bind_handler(const char *detail)
 {
     EXAMPLE_TRACE("get bind event:%s", detail);
     return 0;
 }
-
+void (*token_state_cb)(int);
+void register_token_state_cb(void (*cb)(int))
+{
+    token_state_cb = cb;
+}
+int get_token_state(void)
+{
+    return g_user_example_ctx.token_state;
+}
 static int user_state_dev_bind(int ev, const char *msg)
 {
+    // EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
+    // EXAMPLE_TRACE("state: 0x%04X(%s)", ev, msg);
     switch (ev)
     {
+    case STATE_BIND_REPORT_TOKEN:
+        EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
+        EXAMPLE_TRACE("STATE_BIND_REPORT_TOKEN\n");
+        if (token_state_cb != NULL)
+            token_state_cb(0);
+        g_user_example_ctx.token_state = 0;
+        break;
+    case STATE_BIND_REPORT_TOKEN_SUCCESS:
+        EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
+        EXAMPLE_TRACE("STATE_BIND_REPORT_TOKEN_SUCCESS\n");
+        if (token_state_cb != NULL)
+            token_state_cb(1);
+        g_user_example_ctx.token_state = 1;
+        break;
+    case STATE_BIND_RECV_TOKEN_QUERY:
+        EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
+        EXAMPLE_TRACE("STATE_BIND_RECV_TOKEN_QUERY\n");
+        break;
     case STATE_BIND_ASSEMBLE_APP_TOKEN_FAILED:
         EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
         EXAMPLE_TRACE("STATE_BIND_ASSEMBLE_APP_TOKEN_FAILED\n");
@@ -246,6 +275,9 @@ static int user_state_dev_bind(int ev, const char *msg)
     case STATE_BIND_TOKEN_EXPIRED:
         EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
         EXAMPLE_TRACE("STATE_BIND_TOKEN_EXPIRED\n");
+        if (token_state_cb != NULL)
+            token_state_cb(2);
+        g_user_example_ctx.token_state = 2;
         break;
     case STATE_BIND_REPORT_RESET_SUCCESS:
         EXAMPLE_TRACE("state: -0x%04X(%s)", -ev, msg);
@@ -290,7 +322,7 @@ void linkkit_user_post_property(const char *property_payload)
         return;
     if (get_ota_state() == OTA_DOWNLOAD_START)
         return;
-    EXAMPLE_TRACE("user_post_property:%s", property_payload);
+    EXAMPLE_TRACE("user_post_property:%.*s,%d", strlen(property_payload), property_payload, strlen(property_payload));
 
     res = IOT_Linkkit_Report(EXAMPLE_MASTER_DEVID, ITM_MSG_POST_PROPERTY,
                              (unsigned char *)property_payload, strlen(property_payload));
@@ -307,18 +339,16 @@ void linkkit_user_post_event(char *event_id, char *event_payload)
         return;
     if (get_ota_state() == OTA_DOWNLOAD_START)
         return;
-    EXAMPLE_TRACE("Post Event %s,%s", event_id, event_payload);
 
-    if (event_payload != NULL)
+    if (event_payload == NULL)
     {
-        res = IOT_Linkkit_TriggerEvent(EXAMPLE_MASTER_DEVID, event_id, strlen(event_id),
-                                       event_payload, strlen(event_payload));
+        event_payload = "{}";
     }
-    else
-    {
-        res = IOT_Linkkit_TriggerEvent(EXAMPLE_MASTER_DEVID, event_id, strlen(event_id),
-                                       "{}", strlen("{}"));
-    }
+
+    res = IOT_Linkkit_TriggerEvent(EXAMPLE_MASTER_DEVID, event_id, strlen(event_id),
+                                   event_payload, strlen(event_payload));
+
+    EXAMPLE_TRACE("Post Event %s,%s", event_id, event_payload);
     EXAMPLE_TRACE("Post Event Message ID: %d", res);
 }
 

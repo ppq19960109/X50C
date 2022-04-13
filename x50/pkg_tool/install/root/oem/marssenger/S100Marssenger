@@ -18,8 +18,9 @@ start() {
 
 stop() {
     echo "Stopping marssenger: "
-    killall $DAEMON_APP_NAME $SERVER_APP_NAME $UI_APP_NAME
-
+    killall $DAEMON_APP_NAME
+    killall $SERVER_APP_NAME 
+    killall $UI_APP_NAME
     [ $? = 0 ] && echo "OK" || echo "FAIL"
 }
 

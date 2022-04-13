@@ -1,8 +1,8 @@
 #include "history.h"
 #include <cstring>
 
-static int (*history_select_cb)(history_t *history, void *arg);
-void register_history_select_cb(int (*cb)(history_t *history, void *arg))
+static int (*history_select_cb)(history_t *history, void *arg, int simple);
+void register_history_select_cb(int (*cb)(history_t *history, void *arg, int simple))
 {
     history_select_cb = cb;
 }
@@ -34,12 +34,12 @@ void CookHistory::sortHistory()
     historyList.sort();
 }
 
-void CookHistory::selectHistory(void *arg)
+void CookHistory::selectHistory(void *arg, int simple)
 {
     list<recipes_t>::iterator iter;
     for (iter = historyList.begin(); iter != historyList.end(); ++iter)
     {
-        history_select_cb(&iter->history, arg);
+        history_select_cb(&iter->history, arg, simple);
     }
 }
 

@@ -27,7 +27,7 @@ void wrapper_reportUpdateHistory(history_t *history)
     cookHistory.reportUpdateHistory(history);
 }
 
-void wrapper_selectHistory(void *arg)
+void wrapper_selectHistory(void *arg, int simple)
 {
-    cookHistory.selectHistory(arg);
+    cookHistory.selectHistory(arg, simple);
 }

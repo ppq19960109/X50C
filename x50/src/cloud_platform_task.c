@@ -119,6 +119,7 @@ static char *cloud_set_json = NULL;
 static void POSIXTimer_cb(union sigval val)
 {
 #ifndef SOFT_TEST
+
     // if (val.sival_int == 0)
     // {
     cloud_attr_t *attr = get_attr_ptr("CookbookName");
@@ -173,6 +174,46 @@ int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) //调用相关
     return 0;
 }
 
+static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int event_all)
+{
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || strlen(ptr->cloud_key) == 0)
+    {
+        return -1;
+    }
+    else if (LINK_VALUE_TYPE_NUM != ptr->cloud_value_type)
+    {
+        return -1;
+    }
+    // dzlog_warn("get_attr_report_event:%s", ptr->cloud_key);
+    if (strcmp("LStOvState", ptr->cloud_key) == 0)
+    {
+        if (*value == 4 && (*ptr->value != *value || event_all > 0))
+        {
+            linkkit_user_post_event("LCookPush", NULL);
+        }
+    }
+    else if (strcmp("RStOvState", ptr->cloud_key) == 0)
+    {
+        if (*value == 4 && (*ptr->value != *value || event_all > 0))
+        {
+            linkkit_user_post_event("RCookPush", NULL);
+        }
+    }
+    else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
+    {
+        if (*ptr->value != *value || event_all > 0)
+        {
+            cJSON *resp = cJSON_CreateObject();
+            cJSON_AddNumberToObject(resp, "FaultCode", *value);
+            char *json = cJSON_PrintUnformatted(resp);
+            linkkit_user_post_event("ErrorPush", json);
+            cJSON_free(json);
+            cJSON_Delete(resp);
+        }
+    }
+    return 0;
+}
+
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
     if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || strlen(ptr->cloud_key) == 0)
@@ -214,30 +255,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
-            if (strcmp("LStOvState", ptr->cloud_key) == 0)
-            {
-                if (cloud_val == 4)
-                {
-                    linkkit_user_post_event("LCookPush", NULL);
-                }
-            }
-            else if (strcmp("RStOvState", ptr->cloud_key) == 0)
-            {
-                if (cloud_val == 4)
-                {
-                    linkkit_user_post_event("RCookPush", NULL);
-                }
-            }
-            else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
-            {
-                cJSON *resp = cJSON_CreateObject();
-                cJSON_AddNumberToObject(resp, "FaultCode", cloud_val);
-                char *json = cJSON_PrintUnformatted(resp);
-                linkkit_user_post_event("ErrorPush", json);
-                cJSON_free(json);
-                cJSON_Delete(resp);
-            }
-            else if (strcmp(ptr->cloud_key, "CookbookID") == 0)
+            if (strcmp(ptr->cloud_key, "CookbookID") == 0)
             {
                 if (cloud_val > 0)
                 {
@@ -450,14 +468,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
             {
                 if (value[i] == attr[j].uart_cmd)
                 {
-                    if (strcmp("ErrorCodeShow", attr[j].cloud_key) == 0)
-                    {
-                        if (*attr[j].value == value[i + 1])
-                        {
-                            dzlog_debug("ErrorCodeShow repeat....");
-                            continue;
-                        }
-                    }
+                    get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
                     memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
                     // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
                     // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
@@ -486,20 +497,23 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     dzlog_info("send_all_to_cloud");
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
+    char *json = NULL;
 
     cJSON *root = cJSON_CreateObject();
 
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
+        get_attr_report_event(&attr[i], attr[i].value, 1);
         get_attr_report_value(root, &attr[i]);
     }
-    char *json = cJSON_PrintUnformatted(root);
+    json = cJSON_PrintUnformatted(root);
     linkkit_user_post_property(json);
     cJSON_free(json);
     cJSON_Delete(root);
 
+    json = NULL;
     root = cJSON_CreateObject();
-    cJSON_AddNullToObject(root, "CookHistory");
+    cJSON_AddNullToObject(root, "CookHistorySimple");
     cJSON *resp_db = cJSON_CreateObject();
     database_resp_get(root, resp_db);
 
@@ -508,6 +522,7 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     cJSON_free(json);
     cJSON_Delete(root);
     cJSON_Delete(resp_db);
+
     return 0;
 }
 

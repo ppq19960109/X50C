@@ -213,6 +213,7 @@ static int uds_recv(char *data, unsigned int len) //uds接受回调函数，初�
 int uds_protocol_init(void) //uds协议相关初始化
 {
     pthread_mutex_init(&mutex, NULL);
+    device_task_init();
     wifi_task_init();
     ota_task_init();
     database_init();

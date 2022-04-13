@@ -91,22 +91,24 @@ fail:
     return -1;
 }
 
-static int wrapper_histroy_select_cb(history_t *recipe, void *arg)
+static int wrapper_histroy_select_cb(history_t *recipe, void *arg, int simple)
 {
     cJSON *root = (cJSON *)arg;
     cJSON *item = cJSON_CreateObject();
     cJSON_AddNumberToObject(item, "id", recipe->id);
     cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
     cJSON_AddStringToObject(item, "dishName", recipe->dishName);
-    cJSON_AddStringToObject(item, "imgUrl", recipe->imgUrl);
     cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
-    cJSON_AddStringToObject(item, "details", recipe->details);
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "cookType", recipe->cookType);
     cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
     cJSON_AddNumberToObject(item, "cookPos", recipe->cookPos);
-
+    if (simple == 0)
+    {
+        cJSON_AddStringToObject(item, "imgUrl", recipe->imgUrl);
+        cJSON_AddStringToObject(item, "details", recipe->details);
+    }
     cJSON_AddItemToArray(root, item);
     return 0;
 }
@@ -196,8 +198,19 @@ static void *CookRecipe_cb(void *ptr, void *arg)
 static void *CookHistory_cb(void *ptr, void *arg)
 {
     cJSON *item = cJSON_CreateArray();
-    wrapper_selectHistory(item);
+    wrapper_selectHistory(item, 0);
     return item;
+}
+
+static void *CookHistorySimple_cb(void *ptr, void *arg)
+{
+    cJSON *item = cJSON_CreateArray();
+    wrapper_selectHistory(item, 1);
+    char *json = cJSON_PrintUnformatted(item);
+    cJSON *itemStr =cJSON_CreateString(json);
+    free(json);
+    cJSON_Delete(item);
+    return itemStr;
 }
 
 static void *UpdateRecipe_cb(void *ptr, void *arg)
@@ -268,6 +281,11 @@ static set_attr_t g_database_set_attr[] = {
         cloud_key : "CookHistory",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : CookHistory_cb
+    },
+    {
+        cloud_key : "CookHistorySimple",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : CookHistorySimple_cb
     },
     {
         cloud_key : "UpdateRecipe",
@@ -380,15 +398,16 @@ void cook_history(cJSON *root)
         cJSON_AddNumberToObject(cookStep, "number", 0);
         sprintf(recipe.dishName, "%s-%d℃-%d分钟", leftWorkModeFun(LStOvMode->valueint), LStOvSetTemp->valueint, LStOvSetTimer->valueint);
     }
-    else if (cJSON_HasObjectItem(root, "RStOvSetTimer") && cJSON_HasObjectItem(root, "RStOvSetTemp"))
+    else if (cJSON_HasObjectItem(root, "RStOvMode") && cJSON_HasObjectItem(root, "RStOvSetTimer") && cJSON_HasObjectItem(root, "RStOvSetTemp"))
     {
         recipe.cookPos = 1;
         cJSON *cookStep = cJSON_CreateObject();
         cJSON_AddItemToArray(cookSteps, cookStep);
 
+        cJSON *RStOvMode = cJSON_GetObjectItem(root, "RStOvMode");
         cJSON *RStOvSetTimer = cJSON_GetObjectItem(root, "RStOvSetTimer");
         cJSON *RStOvSetTemp = cJSON_GetObjectItem(root, "RStOvSetTemp");
-        cJSON_AddNumberToObject(cookStep, "mode", 0);
+        cJSON_AddNumberToObject(cookStep, "mode", RStOvMode->valueint);
         cJSON_AddNumberToObject(cookStep, "time", RStOvSetTimer->valueint);
         cJSON_AddNumberToObject(cookStep, "temp", RStOvSetTemp->valueint);
         cJSON_AddNumberToObject(cookStep, "number", 0);

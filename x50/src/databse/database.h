@@ -16,10 +16,10 @@ extern "C"
     {
         int id;
         int seqid;
-        char dishName[64];
-        char imgUrl[64];
-        char details[1024];
-        char cookSteps[256];
+        char dishName[48];
+        char imgUrl[80];
+        char details[960];
+        char cookSteps[180];
         int timestamp;
         int collect;
         int cookType;

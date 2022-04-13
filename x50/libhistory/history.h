@@ -46,7 +46,7 @@ class CookHistory
 public:
     void clearHistory();
     void sortHistory();
-    void selectHistory(void *arg);
+    void selectHistory(void *arg, int simple);
     void reportDeleteHistory(int id);
     int compareHistoryCollect(const history_t *single);
     int getHistoryCount();

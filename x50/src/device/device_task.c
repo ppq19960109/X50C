@@ -6,6 +6,7 @@
 #include "cloud_platform_task.h"
 #include "device_task.h"
 #include "linkkit_reset.h"
+#include "linkkit_solo.h"
 #include "database_task.h"
 #include "gesture_uart.h"
 
@@ -75,6 +76,11 @@ static void *AfterSalesQrCode_cb(void *ptr, void *arg)
     char buf[256];
     sprintf(buf, "http://club.marssenger.com/hxr/download.html?pk=%s", cloud_dev->product_key);
     cJSON *item = cJSON_CreateString(buf);
+    return item;
+}
+static void *BindTokenState_cb(void *ptr, void *arg)
+{
+    cJSON *item = cJSON_CreateNumber(get_token_state());
     return item;
 }
 
@@ -157,6 +163,11 @@ static set_attr_t g_device_set_attr[] = {
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : Alarm_cb
     },
+    {
+        cloud_key : "BindTokenState",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : BindTokenState_cb
+    },
 };
 static const int attr_len = sizeof(g_device_set_attr) / sizeof(g_device_set_attr[0]);
 static set_attr_t *attr = g_device_set_attr;
@@ -192,5 +203,19 @@ int device_resp_set(cJSON *root, cJSON *resp)
             set_attr_ctrl_uds(resp, &attr[i], cJSON_GetObjectItem(root, attr[i].cloud_key));
         }
     }
+    return 0;
+}
+
+static void device_token_state_cb(int state)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "BindTokenState", state);
+
+    send_event_uds(root, NULL);
+}
+
+int device_task_init(void)
+{
+    register_token_state_cb(device_token_state_cb);
     return 0;
 }

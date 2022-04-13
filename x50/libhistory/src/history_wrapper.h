@@ -10,22 +10,22 @@ extern "C"
     {
         int id;
         int seqid;
-        char dishName[64];
-        char imgUrl[64];
-        char details[1024];
-        char cookSteps[256];
+        char dishName[48];
+        char imgUrl[80];
+        char details[960];
+        char cookSteps[180];
         int timestamp;
         int collect;
         int cookType;
         int recipeType;
         int cookPos;
     } history_t;
-    void register_history_select_cb(int (*cb)(history_t *history, void *arg));
+    void register_history_select_cb(int (*cb)(history_t *history, void *arg, int simple));
     void register_history_insert_cb(int (*cb)(history_t *history));
     void register_history_delete_cb(int (*cb)(int id));
     void register_history_update_cb(int (*cb)(history_t *history));
     void wrapper_clearHistory(void);
-    void wrapper_selectHistory(void *arg);
+    void wrapper_selectHistory(void *arg, int simple);
     void wrapper_reportDeleteHistory(int id);
     int wrapper_insertHistory(history_t *history);
     void wrapper_reportInsertHistory(history_t *history, const int sort);

@@ -96,7 +96,7 @@ int delete_row_from_table(const char *table_name, const int id)
     sqlite3_bind_int(pstmt, 1, id);
 
     sqlite3_step(pstmt);
-    sqlite3_reset(pstmt);
+    // sqlite3_reset(pstmt);
 
     sqlite3_finalize(pstmt);
     return 0;
@@ -121,7 +121,7 @@ int update_key_to_table(const char *table_name, const char *key, const int val, 
     sqlite3_bind_int(pstmt, 2, id);
 
     sqlite3_step(pstmt);
-    sqlite3_reset(pstmt);
+    // sqlite3_reset(pstmt);
 
     sqlite3_finalize(pstmt);
     return 0;
@@ -146,7 +146,7 @@ int update_key_string_table(const char *table_name, const char *key, const char 
     sqlite3_bind_int(pstmt, 2, id);
 
     sqlite3_step(pstmt);
-    sqlite3_reset(pstmt);
+    // sqlite3_reset(pstmt);
 
     sqlite3_finalize(pstmt);
     return 0;
@@ -181,7 +181,7 @@ int insert_row_to_table(const char *table_name, recipes_t *recipes)
     {
         fprintf(stderr, "%s,sqlite3_step:%s\n", __func__, sqlite3_errmsg(sqlHandle.db));
     }
-    sqlite3_reset(pstmt);
+    // sqlite3_reset(pstmt);
 
     sqlite3_finalize(pstmt);
     return 0;
@@ -212,7 +212,7 @@ int insert_replace_row_to_table(const char *table_name, recipes_t *recipes)
     sqlite3_bind_int(pstmt, 10, recipes->cookPos);
 
     sqlite3_step(pstmt);
-    sqlite3_reset(pstmt);
+    // sqlite3_reset(pstmt);
 
     sqlite3_finalize(pstmt);
     return 0;
