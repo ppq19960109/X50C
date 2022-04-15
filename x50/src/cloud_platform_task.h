@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "1.0.7"
+#define SOFTER_VER "1.0.8"
 
 #define UART_CMD_MULTISTAGE_SET (76)
 #define UART_CMD_MULTISTAGE_STATE (77)
@@ -86,6 +86,7 @@ int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item);
 int cloud_resp_get(cJSON *root, cJSON *resp);
 int cloud_resp_getall(cJSON *root, cJSON *resp);
 int cloud_resp_set(cJSON *root, cJSON *resp);
+int send_all_to_cloud(void);
 
 cloud_dev_t *get_cloud_dev(void);
 // unsigned char get_BuzControl(void);

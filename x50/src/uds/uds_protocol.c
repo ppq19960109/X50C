@@ -225,5 +225,6 @@ void uds_protocol_deinit(void) //uds协议相关反初始化
 {
     uds_tcp_server_task_deinit();
     database_deinit();
+    ota_task_deinit();
     pthread_mutex_destroy(&mutex);
 }

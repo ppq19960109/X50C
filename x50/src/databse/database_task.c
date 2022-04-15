@@ -8,11 +8,11 @@
 #include "database.h"
 
 #include "history_wrapper.h"
-#include "linkkit_ota.h"
+#include "link_fota_posix.h"
 
 static int g_history_seqid = 0;
 static char *leftWorkMode[] = {"未设定", "经典蒸", "高温蒸", "热风烧烤", "上下加热", "立体热风", "蒸汽烤", "空气炸", "保温烘干"};
-static int leftWorkModeNumber[] = {0, 1, 2, 35, 36, 38, 40, 42, 72};
+// static int leftWorkModeNumber[] = {0, 1, 2, 35, 36, 38, 40, 42, 72};
 
 char *leftWorkModeFun(int n)
 {
@@ -201,16 +201,13 @@ static void *CookHistory_cb(void *ptr, void *arg)
     wrapper_selectHistory(item, 0);
     return item;
 }
-
-static void *CookHistorySimple_cb(void *ptr, void *arg)
+void *get_link_CookHistory(void)
 {
-    cJSON *item = cJSON_CreateArray();
+    cJSON *root = cJSON_CreateObject();
+    cJSON *item = cJSON_AddArrayToObject(root, "CookHistory");
     wrapper_selectHistory(item, 1);
-    char *json = cJSON_PrintUnformatted(item);
-    cJSON *itemStr =cJSON_CreateString(json);
-    free(json);
-    cJSON_Delete(item);
-    return itemStr;
+    char *json = cJSON_PrintUnformatted(root);
+    return json;
 }
 
 static void *UpdateRecipe_cb(void *ptr, void *arg)
@@ -281,11 +278,6 @@ static set_attr_t g_database_set_attr[] = {
         cloud_key : "CookHistory",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : CookHistory_cb
-    },
-    {
-        cloud_key : "CookHistorySimple",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-        cb : CookHistorySimple_cb
     },
     {
         cloud_key : "UpdateRecipe",
@@ -452,9 +444,11 @@ int database_histroy_select_cb(void *data, void *arg)
     return 0;
 }
 
-static void databse_ota_complete_cb_cb(void)
+static void databse_ota_complete_cb(void)
 {
     databse_drop_table(RECIPE_TABLE_NAME);
+    sync();
+    reboot(RB_AUTOBOOT);
 }
 
 void database_task_reinit(void)
@@ -465,7 +459,7 @@ void database_task_reinit(void)
 
 int database_task_init(void)
 {
-    register_ota_complete_cb(databse_ota_complete_cb_cb);
+    register_ota_complete_cb(databse_ota_complete_cb);
     register_history_select_cb(wrapper_histroy_select_cb);
     register_history_insert_cb(wrapper_history_insert_cb);
     register_history_delete_cb(wrapper_history_delete_cb);

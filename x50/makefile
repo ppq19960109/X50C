@@ -8,14 +8,16 @@ MKDIR = mkdir -p
 
 TOPDIR = .
 
+ALI_PATH:=LinkSDK-MQTT5-CA
 SRC_DIRS := $(shell find src -maxdepth 3 -type d)
+INC_DIRS += $(shell find ${ALI_PATH} -type d \( ! -name demos \))
 
 LINKTOOL_PATH:=liblinktool
-ALI_PATH:=libalink
 # LOG_PATH:=libzlog
 HISTORY_PATH:=libhistory
 
 CFLAGS += $(addprefix -I , $(SRC_DIRS))
+CFLAGS += $(addprefix -I , $(INC_DIRS))
 CFLAGS += -I$(LINKTOOL_PATH)/include
 CFLAGS += -I$(LINKTOOL_PATH)/include/base64
 CFLAGS += -I$(LINKTOOL_PATH)/include/cJSON
@@ -32,13 +34,13 @@ CFLAGS += -g -lmcheck -DDEBUG
 endif
 
 LDFLAGS += -L$(LINKTOOL_PATH)/lib
-LDFLAGS += -L$(ALI_PATH)/lib
+LDFLAGS += -L$(ALI_PATH)
 # LDFLAGS += -L$(LOG_PATH)/lib
 LDFLAGS += -L$(HISTORY_PATH)
 LDFLAGS += -L$(TOPDIR)
 
 LIBS += -Wl,--start-group	\
-		-Wl,-Bstatic  -llinktool -liot_hal -liot_sdk -liot_tls -lzlog -lhistory \
+		-Wl,-Bstatic  -llinktool -lalisdk -lzlog -lhistory \
 		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lsqlite3	-lcurl -lDeviceIo -lasound \
 		-Wl,--end-group
 

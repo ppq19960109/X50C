@@ -1,6 +1,6 @@
 #include "main.h"
 
-#include "linkkit_reset.h"
+#include "link_reset_posix.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "uart_resend.h"
@@ -117,7 +117,7 @@ void keypress_local_pro(unsigned char value)
         break;
     case KEYPRESS_LOCAL_FT_RESET: /* 整机厂测，恢复出厂设置 */
         dzlog_info("factory test: reset test ");
-        if (0 != linkkit_unbind())
+        if (0 != link_reset_check())
         {
             dzlog_error("factory test: reset error ");
             ecb_uart_send_factory(FT_RET_ERR_RESET);

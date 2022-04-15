@@ -5,8 +5,8 @@
 
 #include "cloud_platform_task.h"
 #include "ota_task.h"
-#include "linkkit_ota.h"
-#include "linkkit_solo.h"
+#include "link_fota_posix.h"
+#include "link_solo.h"
 
 static void *OTAState_cb(void *ptr, void *arg)
 {
@@ -21,11 +21,11 @@ static void *OTARquest_cb(void *ptr, void *arg)
     cJSON *item = (cJSON *)arg;
     if (item->valueint == 0)
     {
-        request_fota_image();
+        link_query_firmware();
     }
     else
     {
-        download_fota_image();
+        link_download_firmware();
     }
     return NULL;
 }
@@ -114,21 +114,46 @@ static int ota_state_event(const int state, void *arg)
     }
     set_attr_report_uds(root, &g_ota_set_attr[0]);
 
-    return send_event_uds(root,NULL);
+    return send_event_uds(root, NULL);
 }
 
-static void ota_progress_cb(int precent)
+static void ota_progress_cb(const int precent)
 {
     dzlog_info("ota_progress_cb:%d", precent);
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, g_ota_set_attr[2].cloud_key, precent);
 
-    send_event_uds(root,NULL);
+    send_event_uds(root, NULL);
 }
-
+static timer_t g_ota_timer = NULL;
+static void POSIXTimer_cb(union sigval val)
+{
+    ota_query_timer_cb();
+}
+int ota_query_timer_start_cb(void)
+{
+    POSIXTimerSet(g_ota_timer, 0, 12);
+    return 0;
+}
+int ota_query_timer_stop_cb(void)
+{
+    POSIXTimerSet(g_ota_timer, 0, 0);
+    return 0;
+}
 int ota_task_init(void)
 {
     register_ota_state_cb(ota_state_event);
-    register_dm_fota_download_percent_cb(ota_progress_cb);
+    register_ota_progress_cb(ota_progress_cb);
+    register_ota_query_timer_start_cb(ota_query_timer_start_cb);
+    register_ota_query_timer_stop_cb(ota_query_timer_stop_cb);
+    g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     return 0;
+}
+void ota_task_deinit(void)
+{
+    if (g_ota_timer != NULL)
+    {
+        POSIXTimerDelete(g_ota_timer);
+        g_ota_timer = NULL;
+    }
 }

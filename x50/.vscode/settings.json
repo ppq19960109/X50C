@@ -120,6 +120,13 @@
         "stdbool.h": "c",
         "infra_defs.h": "c",
         "thread": "c",
-        "linkkit_ota.h": "c"
+        "linkkit_ota.h": "c",
+        "gesture_uart.h": "c",
+        "link_bind_posix.h": "c",
+        "ecb_uart_parse_msg.h": "c",
+        "link_ntp_posix.h": "c",
+        "link_solo.h": "c",
+        "link_dynregmq_posix.h": "c",
+        "link_remote_access.h": "c"
     }
 }

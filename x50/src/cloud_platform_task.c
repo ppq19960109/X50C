@@ -4,7 +4,8 @@
 #include "uds_tcp_server.h"
 #include "rkwifi.h"
 #include "ecb_uart_parse_msg.h"
-#include "linkkit_solo.h"
+#include "link_solo.h"
+#include "link_dynregmq_posix.h"
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
@@ -35,7 +36,7 @@ int report_msg_all_platform(cJSON *root)
         return -1;
     }
     char *json = cJSON_PrintUnformatted(root);
-    linkkit_user_post_property(json);
+    link_send_property_post(json);
     cJSON_free(json);
     send_event_uds(root, NULL);
     return 0;
@@ -132,7 +133,7 @@ static void POSIXTimer_cb(union sigval val)
 #else
     if (cloud_set_json == NULL)
         return;
-    linkkit_user_post_property(cloud_set_json);
+    link_send_property_post(cloud_set_json);
     cJSON_free(cloud_set_json);
     cloud_set_json = NULL;
 #endif
@@ -189,14 +190,14 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
     {
         if (*value == 4 && (*ptr->value != *value || event_all > 0))
         {
-            linkkit_user_post_event("LCookPush", NULL);
+            link_send_event_post("LCookPush", NULL);
         }
     }
     else if (strcmp("RStOvState", ptr->cloud_key) == 0)
     {
         if (*value == 4 && (*ptr->value != *value || event_all > 0))
         {
-            linkkit_user_post_event("RCookPush", NULL);
+            link_send_event_post("RCookPush", NULL);
         }
     }
     else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
@@ -206,7 +207,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
             cJSON *resp = cJSON_CreateObject();
             cJSON_AddNumberToObject(resp, "FaultCode", *value);
             char *json = cJSON_PrintUnformatted(resp);
-            linkkit_user_post_event("ErrorPush", json);
+            link_send_event_post("ErrorPush", json);
             cJSON_free(json);
             cJSON_Delete(resp);
         }
@@ -507,21 +508,13 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
         get_attr_report_value(root, &attr[i]);
     }
     json = cJSON_PrintUnformatted(root);
-    linkkit_user_post_property(json);
+    link_send_property_post(json);
     cJSON_free(json);
     cJSON_Delete(root);
 
-    json = NULL;
-    root = cJSON_CreateObject();
-    cJSON_AddNullToObject(root, "CookHistorySimple");
-    cJSON *resp_db = cJSON_CreateObject();
-    database_resp_get(root, resp_db);
-
-    json = cJSON_PrintUnformatted(resp_db);
-    linkkit_user_post_property(json);
+    json = get_link_CookHistory();
+    link_send_property_post(json);
     cJSON_free(json);
-    cJSON_Delete(root);
-    cJSON_Delete(resp_db);
 
     return 0;
 }
@@ -581,7 +574,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     return 0;
 }
 
-static int recv_data_from_cloud(const int devid, const char *value, const int value_len) //阿里云下发接口回调函数，初始化时注册
+static int recv_data_from_cloud(unsigned long devid, char *value, int value_len) //阿里云下发接口回调函数，初始化时注册
 {
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
@@ -784,8 +777,9 @@ int cloud_init(void) //初始化
     pthread_mutex_init(&mutex, NULL);
 
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
-    register_property_report_all_cb(send_all_to_cloud);   //注册阿里云连接回调
+#ifdef DYNREGMQ
     register_dynreg_device_secret_cb(save_device_secret);
+#endif
     g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
@@ -805,7 +799,7 @@ int cloud_init(void) //初始化
 
 void cloud_deinit(void) //反初始化
 {
-    linkkit_close();
+    link_model_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
         free(g_cloud_dev->attr[i].value);
     free(g_cloud_dev->attr);
@@ -916,7 +910,7 @@ void *cloud_task(void *arg) //云端任务
             }
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
-                linkkit_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret);
+                linkkit_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }
             else
@@ -932,7 +926,7 @@ void *cloud_task(void *arg) //云端任务
         }
     } while (1);
 #else
-    linkkit_init(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
+    link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
 #endif
     return NULL;
 }

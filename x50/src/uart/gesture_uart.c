@@ -8,7 +8,7 @@
 #include "ecb_uart_parse_msg.h"
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
-#include "linkkit_solo.h"
+#include "link_ntp_posix.h"
 #define GESTURE_ERROR (20)
 
 static timer_t g_gesture_timer;
@@ -336,14 +336,10 @@ static int gesture_recv_cb(void *arg)
     return 0;
 }
 
-static void gesture_link_timestamp_cb(const char *timestamp)
+static void gesture_link_timestamp_cb(const unsigned int timestamp)
 {
-    time_t time;
-    unsigned long long int val = 0;
-    if (stoull(timestamp, 10, &val) == NULL) // strtoull
-        return;
-    time = val / 1000;
-    dzlog_warn("gesture_link_timestamp_cb:%lld,%ld", val, time);
+    time_t time = timestamp;
+    dzlog_warn("gesture_link_timestamp_cb:%ld", time);
 
     struct tm *local_tm = localtime(&time);
     gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min, 0);

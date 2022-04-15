@@ -5,8 +5,8 @@
 
 #include "cloud_platform_task.h"
 #include "device_task.h"
-#include "linkkit_reset.h"
-#include "linkkit_solo.h"
+#include "link_reset_posix.h"
+#include "link_bind_posix.h"
 #include "database_task.h"
 #include "gesture_uart.h"
 
@@ -90,7 +90,7 @@ static void *Reset_cb(void *ptr, void *arg)
     // systemRun("wpa_cli remove_network all && wpa_cli save_config");
     // systemRun("wpa_cli reconfigure");
     database_task_reinit();
-    linkkit_unbind();
+    link_reset_report();
     uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);
     return item;

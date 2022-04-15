@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd `dirname $0`
-SOFTWARE_VERSION="1.0.7"
+SOFTWARE_VERSION="1.0.8"
 
 #compress directory and compress file name
 PKG_DIRNAME="install"
@@ -12,7 +12,7 @@ PKG_INSTALL_FILE="install.sh"
 
 #makeself pack --notemp
 MAKESELF_FILE="./makeself/makeself.sh"
-$MAKESELF_FILE $PKG_DIRNAME $PKG_FINAL_FILENAME "package 1.0.7" ./$PKG_INSTALL_FILE
+$MAKESELF_FILE $PKG_DIRNAME $PKG_FINAL_FILENAME "package 1.0.8" ./$PKG_INSTALL_FILE
 
 ./$PKG_FINAL_FILENAME --list
 #makeself check

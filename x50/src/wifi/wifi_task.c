@@ -6,7 +6,7 @@
 #include "cloud_platform_task.h"
 #include "wifi_task.h"
 #include "rkwifi.h"
-#include "linkkit_solo.h"
+#include "link_solo.h"
 
 static void *WifiState_cb(void *ptr, void *arg)
 {
@@ -14,7 +14,7 @@ static void *WifiState_cb(void *ptr, void *arg)
     set_attr_t *attr = (set_attr_t *)ptr;
     attr->value.n = getWifiRunningState();
 
-    // if (attr->value.n == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
+    // if (attr->value.n == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0)
     // {
     //     attr->value.n = RK_WIFI_State_DISCONNECTED;
     // }
@@ -200,7 +200,8 @@ static int wiFiReport(int event)
 
 static int wiFiCallback(int event)
 {
-    if (event == RK_WIFI_State_CONNECTED && get_linkkit_connected_state() == 0)
+    dzlog_warn("wiFiCallback:%d", event);
+    if (event == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0)
     {
         // wiFiReport(RK_WIFI_State_CONNECTFAILED);
         return -1;
@@ -210,8 +211,10 @@ static int wiFiCallback(int event)
 }
 static void linkkit_connected_cb(int connect)
 {
+    dzlog_warn("linkkit_connected_cb:%d", connect);
     if (connect)
     {
+        send_all_to_cloud();
         wiFiReport(RK_WIFI_State_CONNECTED);
     }
     else
