@@ -10,7 +10,8 @@
 extern const char *ali_ca_cert;
 
 void register_connected_cb(void (*cb)(int));
-void register_property_set_event_cb(int (*cb)(unsigned long,  char *,  int));
+void register_property_set_event_cb(int (*cb)(unsigned long, char *, int));
+void register_recv_sync_service_invoke_cb(int (*cb)(char *, char **));
 
 int link_send_property_post(char *params);
 int link_send_event_post(char *event_id, char *params);

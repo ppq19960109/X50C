@@ -52,6 +52,12 @@ void register_property_set_event_cb(int (*cb)(unsigned long, char *, int))
     property_set_event_cb = cb;
 }
 
+int (*recv_sync_service_invoke_cb)(char *, char **);
+void register_recv_sync_service_invoke_cb(int (*cb)(char *, char **))
+{
+    recv_sync_service_invoke_cb = cb;
+}
+
 void *get_mqtt_handle(void)
 {
     return g_mqtt_handle;
@@ -242,23 +248,25 @@ static void demo_dm_recv_sync_service_invoke(void *dm_handle, const aiot_dm_recv
      * 注意: 如果用户在回调函数外进行应答, 需要自行保存msg_id和rrpc_id字符串, 因为回调函数入参在退出回调函数后将被SDK销毁, 不可以再访问到
      */
 
-    /*
-    {
-        aiot_dm_msg_t msg;
+    /**/
+    if (recv_sync_service_invoke_cb == NULL)
+        return;
+    aiot_dm_msg_t msg;
 
-        memset(&msg, 0, sizeof(aiot_dm_msg_t));
-        msg.type = AIOT_DMMSG_SYNC_SERVICE_REPLY;
-        msg.data.sync_service_reply.rrpc_id = recv->data.sync_service_invoke.rrpc_id;
-        msg.data.sync_service_reply.msg_id = recv->data.sync_service_invoke.msg_id;
-        msg.data.sync_service_reply.code = 200;
-        msg.data.sync_service_reply.service_id = "SetLightSwitchTimer";
-        msg.data.sync_service_reply.data = "{}";
-        int32_t res = aiot_dm_send(dm_handle, &msg);
-        if (res < 0) {
-            printf("aiot_dm_send failed\r\n");
-        }
+    memset(&msg, 0, sizeof(aiot_dm_msg_t));
+    msg.type = AIOT_DMMSG_SYNC_SERVICE_REPLY;
+    msg.data.sync_service_reply.rrpc_id = recv->data.sync_service_invoke.rrpc_id;
+    msg.data.sync_service_reply.msg_id = recv->data.sync_service_invoke.msg_id;
+    msg.data.sync_service_reply.code = 200;
+    msg.data.sync_service_reply.service_id = recv->data.sync_service_invoke.service_id;
+    // msg.data.sync_service_reply.data = "{}";
+    if (recv_sync_service_invoke_cb(recv->data.sync_service_invoke.service_id, &msg.data.sync_service_reply.data) < 0)
+        return;
+    int32_t res = aiot_dm_send(dm_handle, &msg);
+    if (res < 0)
+    {
+        printf("aiot_dm_send failed\r\n");
     }
-    */
 }
 
 static void demo_dm_recv_raw_data(void *dm_handle, const aiot_dm_recv_t *recv, void *userdata)
@@ -447,6 +455,28 @@ void link_model_close()
 {
     running = 0;
 }
+static void link_property_get_handler(void *handle, const aiot_mqtt_recv_t *packet, void *userdata)
+{
+    printf("%s,type:%d\n", __func__, packet->type);
+    printf("topic:%s\n", packet->data.pub.topic);
+    printf("payload:%s\n", packet->data.pub.payload);
+}
+// /sys/{productKey}/{deviceName}/thing/service/property/get
+void link_mqtt_sub_property_get(void *mqtt_handle, int sub)
+{
+    static char property_get_fmt_buf[128];
+    const char *property_get_fmt = "sys/%s/%s/thing/service/property/get";
+    if (sub)
+    {
+        sprintf(property_get_fmt_buf, property_get_fmt, product_key, device_name);
+        printf("%s property_get_fmt_buf:%s\n", __func__, property_get_fmt_buf);
+        aiot_mqtt_sub(mqtt_handle, property_get_fmt_buf, link_property_get_handler, 1, NULL);
+    }
+    else
+    {
+        aiot_mqtt_unsub(mqtt_handle, property_get_fmt_buf);
+    }
+}
 
 int link_model_start()
 {
@@ -544,7 +574,7 @@ int link_model_start()
     // link_bind_token_init(mqtt_handle, product_key, device_name);
     // aiot_mqtt_sub(mqtt_handle, "/sys/${YourProductKey}/${YourDeviceName}/thing/event/property/batch/post_reply", NULL, 1, NULL);
     link_reset_init(mqtt_handle, product_key, device_name);
-
+    link_mqtt_sub_property_get(mqtt_handle, 1);
     /* 创建一个单独的线程, 专用于执行aiot_mqtt_process, 它会自动发送心跳保活, 以及重发QoS1的未应答报文 */
     g_mqtt_process_thread_running = 1;
     // res = pthread_create(&g_mqtt_process_thread, NULL, demo_mqtt_process_thread, mqtt_handle);
@@ -615,7 +645,7 @@ int link_model_start()
     /* 停止收发动作 */
     g_mqtt_process_thread_running = 0;
     g_mqtt_recv_thread_running = 0;
-
+    link_mqtt_sub_property_get(mqtt_handle, 0);
     link_reset_deinit(mqtt_handle);
 // link_bind_token_deinit(mqtt_handle);
 #ifdef REMOTE_ACCESS

@@ -22,7 +22,7 @@ extern "C"
         char cookSteps[180];
         int timestamp;
         int collect;
-        int cookType;
+        int recipeid;
         int recipeType;
         int cookPos;
     } recipes_t;
@@ -34,6 +34,7 @@ extern "C"
 
     int select_from_table(const char *table_name, int (*select_func)(void *, void *), void *arg);
     int select_seqid_from_table(const char *table_name, const int seqid, int (*select_func)(void *, void *), void *arg);
+    int select_recipeid_from_table(const char *table_name, const int recipeid, int (*select_func)(void *, void *), void *arg);
     int select_dishname_from_table(const char *table_name, const char *dishname, void *arg);
     int select_id_from_table(const char *table_name, const int id, void *arg);
 

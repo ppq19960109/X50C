@@ -205,7 +205,21 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
         if (*ptr->value != *value || event_all > 0)
         {
             cJSON *resp = cJSON_CreateObject();
-            cJSON_AddNumberToObject(resp, "FaultCode", *value);
+            if (event_all > 0)
+            {
+                cJSON_AddNumberToObject(resp, "FaultCode", *value);
+            }
+            else if (*ptr->value != *value)
+            {
+                if (*ptr->value != 0 && *value == 0)
+                {
+                    cJSON_AddNumberToObject(resp, "FaultCode", 31);
+                }
+                else
+                {
+                    cJSON_AddNumberToObject(resp, "FaultCode", *value);
+                }
+            }
             char *json = cJSON_PrintUnformatted(resp);
             link_send_event_post("ErrorPush", json);
             cJSON_free(json);
@@ -512,9 +526,9 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     cJSON_free(json);
     cJSON_Delete(root);
 
-    json = get_link_CookHistory();
-    link_send_property_post(json);
-    cJSON_free(json);
+    // json = get_link_CookHistory();
+    // link_send_property_post(json);
+    // cJSON_free(json);
 
     return 0;
 }
@@ -770,12 +784,23 @@ fail:
     cJSON_Delete(root);
     return NULL;
 }
-
+static int recv_sync_service_invoke(char *service_id, char **data)
+{
+    if (strcmp("GetHistory", service_id) == 0)
+    {
+        *data = get_link_CookHistory();
+    }
+    else
+    {
+        return -1;
+    }
+    return 0;
+}
 int cloud_init(void) //初始化
 {
     cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     pthread_mutex_init(&mutex, NULL);
-
+    register_recv_sync_service_invoke_cb(recv_sync_service_invoke);
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
 #ifdef DYNREGMQ
     register_dynreg_device_secret_cb(save_device_secret);

@@ -15,17 +15,6 @@ using namespace std;
 
 struct recipes_t
 {
-    // int id;
-    // int seqid;
-    // char dishName[64];
-    // char imgUrl[64];
-    // char details[512];
-    // char cookSteps[256];
-    // int timestamp;
-    // int collect;
-    // int cookType;
-    // int recipeType;
-    // int cookPos;
     history_t history;
 
     bool operator<(const recipes_t &other)

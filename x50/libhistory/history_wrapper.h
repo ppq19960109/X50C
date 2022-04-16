@@ -16,7 +16,7 @@ extern "C"
         char cookSteps[180];
         int timestamp;
         int collect;
-        int cookType;
+        int recipeid;
         int recipeType;
         int cookPos;
     } history_t;
