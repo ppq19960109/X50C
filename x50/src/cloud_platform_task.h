@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile"
 #define QUAD_NAME "DevQuad"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "1.0.8"
+#define SOFTER_VER "1.1.0"
 
 #define UART_CMD_MULTISTAGE_SET (76)
 #define UART_CMD_MULTISTAGE_STATE (77)

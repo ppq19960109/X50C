@@ -145,8 +145,8 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
             ota_fp = NULL;
         }
         set_ota_state(OTA_INSTALL_START, NULL);
-        system("chmod 777 " OTA_FILE);
-        system("cd /tmp &&" OTA_FILE);
+        // system("chmod 777 " OTA_FILE);
+        system("cd /tmp && sh " OTA_FILE);
         set_ota_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
         if (ota_complete_cb)

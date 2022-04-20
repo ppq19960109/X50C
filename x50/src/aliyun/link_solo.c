@@ -418,6 +418,11 @@ int link_send_event_post(char *event_id, char *params)
     }
     if (g_connected == 0)
         return -1;
+    if (params == NULL)
+    {
+        params = "{}";
+    }
+    printf("%s, %s %s %d\n", __func__, event_id, params, strlen(params));
     return demo_send_event_post(g_dm_handle, event_id, params);
 }
 /* 演示了获取属性LightSwitch的期望值, 用户可将此函数加入到main函数中运行演示 */
@@ -455,28 +460,28 @@ void link_model_close()
 {
     running = 0;
 }
-static void link_property_get_handler(void *handle, const aiot_mqtt_recv_t *packet, void *userdata)
-{
-    printf("%s,type:%d\n", __func__, packet->type);
-    printf("topic:%s\n", packet->data.pub.topic);
-    printf("payload:%s\n", packet->data.pub.payload);
-}
+// static void link_property_get_handler(void *handle, const aiot_mqtt_recv_t *packet, void *userdata)
+// {
+//     printf("%s,type:%d\n", __func__, packet->type);
+//     printf("topic:%s\n", packet->data.pub.topic);
+//     printf("payload:%s\n", packet->data.pub.payload);
+// }
 // /sys/{productKey}/{deviceName}/thing/service/property/get
-void link_mqtt_sub_property_get(void *mqtt_handle, int sub)
-{
-    static char property_get_fmt_buf[128];
-    const char *property_get_fmt = "sys/%s/%s/thing/service/property/get";
-    if (sub)
-    {
-        sprintf(property_get_fmt_buf, property_get_fmt, product_key, device_name);
-        printf("%s property_get_fmt_buf:%s\n", __func__, property_get_fmt_buf);
-        aiot_mqtt_sub(mqtt_handle, property_get_fmt_buf, link_property_get_handler, 1, NULL);
-    }
-    else
-    {
-        aiot_mqtt_unsub(mqtt_handle, property_get_fmt_buf);
-    }
-}
+// void link_mqtt_sub_property_get(void *mqtt_handle, int sub)
+// {
+//     static char property_get_fmt_buf[128];
+//     const char *property_get_fmt = "sys/%s/%s/thing/service/property/get";
+//     if (sub)
+//     {
+//         sprintf(property_get_fmt_buf, property_get_fmt, product_key, device_name);
+//         printf("%s property_get_fmt_buf:%s\n", __func__, property_get_fmt_buf);
+//         aiot_mqtt_sub(mqtt_handle, property_get_fmt_buf, link_property_get_handler, 1, NULL);
+//     }
+//     else
+//     {
+//         aiot_mqtt_unsub(mqtt_handle, property_get_fmt_buf);
+//     }
+// }
 
 int link_model_start()
 {
@@ -574,7 +579,7 @@ int link_model_start()
     // link_bind_token_init(mqtt_handle, product_key, device_name);
     // aiot_mqtt_sub(mqtt_handle, "/sys/${YourProductKey}/${YourDeviceName}/thing/event/property/batch/post_reply", NULL, 1, NULL);
     link_reset_init(mqtt_handle, product_key, device_name);
-    link_mqtt_sub_property_get(mqtt_handle, 1);
+    // link_mqtt_sub_property_get(mqtt_handle, 1);
     /* 创建一个单独的线程, 专用于执行aiot_mqtt_process, 它会自动发送心跳保活, 以及重发QoS1的未应答报文 */
     g_mqtt_process_thread_running = 1;
     // res = pthread_create(&g_mqtt_process_thread, NULL, demo_mqtt_process_thread, mqtt_handle);
@@ -645,7 +650,7 @@ int link_model_start()
     /* 停止收发动作 */
     g_mqtt_process_thread_running = 0;
     g_mqtt_recv_thread_running = 0;
-    link_mqtt_sub_property_get(mqtt_handle, 0);
+    // link_mqtt_sub_property_get(mqtt_handle, 0);
     link_reset_deinit(mqtt_handle);
 // link_bind_token_deinit(mqtt_handle);
 #ifdef REMOTE_ACCESS

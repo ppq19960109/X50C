@@ -8,7 +8,6 @@
 #include "database.h"
 
 #include "history_wrapper.h"
-#include "link_fota_posix.h"
 
 static int g_history_seqid = 0;
 static char *leftWorkMode[] = {"未设定", "经典蒸", "高温蒸", "热风烧烤", "上下加热", "立体热风", "蒸汽烤", "空气炸", "保温烘干"};
@@ -57,9 +56,7 @@ int histroy_select_seqid_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "id", recipe->id);
     cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
     cJSON_AddStringToObject(item, "dishName", recipe->dishName);
-    cJSON_AddStringToObject(item, "imgUrl", recipe->imgUrl);
     cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
-    cJSON_AddStringToObject(item, "details", recipe->details);
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "recipeid", recipe->recipeid);
@@ -106,8 +103,6 @@ static int wrapper_histroy_select_cb(history_t *recipe, void *arg, int simple)
     cJSON_AddNumberToObject(item, "cookPos", recipe->cookPos);
     if (simple == 0)
     {
-        cJSON_AddStringToObject(item, "imgUrl", recipe->imgUrl);
-        cJSON_AddStringToObject(item, "details", recipe->details);
     }
     cJSON_AddItemToArray(root, item);
     return 0;
@@ -175,9 +170,7 @@ int recipe_select_func(void *data, void *arg)
     cJSON_AddNumberToObject(item, "id", recipe->id);
     cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
     cJSON_AddStringToObject(item, "dishName", recipe->dishName);
-    cJSON_AddStringToObject(item, "imgUrl", recipe->imgUrl);
     cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
-    cJSON_AddStringToObject(item, "details", recipe->details);
     cJSON_AddNumberToObject(item, "collect", recipe->collect);
     cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
     cJSON_AddNumberToObject(item, "recipeid", recipe->recipeid);
@@ -444,13 +437,6 @@ int database_histroy_select_cb(void *data, void *arg)
     return 0;
 }
 
-static void databse_ota_complete_cb(void)
-{
-    databse_drop_table(RECIPE_TABLE_NAME);
-    sync();
-    reboot(RB_AUTOBOOT);
-}
-
 void database_task_reinit(void)
 {
     wrapper_clearHistory();
@@ -459,7 +445,6 @@ void database_task_reinit(void)
 
 int database_task_init(void)
 {
-    register_ota_complete_cb(databse_ota_complete_cb);
     register_history_select_cb(wrapper_histroy_select_cb);
     register_history_insert_cb(wrapper_history_insert_cb);
     register_history_delete_cb(wrapper_history_delete_cb);

@@ -7,7 +7,8 @@ extern "C"
 #endif
 #include <stdbool.h>
 
-#define DB_NAME "mars.db"
+#define HISTORY_DB_NAME "history.db"
+#define RECIPE_DB_NAME "recipe.db"
 #define HISTORY_TABLE_NAME "history"
 #define RECIPE_TABLE_NAME "recipe"
 #define RECIPES_FILE "Recipes"
@@ -17,8 +18,6 @@ extern "C"
         int id;
         int seqid;
         char dishName[48];
-        char imgUrl[80];
-        char details[960];
         char cookSteps[180];
         int timestamp;
         int collect;
@@ -42,7 +41,6 @@ extern "C"
     int update_key_string_table(const char *table_name, const char *key, const char *val, const int id);
     int delete_row_from_table(const char *table_name, const int id);
     int insert_replace_row_to_table(const char *table_name, recipes_t *recipes);
-    int insert_row_to_table(const char *table_name, recipes_t *recipes);
 #ifdef __cplusplus
 }
 #endif

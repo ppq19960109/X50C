@@ -51,7 +51,7 @@ static void *DeviceSecret_cb(void *ptr, void *arg)
 static void *QrCode_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
-    char buf[256];
+    char buf[180];
     sprintf(buf, "http://club.marssenger.com/hxr/download.html?pk=%s&dn=%s", cloud_dev->product_key, cloud_dev->device_name);
     cJSON *item = cJSON_CreateString(buf);
     return item;
@@ -73,7 +73,7 @@ static void *AfterSalesPhone_cb(void *ptr, void *arg)
 static void *AfterSalesQrCode_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
-    char buf[256];
+    char buf[180];
     sprintf(buf, "http://club.marssenger.com/hxr/download.html?pk=%s", cloud_dev->product_key);
     cJSON *item = cJSON_CreateString(buf);
     return item;

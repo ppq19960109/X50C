@@ -1,6 +1,3 @@
-[submodule "x50/pkg_tool/makeself"]
-	path = x50/pkg_tool/makeself
-	url = git@github.com:megastep/makeself.git
 [submodule "x50ui"]
 	path = x50ui
 	url = git@github.com:ppq19960109/X50QML.git

@@ -6,6 +6,7 @@
 #include "ecb_uart_parse_msg.h"
 #include "link_solo.h"
 #include "link_dynregmq_posix.h"
+#include "link_fota_posix.h"
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
@@ -796,10 +797,16 @@ static int recv_sync_service_invoke(char *service_id, char **data)
     }
     return 0;
 }
+static void ota_complete_cb(void)
+{
+    sync();
+    reboot(RB_AUTOBOOT);
+}
 int cloud_init(void) //初始化
 {
     cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     pthread_mutex_init(&mutex, NULL);
+    register_ota_complete_cb(ota_complete_cb);
     register_recv_sync_service_invoke_cb(recv_sync_service_invoke);
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
 #ifdef DYNREGMQ

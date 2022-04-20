@@ -11,8 +11,6 @@ extern "C"
         int id;
         int seqid;
         char dishName[48];
-        char imgUrl[80];
-        char details[960];
         char cookSteps[180];
         int timestamp;
         int collect;
