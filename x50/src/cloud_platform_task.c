@@ -10,7 +10,9 @@
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
+#include "gesture_uart.h"
 #include "POSIXTimer.h"
+#include "md5_func.h"
 
 static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
@@ -271,7 +273,11 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
-            if (strcmp(ptr->cloud_key, "CookbookID") == 0)
+            if (strcmp("SysPower", ptr->cloud_key) == 0)
+            {
+                set_gesture_power(cloud_val);
+            }
+            else if (strcmp(ptr->cloud_key, "CookbookID") == 0)
             {
                 if (cloud_val > 0)
                 {
@@ -620,9 +626,12 @@ int save_device_secret(const char *device_secret)
     cJSON_AddStringToObject(root, DEVICE_SECRET, g_cloud_dev->device_secret);
 
     char *json = cJSON_PrintUnformatted(root);
-    res = operateFile(1, QUAD_NAME ".json", json, strlen(json));
-    cJSON_free(json);
 
+    res = operateFile(1, "../" QUAD_NAME ".json", json, strlen(json));
+    if (res < 0)
+        res = operateFile(1, QUAD_NAME ".json", json, strlen(json));
+
+    cJSON_free(json);
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
@@ -634,7 +643,7 @@ int save_device_secret(const char *device_secret)
     device_resp_get(root, resp);
     send_event_uds(resp, NULL);
     cJSON_Delete(root);
-
+    sync();
     return res;
 }
 static void *cloud_quad_parse_json(void *input, const char *str) //启动时解析四元组文件
@@ -820,17 +829,21 @@ int cloud_init(void) //初始化
     }
 
     strcpy(g_cloud_dev->software_ver, SOFTER_VER);
-    if (get_dev_profile(".", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
+    if (get_dev_profile("..", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
     {
-        dzlog_error("cloud_init cloud_quad_parse_json error\n");
-        return -1;
+        if (get_dev_profile(".", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
+        {
+            dzlog_error("cloud_init cloud_quad_parse_json error\n");
+            return -1;
+        }
     }
-
+    curl_global_init(CURL_GLOBAL_DEFAULT);
     return 0;
 }
 
 void cloud_deinit(void) //反初始化
 {
+    curl_global_cleanup();
     link_model_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
         free(g_cloud_dev->attr[i].value);
@@ -844,60 +857,51 @@ void cloud_deinit(void) //反初始化
     }
     pthread_mutex_destroy(&mutex);
 }
-size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
+#define QUAD_REQUEST_URL_FMT "http://%s:10010"
+static char quad_request_url[80];
+size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream);
+
+int curl_http_quad(const char *product_key, const char *mac, const char *path, const char *body)
 {
-    printf("get_write_cb size:%u,nmemb:%u\n", size, nmemb);
-    printf("get_write_cb data:%s\n", (char *)ptr);
-    // iotx_linkkit_dev_meta_info_t *master_meta_info = (iotx_linkkit_dev_meta_info_t *)stream;
+    char buf[255];
 
-    cJSON *root = cJSON_Parse(ptr);
-    if (root == NULL)
-        return -1;
-    if (cJSON_HasObjectItem(root, PRODUCT_KEY))
-    {
-        cJSON *ProductKey = cJSON_GetObjectItem(root, PRODUCT_KEY);
-        strcpy(g_cloud_dev->product_key, ProductKey->valuestring);
-    }
-    if (cJSON_HasObjectItem(root, PRODUCT_SECRET))
-    {
-        cJSON *ProductSecret = cJSON_GetObjectItem(root, PRODUCT_SECRET);
-        strcpy(g_cloud_dev->product_secret, ProductSecret->valuestring);
-    }
-    if (cJSON_HasObjectItem(root, DEVICE_NAME))
-    {
-        cJSON *DeviceName = cJSON_GetObjectItem(root, DEVICE_NAME);
-        strcpy(g_cloud_dev->device_name, DeviceName->valuestring);
-    }
-    if (cJSON_HasObjectItem(root, DEVICE_SECRET))
-    {
-        cJSON *DeviceSecret = cJSON_GetObjectItem(root, DEVICE_SECRET);
-        save_device_secret(DeviceSecret->valuestring);
-    }
-
-    cJSON_Delete(root);
-    return size * nmemb;
-}
-int curl_http_get_quad(const char *product_key, const char *mac)
-{
-    char http_request_url[180] = {0};
-
-    sprintf(http_request_url, "http://www.honyarcloud.com:8090/device/serial/code/query/?product_key=%s&device_name=%s", product_key, mac);
-    printf("get http request url:%s\n", http_request_url);
     CURLcode res;
-
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    struct curl_slist *headers = NULL;
 
     // get a curl handle
     CURL *curl = curl_easy_init();
     if (curl)
     {
+        headers = curl_slist_append(headers, "Content-Type:application/json");
+        sprintf(buf, "pk:%s", product_key);
+        headers = curl_slist_append(headers, buf);
+        sprintf(buf, "mac:%s", mac);
+        headers = curl_slist_append(headers, buf);
+
+        sprintf(buf, "%s%s%s%s", "1643738522000", product_key, mac, "mars");
+        char md5_str[33] = {0};
+        Compute_string_md5((unsigned char *)buf, strlen(buf), md5_str);
+        sprintf(buf, "sign:%s.%s", "1643738522000", md5_str);
+        headers = curl_slist_append(headers, buf);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         // set the URL with GET request
-        curl_easy_setopt(curl, CURLOPT_URL, http_request_url);
+        sprintf(buf, "%s%s", quad_request_url, path);
+        curl_easy_setopt(curl, CURLOPT_URL, buf);
 
-        // write response msg into strResponse
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_get_quad_cb);
-        // curl_easy_setopt(curl, CURLOPT_WRITEDATA, master_meta_info);
+        if (body == NULL)
+        {
+            // write response msg into strResponse
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_get_quad_cb);
+            // curl_easy_setopt(curl, CURLOPT_WRITEDATA, master_meta_info);
+            // curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+            body = "";
+        }
 
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 6L);
+        curl_easy_setopt(curl, CURLOPT_POST, 1);
+
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
         // perform the request, res will get the return code
         res = curl_easy_perform(curl);
         // check for errors
@@ -907,15 +911,77 @@ int curl_http_get_quad(const char *product_key, const char *mac)
         }
         else
         {
-            fprintf(stderr, "curl_easy_perform() success.\n");
+            fprintf(stdout, "curl_easy_perform() success.\n");
         }
-
         // always cleanup
         curl_easy_cleanup(curl);
     }
-    curl_global_cleanup();
     return 0;
 }
+size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+    printf("http_get_quad_cb size:%u,nmemb:%u\n", size, nmemb);
+    printf("http_get_quad_cb data:%s\n", (char *)ptr);
+    // iotx_linkkit_dev_meta_info_t *master_meta_info = (iotx_linkkit_dev_meta_info_t *)stream;
+    int res = 2, quad_rupleId = 0;
+    cJSON *root = cJSON_Parse(ptr);
+    if (root == NULL)
+        return -1;
+    char *json = cJSON_PrintUnformatted(root);
+    printf("http_get_quad_cb json:%s\n", json);
+    free(json);
+
+    cJSON *code = cJSON_GetObjectItem(root, "code");
+    if (code == NULL)
+    {
+        goto fail;
+    }
+    if (code->valueint != 0)
+        goto fail;
+    cJSON *data = cJSON_GetObjectItem(root, "data");
+    if (data == NULL)
+    {
+        goto fail;
+    }
+    if (cJSON_HasObjectItem(data, "quadrupleId"))
+    {
+        cJSON *quadrupleId = cJSON_GetObjectItem(data, "quadrupleId");
+        quad_rupleId = quadrupleId->valueint;
+    }
+    if (cJSON_HasObjectItem(data, "productKey"))
+    {
+        cJSON *ProductKey = cJSON_GetObjectItem(data, "productKey");
+        strcpy(g_cloud_dev->product_key, ProductKey->valuestring);
+    }
+    if (cJSON_HasObjectItem(data, "productSecret"))
+    {
+        cJSON *ProductSecret = cJSON_GetObjectItem(data, "productSecret");
+        strcpy(g_cloud_dev->product_secret, ProductSecret->valuestring);
+    }
+    if (cJSON_HasObjectItem(data, "deviceName"))
+    {
+        cJSON *DeviceName = cJSON_GetObjectItem(data, "deviceName");
+        strcpy(g_cloud_dev->device_name, DeviceName->valuestring);
+    }
+    if (cJSON_HasObjectItem(data, "deviceSecret"))
+    {
+        cJSON *DeviceSecret = cJSON_GetObjectItem(data, "deviceSecret");
+        save_device_secret(DeviceSecret->valuestring);
+        res = 1;
+    }
+fail:
+    cJSON_Delete(root);
+
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddNumberToObject(resp, "quadrupleId", quad_rupleId);
+    cJSON_AddNumberToObject(resp, "state", res);
+    char *body = cJSON_PrintUnformatted(resp);
+    cJSON_Delete(resp);
+    curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/report", body);
+    cJSON_free(body);
+    return size * nmemb;
+}
+
 void *cloud_task(void *arg) //云端任务
 {
     if (strlen(g_cloud_dev->product_key) == 0)
@@ -930,19 +996,33 @@ void *cloud_task(void *arg) //云端任务
     {
         getNetworkMac(ETH_NAME, g_cloud_dev->device_name, sizeof(g_cloud_dev->device_name), "");
     }
-#if 0
+#if 1
     do
     {
         if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
         {
             if (strlen(g_cloud_dev->device_secret) == 0)
             {
-                curl_http_get_quad(g_cloud_dev->product_key, g_cloud_dev->device_name);
+                char ip[24];
+                unsigned int s_addr = getNetworkIp(ETH_NAME, NULL, 0);
+                if (s_addr < 0)
+                {
+                    sleep(1);
+                    continue;
+                }
+                s_addr &= ~(0xff << 24);
+                s_addr |= 200 << 24;
+                inet_ntop(AF_INET, &s_addr, ip, sizeof(ip));
+                dzlog_warn("ip:0X%x,url:%s", s_addr, ip);
+                sprintf(quad_request_url, QUAD_REQUEST_URL_FMT, ip);
+                dzlog_warn("quad_request_url:%s", quad_request_url);
+
+                curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/apply", NULL);
                 sleep(2);
             }
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
-                linkkit_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
+                link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }
             else

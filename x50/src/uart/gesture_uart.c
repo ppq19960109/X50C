@@ -14,11 +14,12 @@
 static timer_t g_gesture_timer;
 static timer_t g_gesture_heart_timer;
 
-static int fd = 0;
+static int fd = -1;
 static pthread_mutex_t lock;
 static unsigned char gesture_error_status = 0;
 static unsigned char gesture_alarm_status = 0;
 static struct Select_Client_Event select_client_event;
+static unsigned char gesture_power = 0;
 
 static unsigned short msg_verify(const unsigned char *data, int len)
 {
@@ -33,8 +34,9 @@ static unsigned short msg_verify(const unsigned char *data, int len)
 
 int gesture_uart_send(unsigned char *in, int in_len)
 {
+    dzlog_warn("uart send to gesture--------------------------");
     hdzlog_info(in, in_len);
-    if (fd <= 0)
+    if (fd < 0)
     {
         dzlog_error("gesture_uart_send fd error\n");
         return -1;
@@ -69,7 +71,8 @@ int gesture_uart_send(unsigned char *in, int in_len)
 int gesture_send_msg(unsigned char whole_show, unsigned char sync, unsigned char hour, unsigned char minute, int alarm)
 {
     unsigned char data1 = 0;
-    data1 |= (1 << 0);
+    if (gesture_power)
+        data1 |= (1 << 0);
     if (sync)
         data1 |= (1 << 3);
     if (alarm)
@@ -157,7 +160,15 @@ void gesture_auto_sync_time_alarm(int alarm)
         gesture_sync_time_and_alarm(0, alarm);
     }
 }
+void set_gesture_power(const int power)
+{
+    if (gesture_power != power)
+    {
+        gesture_power = power;
 
+        gesture_auto_sync_time_alarm(0);
+    }
+}
 static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
 {
     static int gesture_recv_error = 0;
@@ -327,7 +338,7 @@ static int gesture_recv_cb(void *arg)
     if (uart_read_len > 0)
     {
         uart_read_buf_index += uart_read_len;
-        dzlog_warn("uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+        dzlog_warn("recv from gesture-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, gesture_uart_parse_msg);
         dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
@@ -362,7 +373,7 @@ void gesture_uart_deinit(void)
 void gesture_uart_init(void)
 {
     fd = uart_init("/dev/ttyS3", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_BLOCK);
-    if (fd <= 0)
+    if (fd < 0)
     {
         dzlog_error("gesture_uart uart init error:%d,%s", errno, strerror(errno));
         return;

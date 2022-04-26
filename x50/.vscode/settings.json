@@ -127,6 +127,7 @@
         "link_ntp_posix.h": "c",
         "link_solo.h": "c",
         "link_dynregmq_posix.h": "c",
-        "link_remote_access.h": "c"
+        "link_remote_access.h": "c",
+        "rk_wifi.h": "c"
     }
 }

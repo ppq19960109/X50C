@@ -97,7 +97,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
     {
         printf("AIOT_MQTTEVT_RECONNECT\n");
         g_connected = 1;
-        if (running == 1)
+        if (running > 0)
         {
             if (connected_cb != NULL)
                 connected_cb(1);
@@ -112,7 +112,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
     {
         char *cause = (event->data.disconnect == AIOT_MQTTDISCONNEVT_NETWORK_DISCONNECT) ? ("network disconnect") : ("heartbeat disconnect");
         printf("AIOT_MQTTEVT_DISCONNECT: %s\n", cause);
-        if (g_connected == 1)
+        if (running > 0)
         {
             if (connected_cb != NULL)
                 connected_cb(0);
@@ -139,7 +139,7 @@ void *demo_mqtt_process_thread(void *args)
         {
             break;
         }
-        usleep(200000);
+        usleep(400000);
     }
     printf("demo_mqtt_process_thread exit.....................\n");
     return NULL;
@@ -159,7 +159,7 @@ void *demo_mqtt_recv_thread(void *args)
             {
                 break;
             }
-            usleep(200000);
+            usleep(400000);
         }
     }
     printf("demo_mqtt_recv_thread exit.....................\n");
@@ -594,18 +594,16 @@ int link_model_start()
 
     /* 创建一个单独的线程用于执行aiot_mqtt_recv, 它会循环收取服务器下发的MQTT消息, 并在断线时自动重连 */
     g_mqtt_recv_thread_running = 1;
-// res = pthread_create(&g_mqtt_recv_thread, NULL, demo_mqtt_recv_thread, mqtt_handle);
-// if (res < 0)
-// {
-//     printf("pthread_create demo_mqtt_recv_thread failed: %d\n", res);
-//     aiot_dm_deinit(&dm_handle);
-//     aiot_mqtt_disconnect(mqtt_handle);
-//     aiot_mqtt_deinit(&mqtt_handle);
-//     return -1;
-// }
-#ifdef REMOTE_ACCESS
-    link_remote_access_open(mqtt_handle);
-#endif
+    // res = pthread_create(&g_mqtt_recv_thread, NULL, demo_mqtt_recv_thread, mqtt_handle);
+    // if (res < 0)
+    // {
+    //     printf("pthread_create demo_mqtt_recv_thread failed: %d\n", res);
+    //     aiot_dm_deinit(&dm_handle);
+    //     aiot_mqtt_disconnect(mqtt_handle);
+    //     aiot_mqtt_deinit(&mqtt_handle);
+    //     return -1;
+    // }
+
     link_fota_report_version(cur_version);
     link_ntp_request();
     // link_reset_report();
@@ -614,7 +612,9 @@ int link_model_start()
     if (connected_cb != NULL)
         connected_cb(1);
     link_reset_check();
-
+#ifdef REMOTE_ACCESS
+    link_remote_access_open(mqtt_handle, &cred);
+#endif
     running = 1;
     /* 主循环进入休眠 */
     while (running)

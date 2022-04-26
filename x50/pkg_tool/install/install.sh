@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "start install......:"`pwd`
+echo "start install pwd:"`pwd`
 
 #Add operation permission
 chmod -R 777 ./

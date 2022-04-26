@@ -25,6 +25,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/klib
 CFLAGS += -I$(LINKTOOL_PATH)/include/tcp
 CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(LINKTOOL_PATH)/include/timer
+CFLAGS += -I$(LINKTOOL_PATH)/include/md5
 CFLAGS += -I$(ALI_PATH)/include
 # CFLAGS += -I$(LOG_PATH)/include
 CFLAGS += -I$(HISTORY_PATH)

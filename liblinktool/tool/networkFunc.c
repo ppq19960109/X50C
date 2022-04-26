@@ -17,7 +17,7 @@
 
 #include <arpa/inet.h>
 
-const char *getNetworkIp(const char *eth_inf, char *ip, unsigned char len)
+unsigned int getNetworkIp(const char *eth_inf, char *ip, unsigned char len)
 {
     // struct sockaddr_in sin;
     struct ifreq ifr;
@@ -26,7 +26,7 @@ const char *getNetworkIp(const char *eth_inf, char *ip, unsigned char len)
     if (-1 == fd)
     {
         printf("socket error: %s\n", strerror(errno));
-        return NULL;
+        return -1;
     }
 
     strncpy(ifr.ifr_name, eth_inf, IFNAMSIZ);
@@ -35,14 +35,15 @@ const char *getNetworkIp(const char *eth_inf, char *ip, unsigned char len)
     {
         printf("ioctl error: %s\n", strerror(errno));
         close(fd);
-        return NULL;
+        return -1;
     }
     close(fd);
 
     // memcpy(&sin, &ifr.ifr_addr, sizeof(struct sockaddr_in));
     // snprintf(ip, len, "%s", inet_ntoa(sin.sin_addr));
-
-    return inet_ntop(AF_INET, &((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, ip, len);
+    if (ip != NULL)
+        inet_ntop(AF_INET, &((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, ip, len);
+    return ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr;
 }
 
 char *getNetworkMac(const char *eth_inf, char *mac, unsigned int len, const char *separator)

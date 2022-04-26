@@ -12,6 +12,7 @@
         "signal.h": "c",
         "stdint.h": "c",
         "termios.h": "c",
-        "uartcfg.h": "c"
+        "uartcfg.h": "c",
+        "fcntl.h": "c"
     }
 }

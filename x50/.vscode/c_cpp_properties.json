@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "~/sdk/rk3308_sdk/buildroot/output/rockchip_rk3308_32_debug/host"
+                "~/sdk/rk3308_sdk/buildroot/output/rockchip_rk3308_32_debug/host",
+                "~/host"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

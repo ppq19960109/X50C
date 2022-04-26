@@ -18,10 +18,12 @@
 #include "aiot_ra_api.h"
 
 /* TODO: 替换为自己设备的三元组 */
-char *product_key       = "${YourProductKey}";
-char *device_name       = "${YourDeviceName}";
-char *device_secret     = "${YourDeviceSecret}";
-
+// char *product_key       = "${YourProductKey}";
+// char *device_name       = "${YourDeviceName}";
+// char *device_secret     = "${YourDeviceSecret}";
+char *product_key       = "a1YPNqSUzPE";
+char *device_name       = "test1";
+char *device_secret     = "46fcabef5178cfc6c27de87c856ccb52";
 /*
     TODO: 替换为自己实例的接入点
 
@@ -37,7 +39,8 @@ char *device_secret     = "${YourDeviceSecret}";
 
     详情请见: https://help.aliyun.com/document_detail/147356.html
 */
-char  *mqtt_host = "${YourInstanceId}.mqtt.iothub.aliyuncs.com";
+// char  *mqtt_host = "${YourInstanceId}.mqtt.iothub.aliyuncs.com";
+char  *mqtt_host = "a1YPNqSUzPE.iot-as-mqtt.cn-shanghai.aliyuncs.com";
 uint16_t    port = 443;      /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
 
 /* 位于portfiles/aiot_port文件夹下的系统适配函数集合 */

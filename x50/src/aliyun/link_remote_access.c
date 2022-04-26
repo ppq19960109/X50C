@@ -45,10 +45,8 @@ void ra_event_cb(void *handle, const aiot_ra_event_t *event, void *userdata)
     }
 }
 
-int link_remote_access_open(void *mqtt_handle)
+int link_remote_access_open(void *mqtt_handle, void *cred)
 {
-    aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
-
     /* 创建1个RA实例并内部初始化默认参数 */
     ra_handle = aiot_ra_init();
     if (ra_handle == NULL)
@@ -60,7 +58,7 @@ int link_remote_access_open(void *mqtt_handle)
     /* 配置MQTT句柄，ra内部会订阅MQTT的消息 */
     aiot_ra_setopt(ra_handle, AIOT_RAOPT_MQTT_HANDLE, mqtt_handle);
     /* 配置网络连接的安全凭据, 上面已经创建好了 */
-    aiot_ra_setopt(ra_handle, AIOT_RAOPT_NETWORK_CRED, (void *)&cred);
+    aiot_ra_setopt(ra_handle, AIOT_RAOPT_NETWORK_CRED, (void *)cred);
     /* 配置RA内部事件回调函数， 可选*/
     aiot_ra_setopt(ra_handle, AIOT_RAOPT_EVENT_HANDLER, (void *)ra_event_cb);
     /* 配置本地可支持的服务 */

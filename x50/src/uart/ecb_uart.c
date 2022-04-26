@@ -8,7 +8,7 @@
 enum msg_get_time_t
 {
     MSG_GET_SHORT_TIME = 3 * 5,
-    MSG_GET_LONG_TIME = 3 * 30 * 5,
+    MSG_GET_LONG_TIME = 2 * 30 * 5,
     MSG_HEART_TIME = 15 * 5,
 };
 
@@ -16,7 +16,7 @@ static unsigned short ecb_seq_id = 0;
 static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
 
-static int fd = 0;
+static int fd = -1;
 static pthread_mutex_t lock;
 // LIST_HEAD(ECB_LIST_RESEND);
 static struct list_head ECB_LIST_RESEND;
@@ -67,8 +67,9 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
 {
+    dzlog_warn("uart send to ecb--------------------------");
     hdzlog_info(in, in_len);
-    if (fd <= 0)
+    if (fd < 0)
     {
         dzlog_error("ecb_uart_send fd error\n");
         return -1;
@@ -156,7 +157,7 @@ static int ecb_recv_cb(void *arg)
     if (uart_read_len > 0)
     {
         uart_read_buf_index += uart_read_len;
-        dzlog_warn("uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+        dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
         dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
@@ -218,7 +219,7 @@ void ecb_uart_deinit(void)
 void ecb_uart_init(void)
 {
     fd = uart_init("/dev/ttyS0", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
-    if (fd <= 0)
+    if (fd < 0)
     {
         dzlog_error("ecb_uart uart init error:%d,%s", errno, strerror(errno));
         return;

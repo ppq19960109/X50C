@@ -30,9 +30,10 @@ static void *WifiEnable_cb(void *ptr, void *arg)
 
     if (wifiEnable(item->valueint) < 0)
     {
-        return NULL;
+        item = cJSON_CreateNumber(0);
     }
-    item = cJSON_CreateNumber(item->valueint);
+    else
+        item = cJSON_CreateNumber(item->valueint);
     return item;
 }
 

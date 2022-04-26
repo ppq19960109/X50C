@@ -358,6 +358,7 @@ int link_fota_report_version(char *cur_version)
 
     /* 演示MQTT连接建立起来之后, 就可以上报当前设备的版本号了 */
     // cur_version = "1.0.0";
+    printf("aiot_ota_report_version %s\r\n", cur_version);
     res = aiot_ota_report_version(ota_handle, cur_version);
     if (res < STATE_SUCCESS)
     {

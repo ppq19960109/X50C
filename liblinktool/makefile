@@ -22,6 +22,7 @@ KLIB_PATH:=klib
 BASE64_PATH:=base64
 SIGNAL_PATH:=signal
 TIMER_PATH:=timer
+MD5_PATH:=md5
 
 CFLAGS += $(addprefix -I , $(SRC_DIRS))
 CFLAGS += $(addprefix -I , $(TCP_DIRS))
@@ -30,6 +31,7 @@ CFLAGS += -I$(KLIB_PATH)
 CFLAGS += -I$(BASE64_PATH)
 CFLAGS += -I$(SIGNAL_PATH)
 CFLAGS += -I$(TIMER_PATH)
+CFLAGS += -I$(MD5_PATH)
 CFLAGS += -Wall
 ifdef DEBUG
 CFLAGS += -g -DDEBUG
@@ -56,6 +58,8 @@ SRC_SIGNAL := $(wildcard $(SIGNAL_PATH)/*.c)
 INC_SIGNAL := $(wildcard $(SIGNAL_PATH)/*.h)
 SRC_TIMER := $(wildcard $(TIMER_PATH)/*.c)
 INC_TIMER := $(wildcard $(TIMER_PATH)/*.h)
+SRC_MD5 := $(wildcard $(MD5_PATH)/*.c)
+INC_MD5 := $(wildcard $(MD5_PATH)/*.h)
 
 OBJ += $(SRC:%.c=%.o)
 OBJ += $(SRC_TCP:%.c=%.o)
@@ -64,6 +68,7 @@ OBJ += $(SRC_KLIB:%.c=%.o)
 OBJ += $(SRC_BASE64:%.c=%.o)
 OBJ += $(SRC_SIGNAL:%.c=%.o)
 OBJ += $(SRC_TIMER:%.c=%.o)
+OBJ += $(SRC_MD5:%.c=%.o)
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -77,7 +82,7 @@ $(TARGET) : $(OBJ)
 	$(AR) $@ $^
 
 install: $(TARGET)
-	$(MKDIR) $(INSTALL_LIB) $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/tcp $(INSTALL_INCLUDE)/cJSON $(INSTALL_INCLUDE)/klib $(INSTALL_INCLUDE)/base64 $(INSTALL_INCLUDE)/signal $(INSTALL_INCLUDE)/timer
+	$(MKDIR) $(INSTALL_LIB) $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/tcp $(INSTALL_INCLUDE)/cJSON $(INSTALL_INCLUDE)/klib $(INSTALL_INCLUDE)/base64 $(INSTALL_INCLUDE)/signal $(INSTALL_INCLUDE)/timer $(INSTALL_INCLUDE)/md5
 	$(CP) $(TARGET) $(INSTALL_LIB)
 	$(CP) $(INC) $(INSTALL_INCLUDE)
 	$(CP) $(INC_TCP) $(INSTALL_INCLUDE)/tcp
@@ -86,6 +91,7 @@ install: $(TARGET)
 	$(CP) $(INC_BASE64) $(INSTALL_INCLUDE)/base64
 	$(CP) $(INC_SIGNAL) $(INSTALL_INCLUDE)/signal
 	$(CP) $(INC_TIMER) $(INSTALL_INCLUDE)/timer
+	$(CP) $(INC_MD5) $(INSTALL_INCLUDE)/md5
 	@echo "successed installed......."
 
 clean :

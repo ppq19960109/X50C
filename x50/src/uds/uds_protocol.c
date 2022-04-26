@@ -49,7 +49,7 @@ int send_event_uds(cJSON *send, const char *type) //uds发送u接口
         goto fail;
     }
     int len = strlen(json);
-    printf("cJSON_PrintUnformatted json:%d,%s\n", len, json);
+    printf("send to UI-------------------------- cJSON_PrintUnformatted json:%d,%s\n", len, json);
     char *send_buf;
     if (len + 10 > sizeof(g_send_buf))
     {
@@ -95,7 +95,7 @@ static int uds_json_parse(char *value, unsigned int value_len) //uds接受的jso
     }
 
     char *json = cJSON_PrintUnformatted(root);
-    dzlog_debug("json:%s", json);
+    dzlog_debug("recv from UI-------------------------- json:%s", json);
     cJSON_free(json);
 
     cJSON *Type = cJSON_GetObjectItem(root, TYPE);
