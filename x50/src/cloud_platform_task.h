@@ -11,9 +11,6 @@
 #define ETH_NAME "wlan0"
 #define SOFTER_VER "1.1.2"
 
-#define UART_CMD_MULTISTAGE_SET (76)
-#define UART_CMD_MULTISTAGE_STATE (77)
-
 enum LINK_VALUE_TYPE
 {
     LINK_VALUE_TYPE_NUM = 0x00,
@@ -32,7 +29,7 @@ enum LINK_FUN_TYPE
 
 typedef struct
 {
-    char cloud_key[33];
+    char cloud_key[28];
     enum LINK_VALUE_TYPE cloud_value_type;
     enum LINK_FUN_TYPE cloud_fun_type;
     unsigned char uart_cmd;
@@ -52,14 +49,14 @@ typedef struct
     char hardware_ver[6];
     char software_ver[6];
     char remind[3][48];
-    char update_log[1024];
+    char update_log[960];
     cloud_attr_t *attr;
     int attr_len;
 } cloud_dev_t;
 
 typedef struct
 {
-    char cloud_key[33];
+    char cloud_key[28];
     enum LINK_FUN_TYPE fun_type;
     void *(*cb)(void *, void *);
 
@@ -71,6 +68,7 @@ typedef struct
         char *p;
     } value;
 } set_attr_t;
+
 int cJSON_Object_isNull(cJSON *object);
 int report_msg_all_platform(cJSON *root);
 
@@ -89,7 +87,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp);
 int send_all_to_cloud(void);
 
 cloud_dev_t *get_cloud_dev(void);
-// unsigned char get_BuzControl(void);
+
 unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
 signed char get_HoodSpeed(void);

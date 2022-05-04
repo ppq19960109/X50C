@@ -248,37 +248,7 @@
             "valueType": 3,
             "funType": 1,
             "uartCmd": 77,
-            "uartByteLen": 3,
-            "struct": [
-                {
-                    "cloudKey": "cnt",
-                    "funType": 1,
-                    "valueType": 1,
-                    "uartCmd": 0,
-                    "uartByteLen": 1
-                },
-                {
-                    "cloudKey": "current",
-                    "funType": 1,
-                    "valueType": 1,
-                    "uartCmd": 1,
-                    "uartByteLen": 1
-                },
-                {
-                    "cloudKey": "remind",
-                    "funType": 1,
-                    "valueType": 1,
-                    "uartCmd": 2,
-                    "uartByteLen": 1
-                },
-                {
-                    "cloudKey": "RemindText",
-                    "funType": 1,
-                    "valueType": 2,
-                    "uartCmd": 3,
-                    "uartByteLen": 0
-                }
-            ]
+            "uartByteLen": 3
         },
         {
             "cloudKey": "CookbookID",

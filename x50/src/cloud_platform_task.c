@@ -49,20 +49,7 @@ cloud_dev_t *get_cloud_dev(void)
 {
     return g_cloud_dev;
 }
-// unsigned char get_BuzControl(void)
-// {
-//     cloud_dev_t *cloud_dev = g_cloud_dev;
-//     cloud_attr_t *attr = cloud_dev->attr;
 
-//     for (int i = 0; i < cloud_dev->attr_len; ++i)
-//     {
-//         if (strcmp("BuzControl", attr->cloud_key) == 0)
-//         {
-//             return *(attr->value);
-//         }
-//     }
-//     return 0;
-// }
 unsigned char get_ErrorCodeShow(void)
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -162,7 +149,6 @@ int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回�
     {
         return -1;
     }
-
     if (attr != NULL)
     {
         if (attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->fun_type == LINK_FUN_TYPE_ATTR_REPORT)
@@ -255,7 +241,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
     cJSON *item = NULL;
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
-        if (ptr->uart_cmd == UART_CMD_MULTISTAGE_STATE)
+        if (strcmp("MultiStageState", ptr->cloud_key) == 0)
         {
             item = cJSON_CreateObject();
 
@@ -275,9 +261,12 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
     else
     {
         int cloud_val = 0;
-        for (int i = 0; i < ptr->uart_byte_len; ++i)
+        if (LINK_VALUE_TYPE_STRING_NUM == ptr->cloud_value_type || LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
-            cloud_val = (cloud_val << 8) + ptr->value[i];
+            for (int i = 0; i < ptr->uart_byte_len; ++i)
+            {
+                cloud_val = (cloud_val << 8) + ptr->value[i];
+            }
         }
         if (LINK_VALUE_TYPE_STRING_NUM == ptr->cloud_value_type)
         {
@@ -291,7 +280,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             {
                 set_gesture_power(cloud_val);
             }
-            else if (strcmp(ptr->cloud_key, "CookbookID") == 0)
+            else if (strcmp("CookbookID", ptr->cloud_key) == 0)
             {
                 if (cloud_val > 0)
                 {
@@ -311,7 +300,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
-            if (ptr->uart_byte_len > 1 && ptr->value[ptr->uart_byte_len - 1] != 0)
+            if (ptr->uart_byte_len > 1)
             {
                 char *buf = (char *)malloc(ptr->uart_byte_len + 1);
                 memcpy(buf, ptr->value, ptr->uart_byte_len);
@@ -360,8 +349,14 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
         int index = 0;
-        if (ptr->uart_cmd == UART_CMD_MULTISTAGE_SET)
+        if (strcmp("MultiStageContent", ptr->cloud_key) == 0 || strcmp("CookbookParam", ptr->cloud_key) == 0)
         {
+            if (strcmp("MultiStageContent", ptr->cloud_key) == 0)
+            {
+                dzlog_warn("get_attr_set_value remind size:%d", sizeof(g_cloud_dev->remind));
+                memset(g_cloud_dev->remind, 0, sizeof(g_cloud_dev->remind));
+            }
+
             int arraySize = cJSON_GetArraySize(item);
             if (arraySize == 0)
             {
@@ -377,7 +372,6 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                 arraySub = cJSON_GetArrayItem(item, i);
                 if (arraySub == NULL)
                     continue;
-
                 out[index++] = i + 1;
 
                 if (cJSON_HasObjectItem(arraySub, "RemindText"))
@@ -397,7 +391,6 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                 {
                     out[index++] = 0;
                 }
-
                 Mode = cJSON_GetObjectItem(arraySub, "Mode");
                 out[index++] = Mode->valueint;
                 Temp = cJSON_GetObjectItem(arraySub, "Temp");
@@ -441,14 +434,6 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                     out[index++] = 0;
                 }
             }
-            if (strcmp("MultiStageContent", ptr->cloud_key) == 0)
-            {
-                dzlog_warn("get_attr_set_value remind size:%d", sizeof(g_cloud_dev->remind));
-                memset(g_cloud_dev->remind, 0, sizeof(g_cloud_dev->remind));
-            }
-            else
-            {
-            }
             dzlog_warn("get_attr_set_value %s:%d %d", ptr->cloud_key, ptr->uart_byte_len, index);
         }
     }
@@ -465,10 +450,9 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
-            if (strcmp(ptr->cloud_key, "CookbookName") == 0)
+            if (strcmp("CookbookName", ptr->cloud_key) == 0)
             {
                 strcpy(ptr->value, item->valuestring);
-                // POSIXTimerSet(cook_name_timer, 0, 1);
                 return 0;
             }
             memcpy(&out[1], item->valuestring, strlen(item->valuestring));
@@ -476,6 +460,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         }
         else
         {
+            return 0;
         }
         for (int i = 0; i < ptr->uart_byte_len; ++i)
         {
@@ -523,7 +508,6 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
             }
         }
     }
-
     report_msg_all_platform(root);
     // cJSON_Delete(root);
 }
@@ -550,7 +534,6 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     // json = get_link_CookHistory();
     // link_send_property_post(json);
     // cJSON_free(json);
-
     return 0;
 }
 
