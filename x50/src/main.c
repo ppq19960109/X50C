@@ -4,7 +4,9 @@
 #include "uds_tcp_server.h"
 #include "uds_protocol.h"
 #include "cloud_platform_task.h"
-
+#ifdef DEBUG
+#include <mcheck.h>
+#endif // DEBUG
 static int running = 0;
 /*********************************************************************************
  *Function:  main_quit
@@ -22,11 +24,20 @@ static int main_quit(void)
         cloud_deinit();        //阿里云相关释放
         zlog_fini();           // zlog释放
         usleep(1000);
+#ifdef DEBUG
+        muntrace();
+        unsetenv("MALLOC_TRACE");
+#endif // DEBUG
     }
     return 0;
 }
 int main(int argc, char **argv)
 {
+#ifdef DEBUG
+    dzlog_info("debug app main start");
+    setenv("MALLOC_TRACE", "./memleak.log", 1);
+    mtrace();
+#endif // DEBUG
     setenv("TZ", "Asia/Shanghai", 1);
     running = 1;
     int rc = dzlog_init("x50zlog.conf", "default"); // zlog初始化

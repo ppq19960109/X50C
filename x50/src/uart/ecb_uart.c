@@ -144,7 +144,12 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     send_msg[index++] = crc16 & 0xff;
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
-    return ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
+    int res = ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
+    if (resend == 0)
+    {
+        free(send_msg);
+    }
+    return res;
 }
 
 static int ecb_recv_cb(void *arg)

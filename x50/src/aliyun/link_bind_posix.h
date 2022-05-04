@@ -7,4 +7,5 @@ void link_bind_token_deinit(void *mqtt_handle);
 
 void register_token_state_cb(void (*cb)(int));
 int get_token_state(void);
+void clear_token_state(void);
 #endif

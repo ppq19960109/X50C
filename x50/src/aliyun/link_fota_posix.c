@@ -11,7 +11,7 @@
 #include "link_fota_posix.h"
 #include "link_solo.h"
 
-#define OTA_FILE "/tmp/upgrade.bin"
+#define OTA_FILE "/userdata/upgrade.bin"
 static FILE *ota_fp = NULL;
 static void *ota_handle = NULL;
 static pthread_t g_download_thread; /* 用于HTTP的固件下载线程 */
@@ -146,7 +146,9 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
         }
         set_ota_state(OTA_INSTALL_START, NULL);
         // system("chmod 777 " OTA_FILE);
-        system("cd /tmp && sh " OTA_FILE);
+        system("sh " OTA_FILE);
+        sync();
+        system("rm -rf " OTA_FILE);
         set_ota_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
         if (ota_complete_cb)

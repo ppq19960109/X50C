@@ -126,7 +126,7 @@ void readFileList(const char *path, int (*readFileFunc)(const char *))
 void *get_dev_profile(const char *path, void *input, const char *modelId, void *(*func)(void *, const char *))
 {
     char filePath[64] = {0};
-    snprintf(filePath, sizeof(filePath), "%s/%s.json", path, modelId);
+    snprintf(filePath, sizeof(filePath), "%s/%s", path, modelId);
     struct stat statfile;
     if (stat(filePath, &statfile) < 0)
     {

@@ -102,7 +102,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
             if (connected_cb != NULL)
                 connected_cb(1);
             link_ntp_request();
-            // link_bind_token_report(handle);
+            link_bind_token_report(handle);
         }
     }
     break;
@@ -118,6 +118,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
                 connected_cb(0);
         }
         g_connected = 0;
+        clear_token_state();
     }
     break;
 
@@ -576,7 +577,7 @@ int link_model_start()
 
     link_ntp_start(mqtt_handle);
     /* 向服务器订阅property/batch/post_reply这个topic */
-    // link_bind_token_init(mqtt_handle, product_key, device_name);
+    link_bind_token_init(mqtt_handle, product_key, device_name);
     // aiot_mqtt_sub(mqtt_handle, "/sys/${YourProductKey}/${YourDeviceName}/thing/event/property/batch/post_reply", NULL, 1, NULL);
     link_reset_init(mqtt_handle, product_key, device_name);
     // link_mqtt_sub_property_get(mqtt_handle, 1);
@@ -607,7 +608,7 @@ int link_model_start()
     link_fota_report_version(cur_version);
     link_ntp_request();
     // link_reset_report();
-    // link_bind_token_report(mqtt_handle);
+    link_bind_token_report(mqtt_handle);
     g_dm_handle = dm_handle;
     if (connected_cb != NULL)
         connected_cb(1);
@@ -652,7 +653,7 @@ int link_model_start()
     g_mqtt_recv_thread_running = 0;
     // link_mqtt_sub_property_get(mqtt_handle, 0);
     link_reset_deinit(mqtt_handle);
-// link_bind_token_deinit(mqtt_handle);
+    link_bind_token_deinit(mqtt_handle);
 #ifdef REMOTE_ACCESS
     link_remote_access_close();
 #endif

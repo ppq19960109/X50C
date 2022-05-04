@@ -202,7 +202,8 @@ static int wiFiReport(int event)
 static int wiFiCallback(int event)
 {
     dzlog_warn("wiFiCallback:%d", event);
-    if (event == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0)
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+    if (event == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0 && strlen(cloud_dev->device_secret) > 0)
     {
         // wiFiReport(RK_WIFI_State_CONNECTFAILED);
         return -1;

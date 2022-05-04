@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 function pathIsNull() {
     if [ "$(ls -A $1)" = "" ]; then
         # echo "$1 is empty"

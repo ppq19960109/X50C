@@ -70,14 +70,18 @@ void wifiInit()
 int wifiEnable(const int enable)
 {
     int ret = RK_wifi_enable(enable);
-    if (ret < 0)
-    {
-        printf("RK_wifi_enable fail!\n");
-    }
+    // if (ret < 0)
+    // {
+    //     printf("RK_wifi_enable fail!\n");
+    // }
+    // else
+    // {
+    //     printf("RK_wifi_enable:%d\n", enable);
+    // }
+    if (enable)
+        system("wpa_cli enable_network all && wpa_cli save_config && wpa_cli wpa_cli reconnect");
     else
-    {
-        printf("RK_wifi_enable:%d\n", enable);
-    }
+        system("wpa_cli disable_network all && wpa_cli save_config");
     return ret;
 }
 

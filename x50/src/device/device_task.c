@@ -9,7 +9,7 @@
 #include "link_bind_posix.h"
 #include "database_task.h"
 #include "gesture_uart.h"
-
+#include "rkwifi.h"
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
@@ -86,9 +86,9 @@ static void *BindTokenState_cb(void *ptr, void *arg)
 
 static void *Reset_cb(void *ptr, void *arg)
 {
-    // wifiDisconnect();
-    // systemRun("wpa_cli remove_network all && wpa_cli save_config");
-    // systemRun("wpa_cli reconfigure");
+    wifiDisconnect();
+    systemRun("wpa_cli remove_network all && wpa_cli save_config");
+    systemRun("wpa_cli reconfigure");
     database_task_reinit();
     link_reset_report();
     uds_event_all();

@@ -16,7 +16,7 @@
 static uint32_t token_exp_time = 0;
 static char token_topic_fmt_buf[128];
 
-static int g_token_state = 1;
+static int g_token_state = 0;
 void (*token_state_cb)(int);
 void register_token_state_cb(void (*cb)(int))
 {
@@ -26,7 +26,10 @@ int get_token_state(void)
 {
     return g_token_state;
 }
-
+void clear_token_state(void)
+{
+    g_token_state = 0;
+}
 static void LITE_hexbuf_convert(unsigned char *digest, char *out, int in_len, int uppercase)
 {
     static char *zEncode[] = {"0123456789abcdef", "0123456789ABCDEF"};
@@ -135,11 +138,14 @@ int link_bind_token_report(void *mqtt_handle)
         printf("link_reset_report error:%d\n", res);
         return -1;
     }
-    char token[BIND_TOKEN_LEN];
-    bind_refresh_token(token);
-    char rand_str[(BIND_TOKEN_LEN << 1) + 1] = {0};
-    LITE_hexbuf_convert((unsigned char *)token, rand_str, BIND_TOKEN_LEN, 1);
+    static char rand_str[(BIND_TOKEN_LEN << 1) + 1] = {0};
+    if (strlen(rand_str) == 0)
+    {
+        char token[BIND_TOKEN_LEN];
+        bind_refresh_token(token);
 
+        LITE_hexbuf_convert((unsigned char *)token, rand_str, BIND_TOKEN_LEN, 1);
+    }
     char payload_fmt_buf[256];
     sprintf(payload_fmt_buf, BIND_REPORT_TOKEN_FMT, alink_id, rand_str);
     printf("%s:%s\n", __func__, payload_fmt_buf);

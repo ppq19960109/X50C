@@ -6,8 +6,8 @@
 #define DEFAULT_PRODUCT_KEY "a1YTZpQDGwn"
 #define DEFAULT_PRODUCT_SECRET "oE99dmyBcH5RAWE3"
 
-#define PROFILE_NAME "DevProfile"
-#define QUAD_NAME "DevQuad"
+#define PROFILE_NAME "DevProfile.json"
+#define QUAD_NAME "DevQuad.json"
 #define ETH_NAME "wlan0"
 #define SOFTER_VER "1.1.2"
 
@@ -93,4 +93,5 @@ cloud_dev_t *get_cloud_dev(void);
 unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
 signed char get_HoodSpeed(void);
+signed char get_StoveStatus(void);
 #endif

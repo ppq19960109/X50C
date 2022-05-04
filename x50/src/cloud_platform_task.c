@@ -116,6 +116,20 @@ signed char get_HoodSpeed(void)
     }
     return *(attr->value);
 }
+signed char get_StoveStatus(void)
+{
+    cloud_attr_t *lattr = get_attr_ptr("LStoveStatus");
+    if (lattr == NULL)
+    {
+        return -1;
+    }
+    cloud_attr_t *rattr = get_attr_ptr("RStoveStatus");
+    if (rattr == NULL)
+    {
+        return -1;
+    }
+    return *(lattr->value) || *(rattr->value);
+}
 // #define SOFT_TEST
 #ifdef SOFT_TEST
 static char *cloud_set_json = NULL;
@@ -570,7 +584,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
-    static unsigned char uart_buf[256];
+    unsigned char uart_buf[256];
     int uart_buf_len = 0;
 
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -617,6 +631,8 @@ int save_device_secret(const char *device_secret)
 {
     strcpy(g_cloud_dev->device_secret, device_secret);
     int res = 0;
+    systemRun("chmod 600 ../" QUAD_NAME);
+    systemRun("chmod 600 " QUAD_NAME);
 
     cJSON *root = cJSON_CreateObject();
 
@@ -628,8 +644,7 @@ int save_device_secret(const char *device_secret)
     char *json = cJSON_PrintUnformatted(root);
 
     res = operateFile(1, "../" QUAD_NAME ".json", json, strlen(json));
-    if (res < 0)
-        res = operateFile(1, QUAD_NAME ".json", json, strlen(json));
+    res = operateFile(1, QUAD_NAME ".json", json, strlen(json));
 
     cJSON_free(json);
     cJSON_Delete(root);
@@ -643,6 +658,10 @@ int save_device_secret(const char *device_secret)
     device_resp_get(root, resp);
     send_event_uds(resp, NULL);
     cJSON_Delete(root);
+
+    systemRun("chmod 400 ../" QUAD_NAME);
+    systemRun("chmod 400 " QUAD_NAME);
+
     sync();
     return res;
 }

@@ -244,7 +244,10 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
             if (speed >= 0 && speed < 3)
             {
                 msg[msg_len++] = 0x31;
-                msg[msg_len++] = ++speed;
+                if (speed == 0)
+                    msg[msg_len++] = 2;
+                else
+                    msg[msg_len++] = ++speed;
             }
         }
         else if (data1 & (1 << 4)) //左挥标志位
@@ -252,8 +255,14 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
             char speed = get_HoodSpeed();
             if (speed > 0)
             {
-                msg[msg_len++] = 0x31;
-                msg[msg_len++] = --speed;
+                if (speed == 1 && get_StoveStatus() > 0)
+                {
+                }
+                else
+                {
+                    msg[msg_len++] = 0x31;
+                    msg[msg_len++] = --speed;
+                }
             }
         }
         if (data1 & (1 << 6)) //闹钟提示标志位
