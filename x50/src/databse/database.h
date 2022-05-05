@@ -11,7 +11,7 @@ extern "C"
 #define RECIPE_DB_NAME "recipe.db"
 #define HISTORY_TABLE_NAME "history"
 #define RECIPE_TABLE_NAME "recipe"
-#define RECIPES_FILE "Recipes"
+#define RECIPES_FILE "Recipes.json"
 
     typedef struct
     {

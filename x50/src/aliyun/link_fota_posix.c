@@ -144,10 +144,10 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
             fclose(ota_fp);
             ota_fp = NULL;
         }
+        sync();
         set_ota_state(OTA_INSTALL_START, NULL);
         // system("chmod 777 " OTA_FILE);
         system("sh " OTA_FILE);
-        sync();
         system("rm -rf " OTA_FILE);
         set_ota_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
