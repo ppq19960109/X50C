@@ -153,6 +153,13 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "HoodOffRemind",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 57,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "MultiMode",
             "valueType": 0,
             "funType": 0,

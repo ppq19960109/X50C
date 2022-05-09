@@ -69,7 +69,8 @@ void wifiInit()
  */
 int wifiEnable(const int enable)
 {
-    int ret = RK_wifi_enable(enable);
+    int ret = 0;
+    // ret = RK_wifi_enable(enable);
     // if (ret < 0)
     // {
     //     printf("RK_wifi_enable fail!\n");

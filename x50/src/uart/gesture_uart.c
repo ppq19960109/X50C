@@ -147,7 +147,7 @@ void gesture_send_error_cloud(int error_code, int clear)
         payload[index++] = 0x0b;
         payload[index++] = error_code;
     }
-    send_data_to_cloud(payload, index);
+    send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT);
 }
 void gesture_auto_sync_time_alarm(int alarm)
 {

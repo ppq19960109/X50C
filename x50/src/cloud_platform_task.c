@@ -473,8 +473,9 @@ end:
     return ptr->uart_byte_len + 1;
 }
 
-void send_data_to_cloud(const unsigned char *value, const int value_len) //所有串口数据解析，并上报阿里云平台和UI
+void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
 {
+    static char first_uds_report = 0;
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -508,8 +509,33 @@ void send_data_to_cloud(const unsigned char *value, const int value_len) //所�
             }
         }
     }
-    report_msg_all_platform(root);
-    // cJSON_Delete(root);
+    if (cJSON_Object_isNull(root))
+    {
+        cJSON_Delete(root);
+        dzlog_warn("%s,send NULL", __func__);
+        return;
+    }
+    char *json = cJSON_PrintUnformatted(root);
+    link_send_property_post(json);
+    cJSON_free(json);
+
+    if (ECB_UART_COMMAND_GETACK == command)
+    {
+        if (first_uds_report > 0)
+        {
+            cJSON_Delete(root);
+        }
+        else
+        {
+            first_uds_report = 1;
+            send_event_uds(root, NULL);
+        }
+    }
+    else
+    {
+        send_event_uds(root, NULL);
+    }
+    return;
 }
 
 int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚建立连接

@@ -24,7 +24,7 @@ void send_error_to_cloud(int error_code)
     payload[index++] = code;
     payload[index++] = 0x0b;
     payload[index++] = error_code;
-    send_data_to_cloud(payload, index);
+    send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT);
 }
 
 int ecb_uart_msg_get(bool increase)
@@ -226,7 +226,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         ecb_uart_send_ack(seq_id);
         if (command == ECB_UART_COMMAND_EVENT)
         {
-            send_data_to_cloud(payload, data_len);
+            send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_EVENT);
         }
         else if (command == ECB_UART_COMMAND_KEYPRESS)
         {
@@ -252,7 +252,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     {
         msg_get_timeout_count = 0;
         // ecb_resend_list_del_by_id(seq_id);
-        send_data_to_cloud(payload, data_len);
+        send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK);
     }
     else if (command == ECB_UART_COMMAND_ACK || command == ECB_UART_COMMAND_NAK)
     {
