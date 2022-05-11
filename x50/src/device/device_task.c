@@ -87,8 +87,7 @@ static void *BindTokenState_cb(void *ptr, void *arg)
 static void *Reset_cb(void *ptr, void *arg)
 {
     wifiDisconnect();
-    systemRun("wpa_cli remove_network all && wpa_cli save_config");
-    systemRun("wpa_cli reconfigure");
+    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure");
     database_task_reinit();
     link_reset_report();
     uds_event_all();

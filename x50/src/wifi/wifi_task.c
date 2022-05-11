@@ -89,6 +89,7 @@ static void *WifiCurConnected_cb(void *ptr, void *arg)
     {
         dzlog_error("getWifiConnectionInfo error");
         // return NULL;
+        memset(&wifiInfo, 0, sizeof(RK_WIFI_INFO_Connection_s));
     }
     cJSON *item = cJSON_CreateObject();
     cJSON_AddStringToObject(item, "ssid", wifiInfo.ssid);
