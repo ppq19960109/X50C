@@ -4,6 +4,7 @@
 #include "uds_tcp_server.h"
 #include "uds_protocol.h"
 #include "cloud_platform_task.h"
+#include "KV_linux.h"
 #ifdef DEBUG
 #include <mcheck.h>
 #endif // DEBUG
@@ -39,6 +40,12 @@ int main(int argc, char **argv)
     mtrace();
 #endif // DEBUG
     setenv("TZ", "Asia/Shanghai", 1);
+    // char val[4] = {6, 2, 3, 4};
+    // char val2[4] = {0};
+    // int len = 4;
+    // printf("H_Kv_Set:%d\n",H_Kv_Set("test",val,4,1));
+    // printf("H_Kv_Get:%d\n",H_Kv_Get("test",val2,&len));
+    // printf("len:%d value:%d %d %d %d\n",len,val2[0],val2[1],val2[2],val2[3]);
     running = 1;
     int rc = dzlog_init("x50zlog.conf", "default"); // zlog初始化
     if (rc)

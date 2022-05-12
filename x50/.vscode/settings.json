@@ -128,6 +128,8 @@
         "link_solo.h": "c",
         "link_dynregmq_posix.h": "c",
         "link_remote_access.h": "c",
-        "rk_wifi.h": "c"
+        "rk_wifi.h": "c",
+        "stdint.h": "c",
+        "kv_linux.h": "c"
     }
 }

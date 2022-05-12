@@ -11,26 +11,14 @@
 #include "core_global.h"
 
 #include "link_solo.h"
-#define RESET_FLAG "link_reset"
+#include "KV_linux.h"
+#define LINK_RST_FLAG "link_reset"
 static char reset_topic_fmt_buf[128];
-
-static void create_reset_flag()
-{
-    FILE *fp = fopen(RESET_FLAG, "wb+");
-    fclose(fp);
-}
-static void remove_reset_flag()
-{
-    remove(RESET_FLAG);
-}
-static int access_reset_flag()
-{
-    return access(RESET_FLAG, 0);
-}
 
 static void link_reset_recv_handler(void *handle, const aiot_mqtt_recv_t *packet, void *userdata)
 {
-    remove_reset_flag();
+    char rst = 0x00;
+    H_Kv_Set(LINK_RST_FLAG, &rst, sizeof(rst), 0);
     printf("type:%d\n", packet->type);
     printf("topic:%s\n", packet->data.pub.topic);
     printf("payload:%s\n", packet->data.pub.payload);
@@ -73,16 +61,23 @@ static int link_reset(void)
 
 int link_reset_report(void)
 {
-    create_reset_flag();
+    char rst = 0x01;
+    H_Kv_Set(LINK_RST_FLAG, &rst, sizeof(rst), 0);
     link_reset();
     return 0;
 }
 
 int link_reset_check(void *mqtt_handle)
 {
-    int res = access_reset_flag();
-    printf("link_reset_check:%d\n", res);
-    if (res == 0)
+    int len = 1;
+    char rst = 0;
+    int ret = H_Kv_Get(LINK_RST_FLAG, &rst, &len);
+    if (ret < 0)
+    {
+        rst = 1;
+        H_Kv_Set(LINK_RST_FLAG, &rst, sizeof(rst), 0);
+    }
+    if (rst > 0)
         link_reset();
     return 0;
 }
