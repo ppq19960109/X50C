@@ -4,6 +4,7 @@
 #include "ecb_uart_parse_msg.h"
 #include "uart_resend.h"
 #include "uart_task.h"
+#include "gesture_uart.h"
 
 enum msg_get_time_t
 {
@@ -165,7 +166,7 @@ static int ecb_recv_cb(void *arg)
         dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        dzlog_warn("ecb uart_read_buf_index:%d", uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;
@@ -192,11 +193,12 @@ static int ecb_timeout_cb(void)
     {
         ecb_msg_get_timeout = MSG_GET_SHORT_TIME;
     }
-
+    // gesture_uart_msg_get();
     if (++ecb_msg_get_count > ecb_msg_get_timeout)
     {
         ecb_msg_get_count = 0;
         ecb_uart_msg_get(true);
+        gesture_uart_msg_get();
         dzlog_warn("ecb_uart_msg_get\n");
     }
     if (ecb_uart_heart_timeout(false) < MSG_HEART_TIME)

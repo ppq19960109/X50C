@@ -278,7 +278,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         {
             if (strcmp("SysPower", ptr->cloud_key) == 0)
             {
-                set_gesture_power(cloud_val);
+                // set_gesture_power(cloud_val);
             }
             else if (strcmp("CookbookID", ptr->cloud_key) == 0)
             {
@@ -475,6 +475,7 @@ end:
 
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
 {
+    unsigned char uart_buf[6];
     static char first_uds_report = 0;
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
@@ -482,33 +483,67 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
     cloud_attr_t *attr = cloud_dev->attr;
 
     cJSON *root = cJSON_CreateObject();
-    if (value != NULL)
+    if (value == NULL)
     {
-        for (i = 0; i < value_len; ++i)
+        return;
+    }
+    for (i = 0; i < value_len; ++i)
+    {
+        for (j = 0; j < cloud_dev->attr_len; ++j)
         {
-            for (j = 0; j < cloud_dev->attr_len; ++j)
+            if (value[i] == attr[j].uart_cmd)
             {
-                if (value[i] == attr[j].uart_cmd)
+                get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
+                memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
+                // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                get_attr_report_value(root, &attr[j]);
+                if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
                 {
-                    get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
-                    memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
-                    // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
-                    // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
-                    get_attr_report_value(root, &attr[j]);
-                    if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
+                    cloud_attr_t *ptr = get_attr_ptr("CookbookName");
+                    if (ptr != NULL)
                     {
-                        cloud_attr_t *ptr = get_attr_ptr("CookbookName");
-                        if (ptr != NULL)
-                        {
-                            get_attr_report_value(root, ptr);
-                        }
+                        get_attr_report_value(root, ptr);
                     }
-                    i += attr[j].uart_byte_len;
-                    break;
                 }
+                else if (strcmp("RStOvRealTemp", attr[j].cloud_key) == 0)
+                {
+                    uart_buf[0] = 0x74;
+                    uart_buf[1] = attr[j].value[0];
+                    uart_buf[2] = attr[j].value[1];
+                    gesture_uart_send_cloud_msg(uart_buf, 3);
+                }
+                i += attr[j].uart_byte_len;
+                break;
             }
         }
     }
+
+    cloud_dev = get_gesture_dev();
+    attr = cloud_dev->attr;
+
+    for (i = 0; i < value_len; ++i)
+    {
+        for (j = 0; j < cloud_dev->attr_len; ++j)
+        {
+            if (value[i] == attr[j].uart_cmd)
+            {
+                memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
+                // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                get_attr_report_value(root, &attr[j]);
+                if (strcmp("IceHoodSpeed", attr[j].cloud_key) == 0)
+                {
+                    uart_buf[0] = 0x31;
+                    uart_buf[1] = attr[j].value[0];
+                    ecb_uart_send_cloud_msg(uart_buf, 2);
+                }
+                i += attr[j].uart_byte_len;
+                break;
+            }
+        }
+    }
+
     if (cJSON_Object_isNull(root))
     {
         cJSON_Delete(root);
@@ -521,13 +556,13 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
 
     if (ECB_UART_COMMAND_GETACK == command)
     {
-        if (first_uds_report > 0)
+        if (first_uds_report >= 4)
         {
             cJSON_Delete(root);
         }
         else
         {
-            first_uds_report = 1;
+            ++first_uds_report;
             send_event_uds(root, NULL);
         }
     }
@@ -587,6 +622,13 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
     {
         get_attr_report_value(resp, &attr[i]);
     }
+
+    cloud_dev = get_gesture_dev();
+    attr = cloud_dev->attr;
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        get_attr_report_value(resp, &attr[i]);
+    }
     return 0;
 }
 
@@ -609,6 +651,23 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     if (uart_buf_len > 0)
     {
         ecb_uart_send_cloud_msg(uart_buf, uart_buf_len);
+    }
+
+    uart_buf_len = 0;
+    cloud_dev = get_gesture_dev();
+    attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if ((attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, attr[i].cloud_key))
+        {
+            cJSON *item = cJSON_GetObjectItem(root, attr[i].cloud_key);
+            uart_buf_len += get_attr_set_value(&attr[i], item, &uart_buf[uart_buf_len]);
+        }
+    }
+    if (uart_buf_len > 0)
+    {
+        gesture_uart_send_cloud_msg(uart_buf, uart_buf_len);
     }
 
     cJSON *resp_db = cJSON_CreateObject();
@@ -874,7 +933,10 @@ void cloud_deinit(void) //反初始化
     curl_global_cleanup();
     link_model_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
-        free(g_cloud_dev->attr[i].value);
+    {
+        if (g_cloud_dev->attr[i].uart_byte_len > 0)
+            free(g_cloud_dev->attr[i].value);
+    }
     free(g_cloud_dev->attr);
     free(g_cloud_dev);
     dzlog_warn("cloud_deinit...........\n");

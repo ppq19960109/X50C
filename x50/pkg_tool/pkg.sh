@@ -5,7 +5,7 @@ SOFTWARE_VERSION="1.1.3"
 
 #compress directory and compress file name
 PKG_DIRNAME="install"
-PKG_FINAL_FILENAME="upgrade_${SOFTWARE_VERSION}_x50.bin"
+PKG_FINAL_FILENAME="upgrade_${SOFTWARE_VERSION}_x50Ice.bin"
 rm -f upgrade_*.bin
 #upgrade file name
 PKG_INSTALL_FILE="install.sh"

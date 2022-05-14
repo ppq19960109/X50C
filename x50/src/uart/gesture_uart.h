@@ -1,8 +1,9 @@
 #ifndef _GESTURE_UART_H_
 #define _GESTURE_UART_H_
-
+#include "cloud_platform_task.h"
 void gesture_uart_init(void);
 void gesture_uart_deinit(void);
-void gesture_auto_sync_time_alarm(int alarm);
-void set_gesture_power(const int power);
+int gesture_uart_send_cloud_msg(unsigned char *msg, const int msg_len);
+int gesture_uart_msg_get();
+cloud_dev_t *get_gesture_dev();
 #endif

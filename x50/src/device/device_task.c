@@ -97,7 +97,7 @@ static void *Reset_cb(void *ptr, void *arg)
 
 static void *Alarm_cb(void *ptr, void *arg)
 {
-    gesture_auto_sync_time_alarm(1);
+    // gesture_auto_sync_time_alarm(1);
     return NULL;
 }
 
