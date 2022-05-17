@@ -476,11 +476,12 @@ end:
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
 {
     static char first_uds_report = 0;
+    // dzlog_debug("send_data_to_cloud...");
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
-    if (value != NULL)
+    if (value == NULL)
     {
         return;
     }
@@ -494,8 +495,8 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
             {
                 get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
                 memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
-                // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
-                // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
                 get_attr_report_value(root, &attr[j]);
                 if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
                 {
@@ -1015,6 +1016,45 @@ fail:
     return size * nmemb;
 }
 
+// size_t http_weather_cb(void *ptr, size_t size, size_t nmemb, void *stream)
+// {
+//     printf("%s size:%u,nmemb:%u\n", __func__, size, nmemb);
+//     printf("%s data:%s\n", __func__, (char *)ptr);
+//     return size * nmemb;
+// }
+// int curl_weather()
+// {
+//     CURLcode res;
+//     struct curl_slist *headers = NULL;
+
+//     // get a curl handle
+//     CURL *curl = curl_easy_init();
+//     if (curl)
+//     {
+//         curl_easy_setopt(curl, CURLOPT_URL, "https://wttr.in/杭州?format=j2");//http://mcook.marssenger.com/application/weather/day https://wttr.in
+//         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_weather_cb);
+//         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 4L);
+//         // curl_easy_setopt(curl, CURLOPT_POST, 1);
+
+//         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+//         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+//         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+//         // perform the request, res will get the return code
+//         res = curl_easy_perform(curl);
+//         // check for errors
+//         if (res != CURLE_OK)
+//         {
+//             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+//         }
+//         else
+//         {
+//             fprintf(stdout, "curl_easy_perform() success.\n");
+//         }
+//         // always cleanup
+//         curl_easy_cleanup(curl);
+//     }
+//     return 0;
+// }
 void *cloud_task(void *arg) //云端任务
 {
     if (strlen(g_cloud_dev->product_key) == 0)
@@ -1034,6 +1074,7 @@ void *cloud_task(void *arg) //云端任务
     {
         if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
         {
+            // curl_weather();
             if (strlen(g_cloud_dev->device_secret) == 0)
             {
                 char ip[24];
