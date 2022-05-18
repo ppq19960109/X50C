@@ -1,17 +1,17 @@
 # X50BCZ
-##目录介绍
-src：源码
-pkg_tool：升级包打包工具
-libhistory：烹饪历史库
-LinkSDK-MQTT5-CA：阿里云SDK4库
-liblinktool：编译完成的自定义工具库
-DevProfile.json：电控板和阿里云之间数据转换配置文件
-DevQuad.json：阿里云四元组
-Recipes.json：菜谱配置文件
-RecipesDetails.json：菜谱详情文件，UI程序使用
-x50_log.conf:zlog配置文件
-makefile：编译文件
-logo:上电启动时UI前会产生一段时间黑屏，为了解决这个，先运行这个程序显示logo
+##目录介绍  
+src：源码  
+pkg_tool：升级包打包工具  
+libhistory：烹饪历史库  
+LinkSDK-MQTT5-CA：阿里云SDK4库  
+liblinktool：编译完成的自定义工具库  
+DevProfile.json：电控板和阿里云之间数据转换配置文件  
+DevQuad.json：阿里云四元组  
+Recipes.json：菜谱配置文件  
+RecipesDetails.json：菜谱详情文件，UI程序使用  
+x50_log.conf:zlog配置文件  
+makefile：编译文件  
+logo:上电启动时UI前会产生一段时间黑屏，为了解决这个，先运行这个程序显示logo  
 
 ###src目录
 aliyun：阿里云交互代码
