@@ -481,12 +481,12 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *attr = cloud_dev->attr;
-
-    cJSON *root = cJSON_CreateObject();
     if (value == NULL)
     {
         return;
     }
+    cJSON *root = cJSON_CreateObject();
+
     for (i = 0; i < value_len; ++i)
     {
         for (j = 0; j < cloud_dev->attr_len; ++j)

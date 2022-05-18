@@ -174,7 +174,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     unsigned char command = in[index + msg_index];
     msg_index += 1;
     int data_len = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    if (data_len > 512)
+    if (data_len > 1024)
     {
         *end = index + 1;
         dzlog_error("input data len error");
