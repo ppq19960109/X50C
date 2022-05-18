@@ -151,6 +151,7 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
         system("rm -rf " OTA_FILE);
         set_ota_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
+        sleep(1);
         if (ota_complete_cb)
             ota_complete_cb();
     }
