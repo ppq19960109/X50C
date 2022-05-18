@@ -46,5 +46,5 @@ $(OUT_DIR)/%.o: %.c
 clean:
 	$(Q)rm -rf $(OUT_DIR) libalisdk.a
 
- install: $(OBJ_FILES)
+install: $(OBJ_FILES)
 	$(AR) libalisdk.a $(OBJ_FILES)

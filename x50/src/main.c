@@ -8,7 +8,7 @@
 #ifdef DEBUG
 #include <mcheck.h>
 #endif // DEBUG
-static int running = 0;
+static char running = 0;
 /*********************************************************************************
  *Function:  main_quit
  *Description： main主函数退出清理资源函数

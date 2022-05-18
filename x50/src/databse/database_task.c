@@ -342,9 +342,8 @@ void cook_history(cJSON *root)
             cJSON_AddNumberToObject(cookStep, "time", Timer->valueint);
             cJSON_AddNumberToObject(cookStep, "temp", Temp->valueint);
             cJSON_AddNumberToObject(cookStep, "number", i + 1);
-            sprintf(&recipe.dishName[strlen(recipe.dishName)], "%s-", leftWorkModeFun(Mode->valueint));
         }
-        recipe.dishName[strlen(recipe.dishName) - 1] = 0;
+        strcpy(recipe.dishName, CookbookName->valuestring);
     }
     else if (cJSON_HasObjectItem(root, "MultiStageContent"))
     {
