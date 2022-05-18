@@ -1,10 +1,10 @@
 # X50BCZ
 ##目录介绍  
-src：源码   
-pkg_tool：升级包打包工具    
+src：源码  
+pkg_tool：升级包打包工具  
 libhistory：烹饪历史库  
 LinkSDK-MQTT5-CA：阿里云SDK4库  
-liblinktool：编译完成的自定义工具库 
+liblinktool：编译完成的自定义工具库  
 DevProfile.json：电控板和阿里云之间数据转换配置文件 
 DevQuad.json：阿里云四元组  
 Recipes.json：菜谱配置文件  
