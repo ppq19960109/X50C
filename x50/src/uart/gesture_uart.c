@@ -16,10 +16,11 @@ static timer_t g_gesture_heart_timer;
 
 static int fd = -1;
 static pthread_mutex_t lock;
-static unsigned char gesture_error_status = 0;
+static unsigned char gesture_error_code = 0;
 static unsigned char gesture_alarm_status = 0;
 static struct Select_Client_Event select_client_event;
 static unsigned char gesture_power = 0;
+static int gesture_send_error = 0;
 
 static unsigned short msg_verify(const unsigned char *data, int len)
 {
@@ -123,6 +124,21 @@ static void gesture_sync_time_cb(int state)
 {
     gesture_sync_time_and_alarm(state, 0);
 }
+void gesture_error_code_func(int *error_code)
+{
+    if (gesture_error_code > 0)
+    {
+        *error_code |= 1 << (gesture_error_code - 1);
+    }
+}
+
+void gesture_error_show_func(int *error_show)
+{
+    if (gesture_error_code > 0 && *error_show == 0)
+    {
+        *error_show = gesture_error_code;
+    }
+}
 void gesture_send_error_cloud(int error_code, int clear)
 {
     unsigned char payload[8] = {0};
@@ -132,23 +148,39 @@ void gesture_send_error_cloud(int error_code, int clear)
     payload[index++] = 0x0a;
     if (clear)
     {
+        gesture_error_code = 0;
         code &= ~(1 << (error_code - 1));
     }
     else
     {
+        gesture_error_code = error_code;
         code |= 1 << (error_code - 1);
     }
     payload[index++] = code >> 24;
     payload[index++] = code >> 16;
     payload[index++] = code >> 6;
     payload[index++] = code;
-    if (clear == 0 && get_ErrorCodeShow() == 0)
+
+    unsigned char codeShow = get_ErrorCodeShow();
+    if (clear)
     {
-        payload[index++] = 0x0b;
-        payload[index++] = error_code;
+        if (codeShow == error_code)
+        {
+            payload[index++] = 0x0b;
+            payload[index++] = 0;
+        }
+    }
+    else
+    {
+        if (codeShow == 0)
+        {
+            payload[index++] = 0x0b;
+            payload[index++] = error_code;
+        }
     }
     send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT);
 }
+
 void gesture_auto_sync_time_alarm(int alarm)
 {
     if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
@@ -227,14 +259,21 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
         unsigned char msg_len = 0;
         if (data1 & (1 << 1))
         {
-            if (++gesture_recv_error > 4)
+            if (++gesture_recv_error >= 4)
             {
-                gesture_recv_error = 0;
-                gesture_auto_sync_time_alarm(0);
+                if (gesture_recv_error % 4 == 0)
+                {
+                    gesture_auto_sync_time_alarm(0);
+                }
+                if (gesture_recv_error == 4)
+                    gesture_send_error_cloud(GESTURE_ERROR, 1);
             }
         }
         else
         {
+            if (gesture_recv_error > 0 || gesture_send_error > 0)
+                gesture_send_error_cloud(GESTURE_ERROR, 0);
+            gesture_send_error = 0;
             gesture_recv_error = 0;
         }
 
@@ -298,15 +337,10 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
         }
         else if (data2 == 0x15)
         {
-            gesture_send_error_cloud(GESTURE_ERROR, 0);
-            gesture_error_status = 1;
+            msg[msg_len++] = 0xf7;
+            msg[msg_len++] = 0x02;
         }
 
-        if (gesture_error_status > 0 && data2 != 0x15)
-        {
-            gesture_error_status = 0;
-            gesture_send_error_cloud(GESTURE_ERROR, 1);
-        }
         if (msg_len > 0)
             ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
         // hour = in[index + 6];
@@ -319,7 +353,7 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
 
 static void gesture_POSIXTimer_cb(union sigval val)
 {
-    dzlog_warn("gesture_POSIXTimer_cb timeout:%d", val.sival_int);
+    dzlog_warn("gesture_POSIXTimer_cb timeout:%d gesture_send_error:%d", val.sival_int, gesture_send_error);
     if (val.sival_int == 1)
     {
         gesture_auto_sync_time_alarm(0);
@@ -333,6 +367,11 @@ static void gesture_POSIXTimer_cb(union sigval val)
         else
         {
             gesture_send_msg(0, 0, 0, 0, 0);
+        }
+        if (gesture_send_error < 8)
+        {
+            if (++gesture_send_error == 8)
+                gesture_send_error_cloud(GESTURE_ERROR, 0);
         }
     }
 }

@@ -280,6 +280,14 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             {
                 set_gesture_power(cloud_val);
             }
+            else if (strcmp("ErrorCode", ptr->cloud_key) == 0)
+            {
+                gesture_error_code_func(&cloud_val);
+            }
+            else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
+            {
+                 gesture_error_show_func(&cloud_val);
+            }
             else if (strcmp("CookbookID", ptr->cloud_key) == 0)
             {
                 if (cloud_val > 0)
@@ -891,7 +899,7 @@ void cloud_deinit(void) //反初始化
     }
     pthread_mutex_destroy(&mutex);
 }
-#define QUAD_REQUEST_URL_FMT "http://%s:10010"
+#define QUAD_REQUEST_URL_FMT "http://%s:58396"
 static char quad_request_url[80];
 size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream);
 
