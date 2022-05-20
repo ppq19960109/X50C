@@ -57,7 +57,7 @@ int CookHistory::compareHistoryCollect(const history_t *single)
         if (iter->history.collect == 0)
             continue;
 
-        if (strcmp(iter->history.dishName, single->dishName) == 0 && iter->history.recipeid == single->recipeid && strcmp(iter->history.cookSteps, single->cookSteps) == 0)
+        if (iter->history.recipeid == single->recipeid && strcmp(iter->history.cookSteps, single->cookSteps) == 0)
         {
             iter->history.timestamp = single->timestamp;
             return iter->history.id;
@@ -104,6 +104,8 @@ int CookHistory::insertHistory(history_t *single)
     if (id >= 0)
     {
         history_t history = {0};
+        history.id = id;
+        history.collect = -1;
         history.timestamp = single->timestamp;
         ret = history_update_cb(&history);
     }

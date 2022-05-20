@@ -110,6 +110,7 @@ static int wrapper_histroy_select_cb(history_t *recipe, void *arg, int simple)
 
 static int wrapper_history_update_cb(history_t *history)
 {
+    dzlog_info("history_update_cb:id:%d\n", history->id);
     cJSON *root = cJSON_CreateObject();
     cJSON *UpdateHistory = cJSON_AddObjectToObject(root, "UpdateHistory");
     cJSON_AddNumberToObject(UpdateHistory, "id", history->id);
@@ -128,7 +129,11 @@ static int wrapper_history_update_cb(history_t *history)
         update_key_string_table(HISTORY_TABLE_NAME, "dishName", history->dishName, history->id);
         cJSON_AddStringToObject(UpdateHistory, "dishName", history->dishName);
     }
-    update_key_to_table(HISTORY_TABLE_NAME, "seqid", g_history_seqid + 1, history->id);
+    if (update_key_to_table(HISTORY_TABLE_NAME, "seqid", g_history_seqid + 1, history->id) < 0)
+    {
+        cJSON_Delete(root);
+        return -1;
+    }
     cJSON_AddNumberToObject(UpdateHistory, "seqid", g_history_seqid + 1);
     ++g_history_seqid;
     history->seqid = g_history_seqid;
@@ -140,12 +145,13 @@ static int wrapper_history_update_cb(history_t *history)
 
 static int wrapper_history_delete_cb(int id)
 {
-    cJSON *array = cJSON_CreateArray();
+    cJSON *root = cJSON_CreateObject();
+    cJSON *array = cJSON_AddArrayToObject(root, "DeleteHistory");
     cJSON_AddItemToArray(array, cJSON_CreateNumber(id));
 
     delete_row_from_table(HISTORY_TABLE_NAME, id);
     wrapper_reportDeleteHistory(id);
-    report_msg_all_platform(array);
+    report_msg_all_platform(root);
     return 0;
 }
 

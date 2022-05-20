@@ -286,7 +286,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             }
             else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
             {
-                 gesture_error_show_func(&cloud_val);
+                gesture_error_show_func(&cloud_val);
             }
             else if (strcmp("CookbookID", ptr->cloud_key) == 0)
             {
@@ -560,6 +560,8 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
 
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
+        if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
+            continue;
         get_attr_report_event(&attr[i], attr[i].value, 1);
         get_attr_report_value(root, &attr[i]);
     }
@@ -583,6 +585,8 @@ int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
     {
         if (cJSON_HasObjectItem(root, attr[i].cloud_key))
         {
+            if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
+                continue;
             get_attr_report_value(resp, &attr[i]);
         }
     }
@@ -596,6 +600,8 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
+        if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
+            continue;
         get_attr_report_value(resp, &attr[i]);
     }
     return 0;
@@ -663,8 +669,8 @@ int save_device_secret(const char *device_secret)
 
     char *json = cJSON_PrintUnformatted(root);
 
-    res = operateFile(1, "../" QUAD_NAME ".json", json, strlen(json));
-    res = operateFile(1, QUAD_NAME ".json", json, strlen(json));
+    res = operateFile(1, "../" QUAD_NAME, json, strlen(json));
+    res = operateFile(1, QUAD_NAME, json, strlen(json));
 
     cJSON_free(json);
     cJSON_Delete(root);
@@ -1078,6 +1084,8 @@ void *cloud_task(void *arg) //云端任务
         getNetworkMac(ETH_NAME, g_cloud_dev->device_name, sizeof(g_cloud_dev->device_name), "");
     }
 #if 1
+    char ip[24] = {0};
+    unsigned int s_addr = 0;
     do
     {
         if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
@@ -1085,8 +1093,12 @@ void *cloud_task(void *arg) //云端任务
             // curl_weather();
             if (strlen(g_cloud_dev->device_secret) == 0)
             {
-                char ip[24];
-                unsigned int s_addr = getNetworkIp(ETH_NAME, NULL, 0);
+                if (strlen(ip) == 0 && s_addr == 0)
+                {
+                    dzlog_warn("first get ip......................");
+                    sleep(6);
+                }
+                s_addr = getNetworkIp(ETH_NAME, NULL, 0);
                 if (s_addr < 0)
                 {
                     sleep(1);

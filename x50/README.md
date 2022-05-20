@@ -29,7 +29,7 @@ main.c:main主函数
 ./pkg_tool/pkg.sh  
 运行后会生成类似upgrade_1.1.2_x50.bin的升级固件  
 ### 升级目录介绍  
-![升级目录](pkg.png "升级目录")  
+![升级目录](update_pkg.png "升级目录")  
 intstall.sh：安装脚本，把升级包中文件复制进入设备  
 install：安装打包目录，**install/root**目录下路径和设备路径相同，需要升级的文件放入对应位置，升级时会把文件复制进相同目录  
 makeself:开源打包工具  

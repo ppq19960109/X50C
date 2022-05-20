@@ -104,6 +104,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
             resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
             ecb_resend_list_add(resend);
         }
+        usleep(100000);
     fail:
         pthread_mutex_unlock(&lock);
         return res;

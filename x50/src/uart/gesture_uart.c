@@ -266,13 +266,13 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
                     gesture_auto_sync_time_alarm(0);
                 }
                 if (gesture_recv_error == 4)
-                    gesture_send_error_cloud(GESTURE_ERROR, 1);
+                    gesture_send_error_cloud(GESTURE_ERROR, 0);
             }
         }
         else
         {
-            if (gesture_recv_error > 0 || gesture_send_error > 0)
-                gesture_send_error_cloud(GESTURE_ERROR, 0);
+            if (gesture_recv_error > 0 || gesture_send_error > 2)
+                gesture_send_error_cloud(GESTURE_ERROR, 1);
             gesture_send_error = 0;
             gesture_recv_error = 0;
         }
@@ -368,9 +368,9 @@ static void gesture_POSIXTimer_cb(union sigval val)
         {
             gesture_send_msg(0, 0, 0, 0, 0);
         }
-        if (gesture_send_error < 8)
+        if (gesture_send_error < 6)
         {
-            if (++gesture_send_error == 8)
+            if (++gesture_send_error == 6)
                 gesture_send_error_cloud(GESTURE_ERROR, 0);
         }
     }
