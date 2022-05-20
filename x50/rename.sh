@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 
 # for i in `ls images/*@2x.png`; do

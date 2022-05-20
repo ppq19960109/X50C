@@ -356,6 +356,13 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "BuzControl",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 247,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "PermitSteamStartStatus",
             "valueType": 0,
             "funType": 2,
