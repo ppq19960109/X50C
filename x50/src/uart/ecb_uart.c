@@ -9,7 +9,7 @@
 enum msg_get_time_t
 {
     MSG_GET_SHORT_TIME = 3 * 5,
-    MSG_GET_LONG_TIME = 2 * 30 * 5,
+    MSG_GET_LONG_TIME = 1 * 30 * 6,
     MSG_HEART_TIME = 15 * 5,
 };
 
@@ -83,28 +83,9 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
             res = 0;
             goto fail;
         }
-
         res = write(fd, in, in_len);
         if (resend)
-        {
-            uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
-            resend->send_len = in_len;
-            if (iscopy)
-            {
-                resend->send_data = (unsigned char *)malloc(resend->send_len);
-                memcpy(resend->send_data, in, resend->send_len);
-            }
-            else
-                resend->send_data = (unsigned char *)in;
-
-            // resend->fd = fd;
-            if (resend->send_len >= 4)
-                resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
-            resend->resend_cnt = RESEND_CNT;
-            resend->resend_cb = ecb_uart_resend_cb;
-            resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
-            ecb_resend_list_add(resend);
-        }
+            usleep(50000);
     fail:
         pthread_mutex_unlock(&lock);
         return res;
@@ -112,6 +93,26 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
     else
     {
         dzlog_error("pthread_mutex_lock error\n");
+    }
+    if (resend)
+    {
+        uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
+        resend->send_len = in_len;
+        if (iscopy)
+        {
+            resend->send_data = (unsigned char *)malloc(resend->send_len);
+            memcpy(resend->send_data, in, resend->send_len);
+        }
+        else
+            resend->send_data = (unsigned char *)in;
+
+        // resend->fd = fd;
+        if (resend->send_len >= 4)
+            resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
+        resend->resend_cnt = RESEND_CNT;
+        resend->resend_cb = ecb_uart_resend_cb;
+        resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
+        ecb_resend_list_add(resend);
     }
     return res;
 }
@@ -165,7 +166,7 @@ static int ecb_recv_cb(void *arg)
         uart_read_buf_index += uart_read_len;
         dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         hdzlog_info(uart_read_buf, uart_read_buf_index);
-        uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
+        uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg, 0);
         dzlog_warn("ecb uart_read_buf_index:%d", uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
     }

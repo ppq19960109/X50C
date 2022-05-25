@@ -109,7 +109,7 @@ int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len);
 int ecb_uart_send_factory(ft_ret_t ret);
 void send_error_to_cloud(int error_code);
 
-int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
-void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *));
+int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end, int argc);
+void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *, int), int argc);
 
 #endif

@@ -76,7 +76,7 @@ int cloud_init(void);
 void cloud_deinit(void);
 void *cloud_task(void *arg);
 
-void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command);
+void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command,int argc);
 void register_send_data_ecb_cb(int (*cb)(unsigned char *, const int));
 
 int set_attr_report_uds(cJSON *root, set_attr_t *attr);

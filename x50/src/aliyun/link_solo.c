@@ -492,7 +492,7 @@ int link_model_start()
     uint16_t port = 443;             /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
     aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
     uint8_t post_reply = 1;
-
+    uint16_t keep_alive = 120;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
     /* 配置SDK的日志输出 */
@@ -539,7 +539,7 @@ int link_model_start()
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_NETWORK_CRED, (void *)&cred);
     /* 配置MQTT事件回调函数 */
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_EVENT_HANDLER, (void *)demo_mqtt_event_handler);
-
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_KEEPALIVE_SEC, (void *)&keep_alive);
     link_fota_start(mqtt_handle);
     /* 创建DATA-MODEL实例 */
     dm_handle = aiot_dm_init();

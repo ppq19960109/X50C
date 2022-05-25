@@ -473,77 +473,84 @@ end:
     return ptr->uart_byte_len + 1;
 }
 
-void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
+void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command, int argc) //所有串口数据解析，并上报阿里云平台和UI
 {
     unsigned char uart_buf[6];
     static char first_uds_report = 0;
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
-    cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
+    cloud_dev_t *cloud_dev;
+    cloud_attr_t *attr;
+
     if (value == NULL)
     {
         return;
     }
     cJSON *root = cJSON_CreateObject();
-
-    for (i = 0; i < value_len; ++i)
+    if (argc == 0)
     {
-        for (j = 0; j < cloud_dev->attr_len; ++j)
+        cloud_dev = g_cloud_dev;
+        attr = cloud_dev->attr;
+
+        for (i = 0; i < value_len; ++i)
         {
-            if (value[i] == attr[j].uart_cmd)
+            for (j = 0; j < cloud_dev->attr_len; ++j)
             {
-                get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
-                memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
-                // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
-                // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
-                get_attr_report_value(root, &attr[j]);
-                if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
+                if (value[i] == attr[j].uart_cmd)
                 {
-                    cloud_attr_t *ptr = get_attr_ptr("CookbookName");
-                    if (ptr != NULL)
+                    get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
+                    memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
+                    // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                    // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                    get_attr_report_value(root, &attr[j]);
+                    if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
                     {
-                        get_attr_report_value(root, ptr);
+                        cloud_attr_t *ptr = get_attr_ptr("CookbookName");
+                        if (ptr != NULL)
+                        {
+                            get_attr_report_value(root, ptr);
+                        }
                     }
+                    else if (strcmp("RStOvRealTemp", attr[j].cloud_key) == 0)
+                    {
+                        uart_buf[0] = 0x74;
+                        uart_buf[1] = attr[j].value[0];
+                        uart_buf[2] = attr[j].value[1];
+                        gesture_uart_send_cloud_msg(uart_buf, 3);
+                    }
+                    i += attr[j].uart_byte_len;
+                    break;
                 }
-                else if (strcmp("RStOvRealTemp", attr[j].cloud_key) == 0)
-                {
-                    uart_buf[0] = 0x74;
-                    uart_buf[1] = attr[j].value[0];
-                    uart_buf[2] = attr[j].value[1];
-                    gesture_uart_send_cloud_msg(uart_buf, 3);
-                }
-                i += attr[j].uart_byte_len;
-                break;
             }
         }
     }
-
-    cloud_dev = get_gesture_dev();
-    attr = cloud_dev->attr;
-
-    for (i = 0; i < value_len; ++i)
+    else
     {
-        for (j = 0; j < cloud_dev->attr_len; ++j)
+        cloud_dev = get_gesture_dev();
+        attr = cloud_dev->attr;
+
+        for (i = 0; i < value_len; ++i)
         {
-            if (value[i] == attr[j].uart_cmd)
+            for (j = 0; j < cloud_dev->attr_len; ++j)
             {
-                memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
-                // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
-                // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
-                get_attr_report_value(root, &attr[j]);
-                if (strcmp("IceHoodSpeed", attr[j].cloud_key) == 0)
+                if (value[i] == attr[j].uart_cmd)
                 {
-                    uart_buf[0] = 0x31;
-                    uart_buf[1] = attr[j].value[0];
-                    ecb_uart_send_cloud_msg(uart_buf, 2);
+                    memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
+                    // dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
+                    // hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
+                    get_attr_report_value(root, &attr[j]);
+                    if (strcmp("IceHoodSpeed", attr[j].cloud_key) == 0)
+                    {
+                        uart_buf[0] = 0x31;
+                        uart_buf[1] = attr[j].value[0];
+                        ecb_uart_send_cloud_msg(uart_buf, 2);
+                    }
+                    i += attr[j].uart_byte_len;
+                    break;
                 }
-                i += attr[j].uart_byte_len;
-                break;
             }
         }
     }
-
     if (cJSON_Object_isNull(root))
     {
         cJSON_Delete(root);
@@ -556,7 +563,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
 
     if (ECB_UART_COMMAND_GETACK == command)
     {
-        if (first_uds_report >= 4)
+        if (first_uds_report >= 3)
         {
             cJSON_Delete(root);
         }

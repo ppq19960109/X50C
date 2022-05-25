@@ -24,7 +24,7 @@ void send_error_to_cloud(int error_code)
     payload[index++] = code;
     payload[index++] = 0x0b;
     payload[index++] = error_code;
-    send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT);
+    send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT, 0);
 }
 
 int ecb_uart_msg_get(bool increase)
@@ -139,7 +139,7 @@ void keypress_local_pro(unsigned char value)
     }
 }
 
-int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
+int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end, int argc)
 {
     int index = 0, i;
     if (in_len < 2)
@@ -226,7 +226,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         ecb_uart_send_ack(seq_id);
         if (command == ECB_UART_COMMAND_EVENT)
         {
-            send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_EVENT);
+            send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_EVENT, argc);
         }
         else if (command == ECB_UART_COMMAND_KEYPRESS)
         {
@@ -252,7 +252,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     {
         msg_get_timeout_count = 0;
         // ecb_resend_list_del_by_id(seq_id);
-        send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK);
+        send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK, argc);
     }
     else if (command == ECB_UART_COMMAND_ACK || command == ECB_UART_COMMAND_NAK)
     {
@@ -266,7 +266,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     return ECB_UART_READ_VALID;
 }
 
-void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *))
+void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *, int), int argc)
 {
     int index = 0, end;
     int msg_len = *in_len;
@@ -274,7 +274,7 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
     for (;;)
     {
         dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
-        status = func(&in[index], msg_len, &end);
+        status = func(&in[index], msg_len, &end, argc);
         msg_len -= end;
         index += end;
 
