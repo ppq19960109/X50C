@@ -92,4 +92,5 @@ unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
 signed char get_HoodSpeed(void);
 signed char get_StoveStatus(void);
+void get_quad(void);
 #endif

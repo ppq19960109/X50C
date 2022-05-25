@@ -8,7 +8,7 @@
 enum msg_get_time_t
 {
     MSG_GET_SHORT_TIME = 3 * 5,
-    MSG_GET_LONG_TIME = 2 * 30 * 5,
+    MSG_GET_LONG_TIME = 4 * 30 * 6,
     MSG_HEART_TIME = 15 * 5,
 };
 
@@ -82,29 +82,9 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
             res = 0;
             goto fail;
         }
-
         res = write(fd, in, in_len);
         if (resend)
-        {
-            uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
-            resend->send_len = in_len;
-            if (iscopy)
-            {
-                resend->send_data = (unsigned char *)malloc(resend->send_len);
-                memcpy(resend->send_data, in, resend->send_len);
-            }
-            else
-                resend->send_data = (unsigned char *)in;
-
-            // resend->fd = fd;
-            if (resend->send_len >= 4)
-                resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
-            resend->resend_cnt = RESEND_CNT;
-            resend->resend_cb = ecb_uart_resend_cb;
-            resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
-            ecb_resend_list_add(resend);
-        }
-        usleep(100000);
+            usleep(50000);
     fail:
         pthread_mutex_unlock(&lock);
         return res;
@@ -112,6 +92,26 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
     else
     {
         dzlog_error("pthread_mutex_lock error\n");
+    }
+    if (resend)
+    {
+        uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
+        resend->send_len = in_len;
+        if (iscopy)
+        {
+            resend->send_data = (unsigned char *)malloc(resend->send_len);
+            memcpy(resend->send_data, in, resend->send_len);
+        }
+        else
+            resend->send_data = (unsigned char *)in;
+
+        // resend->fd = fd;
+        if (resend->send_len >= 4)
+            resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
+        resend->resend_cnt = RESEND_CNT;
+        resend->resend_cb = ecb_uart_resend_cb;
+        resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
+        ecb_resend_list_add(resend);
     }
     return res;
 }
@@ -207,7 +207,6 @@ static int ecb_timeout_cb(void)
             send_error_to_cloud(POWER_BOARD_ERROR_CODE);
         }
     }
-
     return 0;
 }
 

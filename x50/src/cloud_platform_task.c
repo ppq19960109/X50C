@@ -17,6 +17,7 @@
 static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
+static char first_uds_report = 0;
 
 int cJSON_Object_isNull(cJSON *object) // cJSON判断Object是否为空
 {
@@ -42,6 +43,14 @@ int report_msg_all_platform(cJSON *root)
     link_send_property_post(json);
     cJSON_free(json);
     send_event_uds(root, NULL);
+    return 0;
+}
+
+int report_msg_quad_uds(const char *msg)
+{
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddStringToObject(resp, "QuadInfo", msg);
+    send_event_uds(resp, NULL);
     return 0;
 }
 
@@ -483,7 +492,6 @@ end:
 
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
 {
-    static char first_uds_report = 0;
     // dzlog_debug("send_data_to_cloud...");
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
@@ -604,6 +612,8 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
             continue;
         get_attr_report_value(resp, &attr[i]);
     }
+    first_uds_report = 0;
+    ecb_uart_msg_get(true);
     return 0;
 }
 
@@ -946,7 +956,7 @@ int curl_http_quad(const char *product_key, const char *mac, const char *path, c
         }
 
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 6L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
         curl_easy_setopt(curl, CURLOPT_POST, 1);
 
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
@@ -956,6 +966,7 @@ int curl_http_quad(const char *product_key, const char *mac, const char *path, c
         if (res != CURLE_OK)
         {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+            report_msg_quad_uds("烧录服务器连接失败");
         }
         else
         {
@@ -985,7 +996,14 @@ size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
         goto fail;
     }
     if (code->valueint != 0)
+    {
+        cJSON *message = cJSON_GetObjectItem(root, "message");
+        if (message != NULL && cJSON_IsString(message))
+        {
+            report_msg_quad_uds(message->string);
+        }
         goto fail;
+    }
     cJSON *data = cJSON_GetObjectItem(root, "data");
     if (data == NULL)
     {
@@ -1029,7 +1047,27 @@ fail:
     cJSON_free(body);
     return size * nmemb;
 }
+void get_quad(void)
+{
+    char ip[24] = {0};
+    unsigned int s_addr = 0;
+    if (strlen(g_cloud_dev->device_secret) == 0)
+    {
+        s_addr = getNetworkIp(ETH_NAME, NULL, 0);
+        if (s_addr < 0)
+        {
+            return;
+        }
+        s_addr &= ~(0xff << 24);
+        s_addr |= 200 << 24;
+        inet_ntop(AF_INET, &s_addr, ip, sizeof(ip));
+        dzlog_warn("ip:0X%x,url:%s", s_addr, ip);
+        sprintf(quad_request_url, QUAD_REQUEST_URL_FMT, ip);
+        dzlog_warn("quad_request_url:%s", quad_request_url);
 
+        curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/apply", NULL);
+    }
+}
 // size_t http_weather_cb(void *ptr, size_t size, size_t nmemb, void *stream)
 // {
 //     printf("%s size:%u,nmemb:%u\n", __func__, size, nmemb);
@@ -1069,6 +1107,7 @@ fail:
 //     }
 //     return 0;
 // }
+
 void *cloud_task(void *arg) //云端任务
 {
     if (strlen(g_cloud_dev->product_key) == 0)
@@ -1084,36 +1123,11 @@ void *cloud_task(void *arg) //云端任务
         getNetworkMac(ETH_NAME, g_cloud_dev->device_name, sizeof(g_cloud_dev->device_name), "");
     }
 #if 1
-    char ip[24] = {0};
-    unsigned int s_addr = 0;
     do
     {
         if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
         {
             // curl_weather();
-            if (strlen(g_cloud_dev->device_secret) == 0)
-            {
-                if (strlen(ip) == 0 && s_addr == 0)
-                {
-                    dzlog_warn("first get ip......................");
-                    sleep(6);
-                }
-                s_addr = getNetworkIp(ETH_NAME, NULL, 0);
-                if (s_addr < 0)
-                {
-                    sleep(1);
-                    continue;
-                }
-                s_addr &= ~(0xff << 24);
-                s_addr |= 200 << 24;
-                inet_ntop(AF_INET, &s_addr, ip, sizeof(ip));
-                dzlog_warn("ip:0X%x,url:%s", s_addr, ip);
-                sprintf(quad_request_url, QUAD_REQUEST_URL_FMT, ip);
-                dzlog_warn("quad_request_url:%s", quad_request_url);
-
-                curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/apply", NULL);
-                sleep(2);
-            }
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
@@ -1121,7 +1135,7 @@ void *cloud_task(void *arg) //云端任务
             }
             else
             {
-                dzlog_warn("curl_http_get_quad is fail");
+                dzlog_warn("wait curl_http_get_quad");
                 sleep(2);
             }
         }

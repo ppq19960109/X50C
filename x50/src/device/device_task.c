@@ -78,6 +78,12 @@ static void *AfterSalesQrCode_cb(void *ptr, void *arg)
     cJSON *item = cJSON_CreateString(buf);
     return item;
 }
+static void *Alarm_cb(void *ptr, void *arg)
+{
+    gesture_auto_sync_time_alarm(1);
+    return NULL;
+}
+
 static void *BindTokenState_cb(void *ptr, void *arg)
 {
     cJSON *item = cJSON_CreateNumber(get_token_state());
@@ -86,6 +92,7 @@ static void *BindTokenState_cb(void *ptr, void *arg)
 
 static void *Reset_cb(void *ptr, void *arg)
 {
+    wifiEnable(1);
     wifiDisconnect();
     systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure");
     database_task_reinit();
@@ -95,9 +102,14 @@ static void *Reset_cb(void *ptr, void *arg)
     return item;
 }
 
-static void *Alarm_cb(void *ptr, void *arg)
+static void *QuadInfo_cb(void *ptr, void *arg)
 {
-    gesture_auto_sync_time_alarm(1);
+    return NULL;
+}
+
+static void *QuadGet_cb(void *ptr, void *arg)
+{
+    get_quad();
     return NULL;
 }
 
@@ -166,6 +178,16 @@ static set_attr_t g_device_set_attr[] = {
         cloud_key : "BindTokenState",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : BindTokenState_cb
+    },
+    {
+        cloud_key : "QuadInfo",
+        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        cb : QuadInfo_cb
+    },
+    {
+        cloud_key : "QuadGet",
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
+        cb : QuadGet_cb
     },
 };
 static const int attr_len = sizeof(g_device_set_attr) / sizeof(g_device_set_attr[0]);

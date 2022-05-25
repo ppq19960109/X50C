@@ -25,15 +25,15 @@ unsigned char CheckSum(unsigned char *buf, int len) //和校验算法
     return ret;
 }
 
-int send_event_uds(cJSON *send, const char *type) //uds发送u接口
+int send_event_uds(cJSON *send, const char *type) // uds发送u接口
 {
-    pthread_mutex_lock(&mutex);
     if (cJSON_Object_isNull(send))
     {
         cJSON_Delete(send);
         dzlog_warn("%s,send NULL", __func__);
-        goto fail;
+        return -1;
     }
+
     cJSON *root = cJSON_CreateObject();
     if (type == NULL)
         cJSON_AddStringToObject(root, TYPE, TYPE_EVENT);
@@ -46,10 +46,12 @@ int send_event_uds(cJSON *send, const char *type) //uds发送u接口
     {
         dzlog_error("%s,cJSON_PrintUnformatted error", __func__);
         cJSON_Delete(root);
-        goto fail;
+        return -1;
     }
     int len = strlen(json);
+
     printf("send to UI-------------------------- cJSON_PrintUnformatted json:%d,%s\n", len, json);
+    pthread_mutex_lock(&mutex);
     char *send_buf;
     if (len + 10 > sizeof(g_send_buf))
     {
@@ -80,12 +82,11 @@ int send_event_uds(cJSON *send, const char *type) //uds发送u接口
 
     cJSON_free(json);
     cJSON_Delete(root);
-fail:
     pthread_mutex_unlock(&mutex);
     return 0;
 }
 
-static int uds_json_parse(char *value, unsigned int value_len) //uds接受的json数据解析
+static int uds_json_parse(char *value, unsigned int value_len) // uds接受的json数据解析
 {
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
@@ -169,7 +170,7 @@ int uds_event_all(void)
     return 0;
 }
 
-static int uds_recv(char *data, unsigned int len) //uds接受回调函数，初始化时注册
+static int uds_recv(char *data, unsigned int len) // uds接受回调函数，初始化时注册
 {
     if (data == NULL)
         return -1;
@@ -210,7 +211,7 @@ static int uds_recv(char *data, unsigned int len) //uds接受回调函数，初�
     return 0;
 }
 
-int uds_protocol_init(void) //uds协议相关初始化
+int uds_protocol_init(void) // uds协议相关初始化
 {
     pthread_mutex_init(&mutex, NULL);
     device_task_init();
@@ -221,7 +222,7 @@ int uds_protocol_init(void) //uds协议相关初始化
     register_uds_recv_cb(uds_recv);
     return 0;
 }
-void uds_protocol_deinit(void) //uds协议相关反初始化
+void uds_protocol_deinit(void) // uds协议相关反初始化
 {
     uds_tcp_server_task_deinit();
     database_deinit();

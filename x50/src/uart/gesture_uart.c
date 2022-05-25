@@ -50,7 +50,6 @@ int gesture_uart_send(unsigned char *in, int in_len)
             res = 0;
             goto fail;
         }
-
         res = write(fd, in, in_len);
 
     fail:
@@ -141,10 +140,11 @@ void gesture_error_show_func(int *error_show)
 }
 void gesture_send_error_cloud(int error_code, int clear)
 {
+    dzlog_warn("%s,error_code:%d clear:%d", __func__, error_code, clear);
     unsigned char payload[8] = {0};
     int index = 0;
     unsigned int code = get_ErrorCode();
-
+    dzlog_warn("%s,code:%d", __func__, code);
     payload[index++] = 0x0a;
     if (clear)
     {
@@ -162,9 +162,10 @@ void gesture_send_error_cloud(int error_code, int clear)
     payload[index++] = code;
 
     unsigned char codeShow = get_ErrorCodeShow();
+    dzlog_warn("%s,codeShow:%d", __func__, codeShow);
     if (clear)
     {
-        if (codeShow == error_code)
+        if (codeShow == error_code || codeShow == 0)
         {
             payload[index++] = 0x0b;
             payload[index++] = 0;
@@ -178,6 +179,7 @@ void gesture_send_error_cloud(int error_code, int clear)
             payload[index++] = error_code;
         }
     }
+    hdzlog_info(payload, index);
     send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT);
 }
 
@@ -254,7 +256,7 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
     {
         data1 = in[index + 4];
         data2 = in[index + 5];
-
+        dzlog_warn("%s,data1:%d data2:%d", __func__, data1, data2);
         unsigned char msg[8];
         unsigned char msg_len = 0;
         if (data1 & (1 << 1))
