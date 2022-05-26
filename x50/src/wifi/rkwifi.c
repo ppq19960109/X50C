@@ -80,9 +80,9 @@ int wifiEnable(const int enable)
     //     printf("RK_wifi_enable:%d\n", enable);
     // }
     if (enable)
-        system("wpa_cli enable_network all && wpa_cli save_config && wpa_cli wpa_cli reconnect");
+        system("wpa_cli enable_network all && wpa_cli save_config && sync"); //&& wpa_cli reconnect
     else
-        system("wpa_cli disable_network all && wpa_cli save_config");
+        system("wpa_cli disable_network all && wpa_cli save_config && sync");
     return ret;
 }
 

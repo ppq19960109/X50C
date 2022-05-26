@@ -699,6 +699,8 @@ int save_device_secret(const char *device_secret)
     systemRun("chmod 400 " QUAD_NAME);
 
     sync();
+    wifiDisconnect();
+    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
     return res;
 }
 static void *cloud_quad_parse_json(void *input, const char *str) //启动时解析四元组文件
@@ -1000,7 +1002,7 @@ size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
         cJSON *message = cJSON_GetObjectItem(root, "message");
         if (message != NULL && cJSON_IsString(message))
         {
-            report_msg_quad_uds(message->string);
+            report_msg_quad_uds(message->valuestring);
         }
         goto fail;
     }

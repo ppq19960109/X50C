@@ -94,7 +94,7 @@ static void *Reset_cb(void *ptr, void *arg)
 {
     wifiEnable(1);
     wifiDisconnect();
-    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure");
+    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
     database_task_reinit();
     link_reset_report();
     uds_event_all();

@@ -274,7 +274,10 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
         else
         {
             if (gesture_recv_error > 0 || gesture_send_error > 2)
+            {
                 gesture_send_error_cloud(GESTURE_ERROR, 1);
+                gesture_auto_sync_time_alarm(0);
+            }
             gesture_send_error = 0;
             gesture_recv_error = 0;
         }
