@@ -514,8 +514,13 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                     else if (strcmp("RStOvRealTemp", attr[j].cloud_key) == 0)
                     {
                         uart_buf[0] = 0x74;
-                        uart_buf[1] = attr[j].value[0];
-                        uart_buf[2] = attr[j].value[1];
+                        unsigned short temp = attr[j].value[0] * 256 + attr[j].value[1];
+                        if (temp >= 3)
+                            temp -= 3;
+                        else
+                            temp = 0;
+                        uart_buf[1] = temp / 256;
+                        uart_buf[2] = temp % 256;
                         gesture_uart_send_cloud_msg(uart_buf, 3);
                     }
                     i += attr[j].uart_byte_len;
