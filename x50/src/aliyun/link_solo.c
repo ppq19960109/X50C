@@ -41,6 +41,8 @@ static pthread_t g_mqtt_recv_thread;
 static uint8_t g_mqtt_process_thread_running = 0;
 static uint8_t g_mqtt_recv_thread_running = 0;
 
+static int disconnect_switch = 0;
+
 void (*connected_cb)(int);
 void register_connected_cb(void (*cb)(int))
 {
@@ -89,6 +91,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
     {
         printf("AIOT_MQTTEVT_CONNECT\n");
         g_connected = 1;
+        disconnect_switch = 0;
     }
     break;
 
@@ -97,6 +100,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
     {
         printf("AIOT_MQTTEVT_RECONNECT\n");
         g_connected = 1;
+        disconnect_switch = 0;
         if (running > 0)
         {
             if (connected_cb != NULL)
@@ -114,7 +118,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
         printf("AIOT_MQTTEVT_DISCONNECT: %s\n", cause);
         if (running > 0)
         {
-            if (connected_cb != NULL)
+            if (connected_cb != NULL && event->data.disconnect == AIOT_MQTTDISCONNEVT_HEARTBEAT_DISCONNECT)
                 connected_cb(0);
         }
         g_connected = 0;
@@ -484,6 +488,14 @@ void link_model_close()
 //     }
 // }
 
+void link_disconnect()
+{
+    if (disconnect_switch == 0 && running > 0)
+    {
+        aiot_mqtt_disconnect(g_mqtt_handle);
+        disconnect_switch = 1;
+    }
+}
 int link_model_start()
 {
     int32_t res = STATE_SUCCESS;
@@ -492,7 +504,7 @@ int link_model_start()
     uint16_t port = 443;             /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
     aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
     uint8_t post_reply = 1;
-    uint16_t keep_alive = 120;
+    uint16_t keep_alive = 60;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
     /* 配置SDK的日志输出 */
@@ -621,8 +633,21 @@ int link_model_start()
     /* 主循环进入休眠 */
     while (running)
     {
-        aiot_mqtt_process(mqtt_handle);
-        aiot_mqtt_recv(mqtt_handle);
+        if (disconnect_switch == 1)
+        {
+            res = aiot_mqtt_connect(mqtt_handle);
+            if (res < STATE_SUCCESS)
+            {
+                printf("aiot_mqtt_connect failed: -0x%04X\n\r\n", -res);
+                printf("please check variables like mqtt_host, produt_key, device_name, device_secret in demo\r\n");
+                sleep(2);
+            }
+        }
+        else
+        {
+            aiot_mqtt_process(mqtt_handle);
+            aiot_mqtt_recv(mqtt_handle);
+        }
         usleep(400000);
         // sleep(5);
         /* TODO: 以下代码演示了简单的属性上报和事件上报, 用户可取消注释观察演示效果 */
@@ -699,6 +724,6 @@ int link_main(const char *productkey, const char *productsecret, const char *dev
     strcpy(device_secret, devicesecret);
     strcpy(cur_version, version);
 
-    sprintf(mqtt_host, "%s.iot-as-mqtt.cn-shanghai.aliyuncs.com", productkey);
+    sprintf(mqtt_host, "%s.iot-as-mqtt.cn-shanghai.aliyuncs.com", productkey); // a1YTZpQDGwn.iot-as-mqtt.cn-shanghai.aliyuncs.com
     return link_model_start();
 }

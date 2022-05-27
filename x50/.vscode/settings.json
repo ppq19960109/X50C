@@ -130,6 +130,7 @@
         "link_remote_access.h": "c",
         "rk_wifi.h": "c",
         "stdint.h": "c",
-        "kv_linux.h": "c"
+        "kv_linux.h": "c",
+        "ecb_uart.h": "c"
     }
 }

@@ -9,7 +9,7 @@
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
 #include "link_ntp_posix.h"
-#define GESTURE_ERROR (20)
+#define GESTURE_ERROR (15)
 
 static timer_t g_gesture_timer;
 static timer_t g_gesture_heart_timer;
@@ -158,7 +158,7 @@ void gesture_send_error_cloud(int error_code, int clear)
     }
     payload[index++] = code >> 24;
     payload[index++] = code >> 16;
-    payload[index++] = code >> 6;
+    payload[index++] = code >> 8;
     payload[index++] = code;
 
     unsigned char codeShow = get_ErrorCodeShow();

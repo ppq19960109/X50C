@@ -64,6 +64,7 @@ static void *WifiConnect_cb(void *ptr, void *arg)
     cJSON *encryp = cJSON_GetObjectItem(item, "encryp");
     if (encryp == NULL)
         return NULL;
+    link_disconnect();
     dzlog_warn("WifiConnect_cb ssid:%s,psk:%s,encryp:%d", ssid->valuestring, psk->valuestring, encryp->valueint);
     if (wifiConnect(ssid->valuestring, psk->valuestring, encryp->valueint) < 0)
     {
@@ -202,14 +203,18 @@ static int wiFiReport(int event)
 
 static int wiFiCallback(int event)
 {
-    dzlog_warn("wiFiCallback:%d", event);
     cloud_dev_t *cloud_dev = get_cloud_dev();
-    if (event == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0 && strlen(cloud_dev->device_secret) > 0)
+    int link_connected_state = get_link_connected_state();
+    int secret_len = strlen(cloud_dev->device_secret);
+    dzlog_warn("wiFiCallback:%d link_connected_state:%d secret_len:%d", event, link_connected_state, secret_len);
+    if (event == RK_WIFI_State_CONNECTED && secret_len > 0)
     {
-        // wiFiReport(RK_WIFI_State_CONNECTFAILED);
         return -1;
     }
-
+    // if (event == RK_WIFI_State_CONNECTED && link_connected_state == 0 && secret_len > 0)
+    // {
+    //     return -1;
+    // }
     return wiFiReport(event);
 }
 static void linkkit_connected_cb(int connect)

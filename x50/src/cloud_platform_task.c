@@ -610,6 +610,8 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
     {
         if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
             continue;
+        else if (strcmp("ElcSWVersion", attr[i].cloud_key) == 0)
+            continue;
         get_attr_report_value(resp, &attr[i]);
     }
     first_uds_report = 0;
@@ -699,8 +701,6 @@ int save_device_secret(const char *device_secret)
     systemRun("chmod 400 " QUAD_NAME);
 
     sync();
-    wifiDisconnect();
-    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
     return res;
 }
 static void *cloud_quad_parse_json(void *input, const char *str) //启动时解析四元组文件
@@ -988,24 +988,16 @@ size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     cJSON *root = cJSON_Parse(ptr);
     if (root == NULL)
         return -1;
-    char *json = cJSON_PrintUnformatted(root);
-    printf("http_get_quad_cb json:%s\n", json);
-    free(json);
+    // char *json = cJSON_PrintUnformatted(root);
+    // printf("http_get_quad_cb json:%s\n", json);
+    // free(json);
 
     cJSON *code = cJSON_GetObjectItem(root, "code");
     if (code == NULL)
     {
         goto fail;
     }
-    if (code->valueint != 0)
-    {
-        cJSON *message = cJSON_GetObjectItem(root, "message");
-        if (message != NULL && cJSON_IsString(message))
-        {
-            report_msg_quad_uds(message->valuestring);
-        }
-        goto fail;
-    }
+
     cJSON *data = cJSON_GetObjectItem(root, "data");
     if (data == NULL)
     {
@@ -1016,6 +1008,16 @@ size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
         cJSON *quadrupleId = cJSON_GetObjectItem(data, "quadrupleId");
         quad_rupleId = quadrupleId->valueint;
     }
+    if (code->valueint != 0)
+    {
+        cJSON *message = cJSON_GetObjectItem(root, "message");
+        if (message != NULL && cJSON_IsString(message))
+        {
+            report_msg_quad_uds(message->valuestring);
+        }
+        goto fail;
+    }
+
     if (cJSON_HasObjectItem(data, "productKey"))
     {
         cJSON *ProductKey = cJSON_GetObjectItem(data, "productKey");
@@ -1044,9 +1046,18 @@ fail:
     cJSON_AddNumberToObject(resp, "quadrupleId", quad_rupleId);
     cJSON_AddNumberToObject(resp, "state", res);
     char *body = cJSON_PrintUnformatted(resp);
-    cJSON_Delete(resp);
+    printf("http_get_quad_cb report json:%s\n", body);
+
     curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/report", body);
+
     cJSON_free(body);
+    cJSON_Delete(resp);
+    if (res == 1)
+    {
+        sleep(1);
+        wifiDisconnect();
+        systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
+    }
     return size * nmemb;
 }
 void get_quad(void)

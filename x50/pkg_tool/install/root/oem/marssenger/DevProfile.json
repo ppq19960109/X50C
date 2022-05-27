@@ -20,28 +20,28 @@
             "uartByteLen": 0
         },
         {
-            "cloudKey": "ElcSWVersion",
+            "cloudKey": "",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 1,
             "uartByteLen": 1
         },
         {
-            "cloudKey": "ElcHWVersion",
+            "cloudKey": "",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 2,
             "uartByteLen": 1
         },
         {
-            "cloudKey": "",
+            "cloudKey": "ElcSWVersion",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 3,
             "uartByteLen": 1
         },
         {
-            "cloudKey": "",
+            "cloudKey": "ElcHWVersion",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 4,

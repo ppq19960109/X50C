@@ -20,7 +20,7 @@ void send_error_to_cloud(int error_code)
     payload[index++] = 0x0a;
     payload[index++] = code >> 24;
     payload[index++] = code >> 16;
-    payload[index++] = code >> 6;
+    payload[index++] = code >> 8;
     payload[index++] = code;
     payload[index++] = 0x0b;
     payload[index++] = error_code;
@@ -245,6 +245,9 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_HEART)
     {
+        if (ecb_heart_count >= MSG_HEART_TIME)
+            ecb_uart_msg_get(true);
+
         ecb_heart_count = 0;
         ecb_uart_send_ack(seq_id);
     }

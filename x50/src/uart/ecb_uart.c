@@ -5,13 +5,6 @@
 #include "uart_resend.h"
 #include "uart_task.h"
 
-enum msg_get_time_t
-{
-    MSG_GET_SHORT_TIME = 3 * 5,
-    MSG_GET_LONG_TIME = 4 * 30 * 6,
-    MSG_HEART_TIME = 15 * 5,
-};
-
 static unsigned short ecb_seq_id = 0;
 static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
