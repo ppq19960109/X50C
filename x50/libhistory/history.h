@@ -10,8 +10,8 @@
 #include "history_wrapper.h"
 using namespace std;
 
-#define MAX_HISTORY (40)
-#define MAX_COLLECT (40)
+#define MAX_HISTORY (20)
+#define MAX_COLLECT (20)
 
 struct recipes_t
 {

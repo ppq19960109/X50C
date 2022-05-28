@@ -320,6 +320,7 @@ int database_resp_getall(cJSON *root, cJSON *resp)
 
 void cook_history(cJSON *root)
 {
+    time_t timestamp;
     recipes_t recipe = {0};
     cJSON *cookSteps = cJSON_CreateArray();
     int arraySize, i;
@@ -410,8 +411,14 @@ void cook_history(cJSON *root)
     char *json = cJSON_PrintUnformatted(cookSteps);
     strcpy(recipe.cookSteps, json);
     cJSON_free(json);
+
 recipe:
-    recipe.timestamp = time(NULL);
+    timestamp = time(NULL);
+    if (timestamp < 1640966400) // 2022-01-01 00:00:00
+    {
+        timestamp = 0;
+    }
+    recipe.timestamp = timestamp;
     wrapper_insertHistory((history_t *)&recipe);
 fail:
     cJSON_Delete(cookSteps);

@@ -496,25 +496,26 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
     hdzlog_info((unsigned char *)value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
+    cloud_attr_t *cloud_attr = cloud_dev->attr;
     if (value == NULL)
     {
         return;
     }
     cJSON *root = cJSON_CreateObject();
-
+    cloud_attr_t *attr;
     for (i = 0; i < value_len; ++i)
     {
         for (j = 0; j < cloud_dev->attr_len; ++j)
         {
-            if (value[i] == attr[j].uart_cmd)
+            attr = &cloud_attr[j];
+            if (value[i] == (*attr).uart_cmd)
             {
-                get_attr_report_event(&attr[j], (char *)&value[i + 1], 0);
-                memcpy(attr[j].value, &value[i + 1], attr[j].uart_byte_len);
-                dzlog_debug("i:%d cloud_key:%s", i, attr[j].cloud_key);
-                hdzlog_info((unsigned char *)attr[j].value, attr[j].uart_byte_len);
-                get_attr_report_value(root, &attr[j]);
-                if (strcmp("MultiMode", attr[j].cloud_key) == 0 && *(attr[j].value) == 1)
+                get_attr_report_event(attr, (char *)&value[i + 1], 0);
+                memcpy((*attr).value, &value[i + 1], (*attr).uart_byte_len);
+                dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
+                hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
+                get_attr_report_value(root, attr);
+                if (strcmp("MultiMode", (*attr).cloud_key) == 0 && *((*attr).value) == 1)
                 {
                     cloud_attr_t *ptr = get_attr_ptr("CookbookName");
                     if (ptr != NULL)
@@ -522,7 +523,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                         get_attr_report_value(root, ptr);
                     }
                 }
-                i += attr[j].uart_byte_len;
+                i += (*attr).uart_byte_len;
                 break;
             }
         }
@@ -561,17 +562,18 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
 {
     dzlog_info("send_all_to_cloud");
     cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
+    cloud_attr_t *cloud_attr = cloud_dev->attr;
     char *json = NULL;
 
     cJSON *root = cJSON_CreateObject();
-
+    cloud_attr_t *attr;
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
-        if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
+        attr = &cloud_attr[i];
+        if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
             continue;
-        get_attr_report_event(&attr[i], attr[i].value, 1);
-        get_attr_report_value(root, &attr[i]);
+        get_attr_report_event(attr, (*attr).value, 1);
+        get_attr_report_value(root, attr);
     }
     json = cJSON_PrintUnformatted(root);
     link_send_property_post(json);
@@ -587,15 +589,16 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
 int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
-
+    cloud_attr_t *cloud_attr = cloud_dev->attr;
+    cloud_attr_t *attr;
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
-        if (cJSON_HasObjectItem(root, attr[i].cloud_key))
+        attr = &cloud_attr[i];
+        if (cJSON_HasObjectItem(root, (*attr).cloud_key))
         {
-            if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
+            if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
                 continue;
-            get_attr_report_value(resp, &attr[i]);
+            get_attr_report_value(resp, attr);
         }
     }
     return 0;
@@ -604,15 +607,16 @@ int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
 int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
-
+    cloud_attr_t *cloud_attr = cloud_dev->attr;
+    cloud_attr_t *attr;
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
-        if (strcmp("HoodOffRemind", attr[i].cloud_key) == 0)
+        attr = &cloud_attr[i];
+        if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
             continue;
-        else if (strcmp("ElcSWVersion", attr[i].cloud_key) == 0)
+        else if (strcmp("ElcSWVersion", (*attr).cloud_key) == 0)
             continue;
-        get_attr_report_value(resp, &attr[i]);
+        get_attr_report_value(resp, attr);
     }
     first_uds_report = 0;
     ecb_uart_msg_get(true);
@@ -626,13 +630,15 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     int uart_buf_len = 0;
 
     cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
+    cloud_attr_t *cloud_attr = cloud_dev->attr;
+    cloud_attr_t *attr;
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
-        if ((attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr[i].cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, attr[i].cloud_key))
+        attr = &cloud_attr[i];
+        if (((*attr).cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || (*attr).cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, (*attr).cloud_key))
         {
-            cJSON *item = cJSON_GetObjectItem(root, attr[i].cloud_key);
-            uart_buf_len += get_attr_set_value(&attr[i], item, &uart_buf[uart_buf_len]);
+            cJSON *item = cJSON_GetObjectItem(root, (*attr).cloud_key);
+            uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
         }
     }
     if (uart_buf_len > 0)
