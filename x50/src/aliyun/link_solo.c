@@ -43,6 +43,11 @@ static uint8_t g_mqtt_recv_thread_running = 0;
 
 static int disconnect_switch = 0;
 
+int (*link_wifi_state_cb)();
+void register_link_wifi_state_cb(int (*cb)())
+{
+    link_wifi_state_cb = cb;
+}
 void (*connected_cb)(int);
 void register_connected_cb(void (*cb)(int))
 {
@@ -106,7 +111,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
             if (connected_cb != NULL)
                 connected_cb(1);
             link_ntp_request();
-            link_bind_token_report(handle);
+            // link_bind_token_report(handle);
         }
     }
     break;
@@ -122,7 +127,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
                 connected_cb(0);
         }
         g_connected = 0;
-        clear_token_state();
+        // clear_token_state();
     }
     break;
 
@@ -504,7 +509,7 @@ int link_model_start()
     uint16_t port = 443;             /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
     aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
     uint8_t post_reply = 1;
-    uint16_t keep_alive = 60;
+    uint16_t keep_alive = 70;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
     /* 配置SDK的日志输出 */
@@ -587,10 +592,10 @@ int link_model_start()
             break;
         }
     } while (1);
-
+    printf("aiot_mqtt_connect success\r\n");
     link_ntp_start(mqtt_handle);
     /* 向服务器订阅property/batch/post_reply这个topic */
-    link_bind_token_init(mqtt_handle, product_key, device_name);
+    // link_bind_token_init(mqtt_handle, product_key, device_name);
     // aiot_mqtt_sub(mqtt_handle, "/sys/${YourProductKey}/${YourDeviceName}/thing/event/property/batch/post_reply", NULL, 1, NULL);
     link_reset_init(mqtt_handle, product_key, device_name);
     // link_mqtt_sub_property_get(mqtt_handle, 1);
@@ -621,7 +626,7 @@ int link_model_start()
     link_fota_report_version(cur_version);
     link_ntp_request();
     // link_reset_report();
-    link_bind_token_report(mqtt_handle);
+    // link_bind_token_report(mqtt_handle);
     g_dm_handle = dm_handle;
     if (connected_cb != NULL)
         connected_cb(1);
@@ -635,19 +640,25 @@ int link_model_start()
     {
         if (disconnect_switch == 1)
         {
-            res = aiot_mqtt_connect(mqtt_handle);
-            if (res < STATE_SUCCESS)
+            if (link_wifi_state_cb && link_wifi_state_cb() > 0)
             {
-                printf("aiot_mqtt_connect failed: -0x%04X\n\r\n", -res);
-                printf("please check variables like mqtt_host, produt_key, device_name, device_secret in demo\r\n");
-                sleep(2);
+                res = aiot_mqtt_connect(mqtt_handle);
+                if (res < STATE_SUCCESS)
+                {
+                    printf("aiot_mqtt_connect failed: -0x%04X\n\r\n", -res);
+                    printf("please check variables like mqtt_host, produt_key, device_name, device_secret in demo\r\n");
+                    sleep(1);
+                }
+            }
+            else
+            {
+                sleep(1);
             }
         }
-        else
-        {
-            aiot_mqtt_process(mqtt_handle);
-            aiot_mqtt_recv(mqtt_handle);
-        }
+
+        aiot_mqtt_process(mqtt_handle);
+        aiot_mqtt_recv(mqtt_handle);
+
         usleep(400000);
         // sleep(5);
         /* TODO: 以下代码演示了简单的属性上报和事件上报, 用户可取消注释观察演示效果 */
@@ -679,7 +690,7 @@ int link_model_start()
     g_mqtt_recv_thread_running = 0;
     // link_mqtt_sub_property_get(mqtt_handle, 0);
     link_reset_deinit(mqtt_handle);
-    link_bind_token_deinit(mqtt_handle);
+    // link_bind_token_deinit(mqtt_handle);
 #ifdef REMOTE_ACCESS
     link_remote_access_close();
 #endif
@@ -718,6 +729,7 @@ int link_model_start()
 
 int link_main(const char *productkey, const char *productsecret, const char *devicename, const char *devicesecret, const char *version)
 {
+    printf("%s productkey:%s productsecret:%s devicename:%s devicesecret:%s version:%s\n", __func__, productkey, productsecret, devicename, devicesecret, version);
     strcpy(product_key, productkey);
     strcpy(product_secret, productsecret);
     strcpy(device_name, devicename);

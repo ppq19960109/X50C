@@ -3,8 +3,8 @@
 
 enum msg_get_time_t
 {
-    MSG_GET_SHORT_TIME = 3 * 6,
-    MSG_GET_LONG_TIME = 4 * 30 * 6,
+    MSG_GET_SHORT_TIME = 3 * 7,
+    MSG_GET_LONG_TIME = 3 * 30 * 7,
     MSG_HEART_TIME = 15 * 6,
 };
 

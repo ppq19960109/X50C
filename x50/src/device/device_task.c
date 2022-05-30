@@ -189,6 +189,7 @@ static set_attr_t g_device_set_attr[] = {
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : QuadGet_cb
     },
+
 };
 static const int attr_len = sizeof(g_device_set_attr) / sizeof(g_device_set_attr[0]);
 static set_attr_t *attr = g_device_set_attr;

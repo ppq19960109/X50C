@@ -12,7 +12,15 @@ static void *WifiState_cb(void *ptr, void *arg)
 {
     dzlog_warn("WifiState_cb");
     set_attr_t *attr = (set_attr_t *)ptr;
-    attr->value.n = getWifiRunningState();
+
+    int link_connected_state = get_link_connected_state();
+    int wifi_state = getWifiRunningState();
+    if (wifi_state == RK_WIFI_State_CONNECTED && link_connected_state == 0)
+    {
+        attr->value.n = RK_WIFI_State_DISCONNECTED;
+    }
+    else
+        attr->value.n = wifi_state;
 
     // if (attr->value.n == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0)
     // {
@@ -28,6 +36,8 @@ static void *WifiEnable_cb(void *ptr, void *arg)
         return NULL;
     cJSON *item = (cJSON *)arg;
 
+    if (item->valueint == 0)
+        link_disconnect();
     if (wifiEnable(item->valueint) < 0)
     {
         item = cJSON_CreateNumber(0);
@@ -70,6 +80,7 @@ static void *WifiConnect_cb(void *ptr, void *arg)
     {
         return NULL;
     }
+
     dzlog_warn("WifiConnect_cb succcess");
     return NULL;
 }
@@ -99,7 +110,11 @@ static void *WifiCurConnected_cb(void *ptr, void *arg)
     cJSON_AddStringToObject(item, "mac_address", wifiInfo.mac_address);
     return item;
 }
-
+static void *BackOnline_cb(void *ptr, void *arg)
+{
+    link_disconnect();
+    return NULL;
+}
 static set_attr_t g_wifi_set_attr[] = {
     {
         cloud_key : "WifiState",
@@ -135,6 +150,11 @@ static set_attr_t g_wifi_set_attr[] = {
         cloud_key : "WifiCurConnected",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : WifiCurConnected_cb
+    },
+    {
+        cloud_key : "BackOnline",
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
+        cb : BackOnline_cb
     },
 };
 
@@ -207,14 +227,14 @@ static int wiFiCallback(int event)
     int link_connected_state = get_link_connected_state();
     int secret_len = strlen(cloud_dev->device_secret);
     dzlog_warn("wiFiCallback:%d link_connected_state:%d secret_len:%d", event, link_connected_state, secret_len);
-    if (event == RK_WIFI_State_CONNECTED && secret_len > 0)
-    {
-        return -1;
-    }
-    // if (event == RK_WIFI_State_CONNECTED && link_connected_state == 0 && secret_len > 0)
+    // if (event == RK_WIFI_State_CONNECTED && secret_len > 0)
     // {
     //     return -1;
     // }
+    if (event == RK_WIFI_State_CONNECTED && link_connected_state == 0 && secret_len > 0)
+    {
+        return -1;
+    }
     return wiFiReport(event);
 }
 static void linkkit_connected_cb(int connect)
@@ -230,10 +250,21 @@ static void linkkit_connected_cb(int connect)
         wiFiReport(RK_WIFI_State_DISCONNECTED);
     }
 }
+static int link_wifi_state_cb()
+{
+    int wifi_state = getWifiRunningState();
+    dzlog_warn("link_wifi_state_cb:%d", wifi_state);
+    if (RK_WIFI_State_CONNECTED == wifi_state)
+    {
+        return 1;
+    }
+    return 0;
+}
 int wifi_task_init(void)
 {
     wifiInit();
     wifiRegsiterCallback(wiFiCallback);
     register_connected_cb(linkkit_connected_cb);
+    register_link_wifi_state_cb(link_wifi_state_cb);
     return 0;
 }

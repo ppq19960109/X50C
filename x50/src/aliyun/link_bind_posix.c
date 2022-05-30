@@ -29,6 +29,8 @@ int get_token_state(void)
 void clear_token_state(void)
 {
     g_token_state = 0;
+    if (token_state_cb)
+        token_state_cb(g_token_state);
 }
 static void LITE_hexbuf_convert(unsigned char *digest, char *out, int in_len, int uppercase)
 {
@@ -104,6 +106,8 @@ static int bind_refresh_token(char *token)
 static void link_token_recv_handler(void *handle, const aiot_mqtt_recv_t *packet, void *userdata)
 {
     g_token_state = 1;
+    if (token_state_cb)
+        token_state_cb(g_token_state);
     printf("%s\n", __func__);
     printf("type:%d\n", packet->type);
     printf("topic:%s\n", packet->data.pub.topic);

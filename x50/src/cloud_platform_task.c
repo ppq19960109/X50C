@@ -12,7 +12,7 @@
 #include "device_task.h"
 #include "gesture_uart.h"
 #include "POSIXTimer.h"
-#include "md5_func.h"
+#include "quad_burn.h"
 
 static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
@@ -709,6 +709,15 @@ int save_device_secret(const char *device_secret)
     sync();
     return res;
 }
+
+int save_device_quad(const char *productkey, const char *productsecret, const char *devicename, const char *devicesecret)
+{
+    strcpy(g_cloud_dev->product_key, productkey);
+    strcpy(g_cloud_dev->product_secret, productsecret);
+    strcpy(g_cloud_dev->device_name, devicename);
+    return save_device_secret(devicesecret);
+}
+
 static void *cloud_quad_parse_json(void *input, const char *str) //启动时解析四元组文件
 {
     cJSON *root = cJSON_Parse(str);
@@ -874,16 +883,28 @@ static void ota_complete_cb(void)
     sync();
     reboot(RB_AUTOBOOT);
 }
+
+static void quad_burn_success()
+{
+    sleep(1);
+    wifiDisconnect();
+    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
+}
+
 int cloud_init(void) //初始化
 {
-    cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     pthread_mutex_init(&mutex, NULL);
+    register_save_quad_cb(save_device_quad);
+    register_report_message_cb(report_msg_quad_uds);
+    register_quad_burn_success_cb(quad_burn_success);
     register_ota_complete_cb(ota_complete_cb);
     register_recv_sync_service_invoke_cb(recv_sync_service_invoke);
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
 #ifdef DYNREGMQ
     register_dynreg_device_secret_cb(save_device_secret);
 #endif
+    cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+
     g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
@@ -900,13 +921,13 @@ int cloud_init(void) //初始化
             return -1;
         }
     }
-    curl_global_init(CURL_GLOBAL_DEFAULT);
+    quad_burn_init();
     return 0;
 }
 
 void cloud_deinit(void) //反初始化
 {
-    curl_global_cleanup();
+    quad_burn_deinit();
     link_model_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
     {
@@ -923,152 +944,10 @@ void cloud_deinit(void) //反初始化
     }
     pthread_mutex_destroy(&mutex);
 }
-#define QUAD_REQUEST_URL_FMT "http://%s:58396"
-static char quad_request_url[80];
-size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream);
 
-int curl_http_quad(const char *product_key, const char *mac, const char *path, const char *body)
-{
-    char buf[255];
-
-    CURLcode res;
-    struct curl_slist *headers = NULL;
-
-    // get a curl handle
-    CURL *curl = curl_easy_init();
-    if (curl)
-    {
-        headers = curl_slist_append(headers, "Content-Type:application/json");
-        sprintf(buf, "pk:%s", product_key);
-        headers = curl_slist_append(headers, buf);
-        sprintf(buf, "mac:%s", mac);
-        headers = curl_slist_append(headers, buf);
-
-        sprintf(buf, "%s%s%s%s", "1643738522000", product_key, mac, "mars");
-        char md5_str[33] = {0};
-        Compute_string_md5((unsigned char *)buf, strlen(buf), md5_str);
-        sprintf(buf, "sign:%s.%s", "1643738522000", md5_str);
-        headers = curl_slist_append(headers, buf);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        // set the URL with GET request
-        sprintf(buf, "%s%s", quad_request_url, path);
-        curl_easy_setopt(curl, CURLOPT_URL, buf);
-
-        if (body == NULL)
-        {
-            // write response msg into strResponse
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_get_quad_cb);
-            // curl_easy_setopt(curl, CURLOPT_WRITEDATA, master_meta_info);
-            // curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-            body = "";
-        }
-
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
-        curl_easy_setopt(curl, CURLOPT_POST, 1);
-
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
-        // perform the request, res will get the return code
-        res = curl_easy_perform(curl);
-        // check for errors
-        if (res != CURLE_OK)
-        {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-            report_msg_quad_uds("烧录服务器连接失败");
-        }
-        else
-        {
-            fprintf(stdout, "curl_easy_perform() success.\n");
-        }
-        // always cleanup
-        curl_easy_cleanup(curl);
-    }
-    return 0;
-}
-size_t http_get_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
-{
-    printf("http_get_quad_cb size:%u,nmemb:%u\n", size, nmemb);
-    printf("http_get_quad_cb data:%s\n", (char *)ptr);
-    // iotx_linkkit_dev_meta_info_t *master_meta_info = (iotx_linkkit_dev_meta_info_t *)stream;
-    int res = 2, quad_rupleId = 0;
-    cJSON *root = cJSON_Parse(ptr);
-    if (root == NULL)
-        return -1;
-    // char *json = cJSON_PrintUnformatted(root);
-    // printf("http_get_quad_cb json:%s\n", json);
-    // free(json);
-
-    cJSON *code = cJSON_GetObjectItem(root, "code");
-    if (code == NULL)
-    {
-        goto fail;
-    }
-
-    cJSON *data = cJSON_GetObjectItem(root, "data");
-    if (data == NULL)
-    {
-        goto fail;
-    }
-    if (cJSON_HasObjectItem(data, "quadrupleId"))
-    {
-        cJSON *quadrupleId = cJSON_GetObjectItem(data, "quadrupleId");
-        quad_rupleId = quadrupleId->valueint;
-    }
-    if (code->valueint != 0)
-    {
-        cJSON *message = cJSON_GetObjectItem(root, "message");
-        if (message != NULL && cJSON_IsString(message))
-        {
-            report_msg_quad_uds(message->valuestring);
-        }
-        goto fail;
-    }
-
-    if (cJSON_HasObjectItem(data, "productKey"))
-    {
-        cJSON *ProductKey = cJSON_GetObjectItem(data, "productKey");
-        strcpy(g_cloud_dev->product_key, ProductKey->valuestring);
-    }
-    if (cJSON_HasObjectItem(data, "productSecret"))
-    {
-        cJSON *ProductSecret = cJSON_GetObjectItem(data, "productSecret");
-        strcpy(g_cloud_dev->product_secret, ProductSecret->valuestring);
-    }
-    if (cJSON_HasObjectItem(data, "deviceName"))
-    {
-        cJSON *DeviceName = cJSON_GetObjectItem(data, "deviceName");
-        strcpy(g_cloud_dev->device_name, DeviceName->valuestring);
-    }
-    if (cJSON_HasObjectItem(data, "deviceSecret"))
-    {
-        cJSON *DeviceSecret = cJSON_GetObjectItem(data, "deviceSecret");
-        save_device_secret(DeviceSecret->valuestring);
-        res = 1;
-    }
-fail:
-    cJSON_Delete(root);
-
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddNumberToObject(resp, "quadrupleId", quad_rupleId);
-    cJSON_AddNumberToObject(resp, "state", res);
-    char *body = cJSON_PrintUnformatted(resp);
-    printf("http_get_quad_cb report json:%s\n", body);
-
-    curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/report", body);
-
-    cJSON_free(body);
-    cJSON_Delete(resp);
-    if (res == 1)
-    {
-        sleep(1);
-        wifiDisconnect();
-        systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
-    }
-    return size * nmemb;
-}
 void get_quad(void)
 {
-    char ip[24] = {0};
+    char ip[18] = {0};
     unsigned int s_addr = 0;
     if (strlen(g_cloud_dev->device_secret) == 0)
     {
@@ -1081,10 +960,8 @@ void get_quad(void)
         s_addr |= 200 << 24;
         inet_ntop(AF_INET, &s_addr, ip, sizeof(ip));
         dzlog_warn("ip:0X%x,url:%s", s_addr, ip);
-        sprintf(quad_request_url, QUAD_REQUEST_URL_FMT, ip);
-        dzlog_warn("quad_request_url:%s", quad_request_url);
 
-        curl_http_quad(g_cloud_dev->product_key, g_cloud_dev->device_name, "/iot/quadruple/apply", NULL);
+        quad_burn_requst(g_cloud_dev->product_key, g_cloud_dev->device_name, ip);
     }
 }
 // size_t http_weather_cb(void *ptr, size_t size, size_t nmemb, void *stream)

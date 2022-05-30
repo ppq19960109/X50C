@@ -83,7 +83,7 @@ int wifiEnable(const int enable)
         system("wpa_cli enable_network all && wpa_cli save_config && wpa_cli reconnect"); //&& wpa_cli reconnect
     else
     {
-        wifiDisconnect();
+        // wifiDisconnect();
         system("wpa_cli disable_network all && wpa_cli save_config");
     }
 
