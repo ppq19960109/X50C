@@ -19,6 +19,12 @@ static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 static char first_uds_report = 0;
 
+void uds_report_reset(void)
+{
+    first_uds_report = 0;
+    ecb_uart_msg_get(true);
+}
+
 int cJSON_Object_isNull(cJSON *object) // cJSON判断Object是否为空
 {
     char *json = cJSON_PrintUnformatted(object);
@@ -618,8 +624,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
             continue;
         get_attr_report_value(resp, attr);
     }
-    first_uds_report = 0;
-    ecb_uart_msg_get(true);
+    uds_report_reset();
     return 0;
 }
 

@@ -145,6 +145,7 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
             ota_fp = NULL;
         }
         sync();
+
         set_ota_state(OTA_INSTALL_START, NULL);
         // system("chmod 777 " OTA_FILE);
         system("sh " OTA_FILE);
@@ -186,7 +187,7 @@ void *demo_ota_download_thread(void *dl_handle)
     aiot_download_send_request(dl_handle);
 
     last_percent = 0;
-    link_log_close();
+    // link_log_close();
     while (1)
     {
         /* 从网络收取服务器回应的固件内容 */
@@ -219,7 +220,7 @@ void *demo_ota_download_thread(void *dl_handle)
         }
     }
     /* 下载所有固件内容完成, 销毁下载会话, 线程自行退出 */
-    link_log_open();
+    // link_log_open();
     printf("download thread exit:%d\r\n", ret);
 
     if (STATE_DOWNLOAD_FINISHED != ret || OTA_INSTALL_SUCCESS != g_ota_state)
@@ -232,14 +233,13 @@ void *demo_ota_download_thread(void *dl_handle)
         last_percent = 0;
         // aiot_download_deinit(&dl_handle);
         // g_dl_handle = NULL;
+        set_ota_state(OTA_IDLE, NULL);
     }
     if (ota_fp != NULL)
     {
         fclose(ota_fp);
         ota_fp = NULL;
     }
-    set_ota_state(OTA_IDLE, NULL);
-
     return NULL;
 }
 
@@ -281,7 +281,10 @@ void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *use
         {
             printf("extra data: %s\r\n", ota_msg->task_desc->extra_data);
         }
-
+        if (NULL != ota_msg->task_desc->module)
+        {
+            printf("module: %s\r\n", ota_msg->task_desc->module);
+        }
         set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;

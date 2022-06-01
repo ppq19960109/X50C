@@ -82,7 +82,11 @@ int get_link_connected_state(void)
 /* 日志回调函数, SDK的日志会从这里输出 */
 int32_t demo_state_logcb(int32_t code, char *message)
 {
-    printf("%d,%.*s", code, 2048, message);
+    if (STATE_HTTP_LOG_RECV_CONTENT != code)
+    {
+        printf("%d,%.*s", code, 2048, message);
+        // printf("%s", message);
+    }
     return 0;
 }
 
@@ -458,14 +462,14 @@ int32_t demo_send_delete_desred_requset(void *dm_handle)
 
     return aiot_dm_send(dm_handle, &msg);
 }
-void link_log_open()
-{
-    aiot_state_set_logcb(demo_state_logcb);
-}
-void link_log_close()
-{
-    aiot_state_set_logcb(NULL);
-}
+// void link_log_open()
+// {
+//     aiot_state_set_logcb(demo_state_logcb);
+// }
+// void link_log_close()
+// {
+//     aiot_state_set_logcb(NULL);
+// }
 void link_model_close()
 {
     running = 0;

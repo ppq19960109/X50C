@@ -215,8 +215,8 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (crc16 != check_sum)
     {
         dzlog_error("data check error");
-        // ecb_uart_send_nak(ECB_NAK_CHECKSUM,seq_id);
-        // return ECB_UART_READ_CHECK_ERR;
+        ecb_uart_send_nak(ECB_NAK_CHECKSUM,seq_id);
+        return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
     dzlog_info("command:%d", command);
@@ -246,8 +246,9 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     else if (command == ECB_UART_COMMAND_HEART)
     {
         if (ecb_heart_count >= MSG_HEART_TIME)
-            ecb_uart_msg_get(true);
-
+        {
+            uds_report_reset();
+        }
         ecb_heart_count = 0;
         ecb_uart_send_ack(seq_id);
     }

@@ -93,4 +93,5 @@ unsigned char get_ErrorCodeShow(void);
 signed char get_HoodSpeed(void);
 signed char get_StoveStatus(void);
 void get_quad(void);
+void uds_report_reset(void);
 #endif
