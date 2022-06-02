@@ -349,9 +349,9 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "",
+            "cloudKey": "CtrlSrc",
             "valueType": 0,
-            "funType": 1,
+            "funType": 0,
             "uartCmd": 246,
             "uartByteLen": 1
         },

@@ -63,8 +63,7 @@ int link_reset_report(void)
 {
     char rst = 0x01;
     H_Kv_Set(LINK_RST_FLAG, &rst, sizeof(rst), 0);
-    link_reset();
-    return 0;
+    return link_reset();
 }
 
 int link_reset_check(void *mqtt_handle)
@@ -78,7 +77,7 @@ int link_reset_check(void *mqtt_handle)
         H_Kv_Set(LINK_RST_FLAG, &rst, sizeof(rst), 0);
     }
     if (rst > 0)
-        link_reset();
+        return link_reset();
     return 0;
 }
 

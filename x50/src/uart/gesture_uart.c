@@ -347,7 +347,11 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
         }
 
         if (msg_len > 0)
+        {
+            msg[msg_len++] = 0xf6;
+            msg[msg_len++] = 0x00;
             ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
+        }
         // hour = in[index + 6];
         // minute = in[index + 7];
     }

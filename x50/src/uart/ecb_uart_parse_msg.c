@@ -1,9 +1,9 @@
 #include "main.h"
 
-#include "link_reset_posix.h"
+// #include "link_reset_posix.h"
+// #include "uart_resend.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
-#include "uart_resend.h"
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
 
@@ -71,13 +71,13 @@ int ecb_uart_send_nak(unsigned char error_code, int seq_id)
     return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0, seq_id);
 }
 
-int ecb_uart_send_factory(ft_ret_t ret)
-{
-    unsigned char send[2] = {0};
-    send[0] = UART_STORE_FT_RESULT;
-    send[1] = ret;
-    return ecb_uart_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send), 1, -1);
-}
+// int ecb_uart_send_factory(ft_ret_t ret)
+// {
+//     unsigned char send[2] = {0};
+//     send[0] = UART_STORE_FT_RESULT;
+//     send[1] = ret;
+//     return ecb_uart_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send), 1, -1);
+// }
 
 void keypress_local_pro(unsigned char value)
 {
@@ -117,15 +117,14 @@ void keypress_local_pro(unsigned char value)
         break;
     case KEYPRESS_LOCAL_FT_RESET: /* 整机厂测，恢复出厂设置 */
         dzlog_info("factory test: reset test ");
-        if (0 != link_reset_check())
-        {
-            dzlog_error("factory test: reset error ");
-            ecb_uart_send_factory(FT_RET_ERR_RESET);
-            break;
-        }
-
-        sleep(1);
-        ecb_uart_send_factory(FT_RET_OK_RESET);
+        // if (0 != link_reset_report())
+        // {
+        //     dzlog_error("factory test: reset error ");
+        //     ecb_uart_send_factory(FT_RET_ERR_RESET);
+        //     break;
+        // }
+        // sleep(1);
+        // ecb_uart_send_factory(FT_RET_OK_RESET);
         break;
     case KEYPRESS_LOCAL_RESET: /* 通讯板重启（主要用于强制断电前进行通知和追溯） */
     case 0xFF:                 /*重启 */
@@ -215,12 +214,13 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (crc16 != check_sum)
     {
         dzlog_error("data check error");
-        ecb_uart_send_nak(ECB_NAK_CHECKSUM,seq_id);
+        ecb_uart_send_nak(ECB_NAK_CHECKSUM, seq_id);
         return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
     dzlog_info("command:%d", command);
-    hdzlog_info((unsigned char *)payload, data_len);
+    if (data_len > 0)
+        hdzlog_info((unsigned char *)payload, data_len);
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {
         ecb_uart_send_ack(seq_id);
@@ -245,11 +245,22 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_HEART)
     {
-        if (ecb_heart_count >= MSG_HEART_TIME)
+        if (data_len == 0 || payload[0] == 0)
         {
-            uds_report_reset();
+            if (ecb_heart_count >= MSG_HEART_TIME)
+            {
+                uds_report_reset();
+            }
+            ecb_heart_count = 0;
         }
-        ecb_heart_count = 0;
+        else
+        {
+            if (ecb_heart_count < MSG_HEART_TIME)
+            {
+                ecb_heart_count = MSG_HEART_TIME;
+                send_error_to_cloud(POWER_BOARD_ERROR_CODE);
+            }
+        }
         ecb_uart_send_ack(seq_id);
     }
     else if (command == ECB_UART_COMMAND_GETACK)

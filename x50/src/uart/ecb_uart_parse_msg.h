@@ -99,14 +99,14 @@ enum ecb_uart_status_t
     ECB_UART_DISCONNECT_COUNT = 4,
 };
 
-#define WIFI_TEST_SSID "moduletest" /* 厂测SSID */
-#define WIFI_TEST_PASSWD "58185818" /* 厂测PSK */
+// #define WIFI_TEST_SSID "moduletest" /* 厂测SSID */
+// #define WIFI_TEST_PASSWD "58185818" /* 厂测PSK */
 
 int ecb_uart_heart_timeout(bool increase);
 int ecb_uart_msg_get(bool increase);
 
 int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len);
-int ecb_uart_send_factory(ft_ret_t ret);
+// int ecb_uart_send_factory(ft_ret_t ret);
 void send_error_to_cloud(int error_code);
 
 int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
