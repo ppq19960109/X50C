@@ -127,7 +127,7 @@ void demo_mqtt_event_handler(void *handle, const aiot_mqtt_event_t *event, void 
         printf("AIOT_MQTTEVT_DISCONNECT: %s\n", cause);
         if (running > 0)
         {
-            if (connected_cb != NULL && event->data.disconnect == AIOT_MQTTDISCONNEVT_HEARTBEAT_DISCONNECT)
+            if (connected_cb != NULL && event->data.disconnect == AIOT_MQTTDISCONNEVT_HEARTBEAT_DISCONNECT && disconnect_switch == 0)
                 connected_cb(0);
         }
         g_connected = 0;
@@ -497,12 +497,23 @@ void link_model_close()
 //     }
 // }
 
-void link_disconnect()
+void link_disconnect(int index)
 {
-    if (disconnect_switch == 0 && running > 0)
+    if (index == 0)
     {
-        aiot_mqtt_disconnect(g_mqtt_handle);
-        disconnect_switch = 1;
+        if (running > 0)
+        {
+            int ret = aiot_mqtt_heartbeat(g_mqtt_handle);
+            printf("link_disconnect heartbeat:%d\n", ret);
+        }
+    }
+    else
+    {
+        if (disconnect_switch == 0 && running > 0)
+        {
+            aiot_mqtt_disconnect(g_mqtt_handle);
+            disconnect_switch = 1;
+        }
     }
 }
 int link_model_start()
@@ -513,7 +524,7 @@ int link_model_start()
     uint16_t port = 443;             /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
     aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
     uint8_t post_reply = 1;
-    uint16_t keep_alive = 70;
+    uint16_t keep_alive = 60;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
     /* 配置SDK的日志输出 */
@@ -642,21 +653,25 @@ int link_model_start()
     /* 主循环进入休眠 */
     while (running)
     {
-        if (disconnect_switch == 1)
+        if (disconnect_switch > 0)
         {
-            if (link_wifi_state_cb && link_wifi_state_cb() > 0)
+            sleep(1);
+            if (disconnect_switch == 2)
             {
                 res = aiot_mqtt_connect(mqtt_handle);
                 if (res < STATE_SUCCESS)
                 {
                     printf("aiot_mqtt_connect failed: -0x%04X\n\r\n", -res);
                     printf("please check variables like mqtt_host, produt_key, device_name, device_secret in demo\r\n");
-                    sleep(1);
+                    // sleep(1);
                 }
+            }
+            else if (disconnect_switch == 1 && link_wifi_state_cb && link_wifi_state_cb() > 0)
+            {
+                disconnect_switch = 2;
             }
             else
             {
-                sleep(1);
             }
         }
 

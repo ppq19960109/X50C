@@ -23,5 +23,5 @@ int get_link_connected_state(void);
 void *get_mqtt_handle(void);
 // void link_log_open();
 // void link_log_close();
-void link_disconnect();
+void link_disconnect(int index);
 #endif

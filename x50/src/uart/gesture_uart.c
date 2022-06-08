@@ -145,6 +145,8 @@ void gesture_send_error_cloud(int error_code, int clear)
     int index = 0;
     unsigned int code = get_ErrorCode();
     dzlog_warn("%s,code:%d", __func__, code);
+    if (code < 0)
+        return;
     payload[index++] = 0x0a;
     if (clear)
     {
@@ -163,6 +165,8 @@ void gesture_send_error_cloud(int error_code, int clear)
 
     unsigned char codeShow = get_ErrorCodeShow();
     dzlog_warn("%s,codeShow:%d", __func__, codeShow);
+    if (codeShow < 0)
+        return;
     if (clear)
     {
         if (codeShow == error_code || codeShow == 0)
@@ -185,7 +189,7 @@ void gesture_send_error_cloud(int error_code, int clear)
 
 void gesture_auto_sync_time_alarm(int alarm)
 {
-    if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
+    if (get_link_state() > 0)
     {
         gesture_sync_time_and_alarm(1, alarm);
     }
@@ -369,7 +373,7 @@ static void gesture_POSIXTimer_cb(union sigval val)
     }
     else if (val.sival_int == 2)
     {
-        if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
+        if (get_link_state() > 0)
         {
             gesture_send_msg(0, 1, 0xff, 0xff, 0);
         }

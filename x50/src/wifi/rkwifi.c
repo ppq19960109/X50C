@@ -139,8 +139,11 @@ int getWifiRunningState()
  */
 int getWifiConnectionInfo(RK_WIFI_INFO_Connection_s *wifiInfo)
 {
-    if (RK_WIFI_State_CONNECTED != getWifiRunningState())
-        return -1;
+    // if (RK_WIFI_State_CONNECTED != getWifiRunningState())
+    // {
+    //     printf("getWifiConnectionInfo WiFi state\n");
+    //     return -1;
+    // }
     return RK_wifi_running_getConnectionInfo(wifiInfo);
 }
 int wifiScan()

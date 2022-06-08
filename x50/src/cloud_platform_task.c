@@ -65,35 +65,6 @@ cloud_dev_t *get_cloud_dev(void)
     return g_cloud_dev;
 }
 
-unsigned char get_ErrorCodeShow(void)
-{
-    cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
-
-    for (int i = 0; i < cloud_dev->attr_len; ++i)
-    {
-        if (strcmp("ErrorCodeShow", attr->cloud_key) == 0)
-        {
-            return *(attr->value);
-        }
-    }
-    return 0;
-}
-unsigned int get_ErrorCode(void)
-{
-    cloud_dev_t *cloud_dev = g_cloud_dev;
-    cloud_attr_t *attr = cloud_dev->attr;
-
-    for (int i = 0; i < cloud_dev->attr_len; ++i)
-    {
-        if (strcmp("ErrorCode", attr->cloud_key) == 0)
-        {
-            return *((int *)(attr->value));
-        }
-    }
-    return 0;
-}
-
 cloud_attr_t *get_attr_ptr(const char *name)
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -107,6 +78,25 @@ cloud_attr_t *get_attr_ptr(const char *name)
         }
     }
     return NULL;
+}
+
+unsigned char get_ErrorCodeShow(void)
+{
+    cloud_attr_t *attr = get_attr_ptr("ErrorCodeShow");
+    if (attr == NULL)
+    {
+        return -1;
+    }
+    return *(attr->value);
+}
+unsigned int get_ErrorCode(void)
+{
+    cloud_attr_t *attr = get_attr_ptr("ErrorCode");
+    if (attr == NULL)
+    {
+        return -1;
+    }
+    return *((int *)(attr->value));
 }
 
 signed char get_HoodSpeed(void)
@@ -1031,6 +1021,9 @@ void *cloud_task(void *arg) //云端任务
             // curl_weather();
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
+                sleep(2);
+                wifiScan();
+                sleep(2);
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }

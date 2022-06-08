@@ -92,11 +92,13 @@ static void *BindTokenState_cb(void *ptr, void *arg)
 
 static void *Reset_cb(void *ptr, void *arg)
 {
+    link_reset_report();
+    sleep(1);
+    database_task_reinit();
     wifiEnable(1);
     wifiDisconnect();
     systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
-    database_task_reinit();
-    link_reset_report();
+    sleep(1);
     uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);
     return item;

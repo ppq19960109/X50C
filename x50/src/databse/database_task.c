@@ -10,40 +10,43 @@
 #include "history_wrapper.h"
 
 static int g_history_seqid = 0;
-static char *leftWorkMode[] = {"未设定", "经典蒸", "高温蒸", "热风烧烤", "上下加热", "立体热风", "蒸汽烤", "空气炸", "保温烘干"};
-// static int leftWorkModeNumber[] = {0, 1, 2, 35, 36, 38, 40, 42, 72};
+static char *workModeText[] = {"未设定", "经典蒸", "高温蒸", "热风烧烤", "上下加热", "立体热风", "蒸汽烤", "空气炸", "保温烘干", "便捷蒸"};
+// static int workModeNumber[] = {0, 1, 2, 35, 36, 38, 40, 42, 72};
 
-char *leftWorkModeFun(int n)
+char *workModeFunc(int n)
 {
     char *mode = NULL;
     switch (n)
     {
     case 1:
-        mode = leftWorkMode[1];
+        mode = workModeText[1];
         break;
     case 2:
-        mode = leftWorkMode[2];
+        mode = workModeText[2];
         break;
     case 35:
-        mode = leftWorkMode[3];
+        mode = workModeText[3];
         break;
     case 36:
-        mode = leftWorkMode[4];
+        mode = workModeText[4];
         break;
     case 38:
-        mode = leftWorkMode[5];
+        mode = workModeText[5];
         break;
     case 40:
-        mode = leftWorkMode[6];
+        mode = workModeText[6];
         break;
     case 42:
-        mode = leftWorkMode[7];
+        mode = workModeText[7];
         break;
     case 72:
-        mode = leftWorkMode[8];
+        mode = workModeText[8];
+        break;
+    case 100:
+        mode = workModeText[9];
         break;
     default:
-        mode = leftWorkMode[0];
+        mode = workModeText[0];
         break;
     }
     return mode;
@@ -371,9 +374,13 @@ void cook_history(cJSON *root)
             cJSON_AddNumberToObject(cookStep, "time", Timer->valueint);
             cJSON_AddNumberToObject(cookStep, "temp", Temp->valueint);
             cJSON_AddNumberToObject(cookStep, "number", i + 1);
-            sprintf(&recipe.dishName[strlen(recipe.dishName)], "%s-", leftWorkModeFun(Mode->valueint));
+            if (arraySize == 1)
+                sprintf(recipe.dishName, "%s-%d℃-%d分钟", workModeFunc(Mode->valueint), Temp->valueint, Timer->valueint);
+            else
+                sprintf(&recipe.dishName[strlen(recipe.dishName)], "%s-", workModeFunc(Mode->valueint));
         }
-        recipe.dishName[strlen(recipe.dishName) - 1] = 0;
+        if (arraySize > 1)
+            recipe.dishName[strlen(recipe.dishName) - 1] = 0;
     }
     else if (cJSON_HasObjectItem(root, "LStOvMode") && cJSON_HasObjectItem(root, "LStOvSetTimer") && cJSON_HasObjectItem(root, "LStOvSetTemp"))
     {
@@ -387,7 +394,7 @@ void cook_history(cJSON *root)
         cJSON_AddNumberToObject(cookStep, "time", LStOvSetTimer->valueint);
         cJSON_AddNumberToObject(cookStep, "temp", LStOvSetTemp->valueint);
         cJSON_AddNumberToObject(cookStep, "number", 0);
-        sprintf(recipe.dishName, "%s-%d℃-%d分钟", leftWorkModeFun(LStOvMode->valueint), LStOvSetTemp->valueint, LStOvSetTimer->valueint);
+        sprintf(recipe.dishName, "%s-%d℃-%d分钟", workModeFunc(LStOvMode->valueint), LStOvSetTemp->valueint, LStOvSetTimer->valueint);
     }
     else if (cJSON_HasObjectItem(root, "RStOvMode") && cJSON_HasObjectItem(root, "RStOvSetTimer") && cJSON_HasObjectItem(root, "RStOvSetTemp"))
     {
@@ -402,7 +409,7 @@ void cook_history(cJSON *root)
         cJSON_AddNumberToObject(cookStep, "time", RStOvSetTimer->valueint);
         cJSON_AddNumberToObject(cookStep, "temp", RStOvSetTemp->valueint);
         cJSON_AddNumberToObject(cookStep, "number", 0);
-        sprintf(recipe.dishName, "%s-%d℃-%d分钟", "便捷蒸", RStOvSetTemp->valueint, RStOvSetTimer->valueint);
+        sprintf(recipe.dishName, "%s-%d℃-%d分钟", workModeFunc(RStOvMode->valueint), RStOvSetTemp->valueint, RStOvSetTimer->valueint);
     }
     else
     {
