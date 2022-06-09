@@ -17,7 +17,7 @@ static timer_t g_gesture_heart_timer;
 static int fd = -1;
 static pthread_mutex_t lock;
 static unsigned char gesture_error_code = 0;
-static unsigned char gesture_alarm_status = 0;
+static unsigned char gesture_alarm_status = 0, gesture_alarm_start_status = 0;
 static struct Select_Client_Event select_client_event;
 static unsigned char gesture_power = 0;
 static int gesture_send_error = 0;
@@ -123,7 +123,7 @@ static void gesture_sync_time_cb(int state)
 {
     gesture_sync_time_and_alarm(state, 0);
 }
-void gesture_error_code_func(int *error_code)
+void gesture_error_code_func(unsigned int *error_code)
 {
     if (gesture_error_code > 0)
     {
@@ -138,7 +138,7 @@ void gesture_error_show_func(int *error_show)
         *error_show = gesture_error_code;
     }
 }
-void gesture_send_error_cloud(int error_code, int clear)
+void gesture_send_error_cloud(unsigned int error_code, int clear)
 {
     dzlog_warn("%s,error_code:%d clear:%d", __func__, error_code, clear);
     unsigned char payload[8] = {0};
@@ -150,8 +150,8 @@ void gesture_send_error_cloud(int error_code, int clear)
     payload[index++] = 0x0a;
     if (clear)
     {
-        gesture_error_code = 0;
         code &= ~(1 << (error_code - 1));
+        gesture_error_code = 0;
     }
     else
     {
@@ -277,7 +277,7 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
         }
         else
         {
-            if (gesture_recv_error > 0 || gesture_send_error > 2)
+            if (gesture_recv_error > 0 || gesture_send_error >= 2)
             {
                 gesture_send_error_cloud(GESTURE_ERROR, 1);
                 gesture_auto_sync_time_alarm(0);
@@ -311,6 +311,27 @@ static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int
                 msg[msg_len++] = 0x31;
                 msg[msg_len++] = --speed;
                 // }
+            }
+        }
+
+        if (data1 & (1 << 2)) //闹钟标志位
+        {
+            if (gesture_alarm_start_status == 0)
+            {
+                cJSON *resp = cJSON_CreateObject();
+                cJSON_AddNumberToObject(resp, "AlarmStatus", 1);
+                send_event_uds(resp, NULL);
+                gesture_alarm_start_status = 1;
+            }
+        }
+        else
+        {
+            if (gesture_alarm_start_status == 1)
+            {
+                cJSON *resp = cJSON_CreateObject();
+                cJSON_AddNumberToObject(resp, "AlarmStatus", 0);
+                send_event_uds(resp, NULL);
+                gesture_alarm_start_status = 0;
             }
         }
         if (data1 & (1 << 6)) //闹钟提示标志位
@@ -381,9 +402,9 @@ static void gesture_POSIXTimer_cb(union sigval val)
         {
             gesture_send_msg(0, 0, 0, 0, 0);
         }
-        if (gesture_send_error < 6)
+        if (gesture_send_error < 5)
         {
-            if (++gesture_send_error == 6)
+            if (++gesture_send_error == 5)
                 gesture_send_error_cloud(GESTURE_ERROR, 0);
         }
     }

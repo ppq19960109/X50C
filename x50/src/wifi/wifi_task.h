@@ -10,4 +10,5 @@ int wifi_resp_getall(cJSON *root,cJSON *resp);
 int wifi_resp_set(cJSON *root,cJSON *resp);
 void register_wifi_connected_cb(void (*cb)(int));
 int get_link_state(void);
+void wifi_reset(void);
 #endif

@@ -349,7 +349,7 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "CtrlSrc",
+            "cloudKey": "DataReportReason",
             "valueType": 0,
             "funType": 0,
             "uartCmd": 246,

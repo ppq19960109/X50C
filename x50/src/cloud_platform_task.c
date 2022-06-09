@@ -96,7 +96,12 @@ unsigned int get_ErrorCode(void)
     {
         return -1;
     }
-    return *((int *)(attr->value));
+    unsigned int error_code = 0;
+    for (int i = 0; i < attr->uart_byte_len; ++i)
+    {
+        error_code = (error_code << 8) + attr->value[i];
+    }
+    return error_code;
 }
 
 signed char get_HoodSpeed(void)
@@ -883,7 +888,7 @@ static void quad_burn_success()
 {
     sleep(1);
     wifiDisconnect();
-    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
+    systemRun("wpa_cli remove_network all && wpa_cli save_config && sync");
 }
 
 int cloud_init(void) //初始化
@@ -1021,9 +1026,9 @@ void *cloud_task(void *arg) //云端任务
             // curl_weather();
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
-                sleep(2);
+                sleep(1);
                 wifiScan();
-                sleep(2);
+                sleep(4);
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }

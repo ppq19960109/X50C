@@ -9,12 +9,20 @@
 #include "link_solo.h"
 
 static int g_wifi_state = 0, g_link_state = 0;
-static int back_online = 0;
+// static int back_online = 0;
 int get_link_state(void)
 {
     if (g_link_state == RK_WIFI_State_CONNECTED)
         return 1;
     return 0;
+}
+void wifi_reset(void)
+{
+    g_wifi_state = 0;
+    g_link_state = 0;
+    wifiEnable(1);
+    wifiDisconnect();
+    systemRun("wpa_cli remove_network all && wpa_cli save_config");
 }
 static void *WifiState_cb(void *ptr, void *arg)
 {
@@ -48,8 +56,6 @@ static void *WifiEnable_cb(void *ptr, void *arg)
         return NULL;
     cJSON *item = (cJSON *)arg;
 
-    if (item->valueint == 0)
-        link_disconnect(1);
     if (wifiEnable(item->valueint) < 0)
     {
         item = cJSON_CreateNumber(0);
@@ -88,7 +94,7 @@ static void *WifiConnect_cb(void *ptr, void *arg)
     if (encryp == NULL)
         return NULL;
     g_link_state = g_wifi_state = 0;
-    link_disconnect(1);
+    link_disconnect();
     dzlog_warn("WifiConnect_cb ssid:%s,psk:%s,encryp:%d", ssid->valuestring, psk->valuestring, encryp->valueint);
     if (wifiConnect(ssid->valuestring, psk->valuestring, encryp->valueint) < 0)
     {
@@ -127,8 +133,8 @@ static void *WifiCurConnected_cb(void *ptr, void *arg)
 
 static void *BackOnline_cb(void *ptr, void *arg)
 {
-    back_online = 1;
-    link_disconnect(1);
+    // back_online = 1;
+    link_disconnect();
     return NULL;
 }
 static set_attr_t g_wifi_set_attr[] = {
@@ -246,7 +252,7 @@ static int wiFiCallback(int event)
     g_wifi_state = event;
     // if (event > RK_WIFI_State_CONNECTING)
     // {
-    //     link_disconnect(1);
+    //     link_disconnect();
     // }
     // if (event == RK_WIFI_State_CONNECTED && secret_len > 0)
     // {
@@ -268,30 +274,28 @@ static void linkkit_connected_cb(int connect)
     }
     else
     {
-        wiFiReport(RK_WIFI_State_DISCONNECTED);
+        if (g_link_state != 0)
+            wiFiReport(RK_WIFI_State_DISCONNECTED);
     }
 }
 static int link_wifi_state_cb()
 {
-    // int wifi_state = getWifiRunningState();
-    // dzlog_warn("link_wifi_state_cb:%d", wifi_state);
-    // if (RK_WIFI_State_CONNECTED == wifi_state)
     dzlog_warn("link_wifi_state_cb:%d", g_wifi_state);
-    if (g_wifi_state != 0 && RK_WIFI_State_CONNECTED != g_wifi_state)
+    if (RK_WIFI_State_CONNECTED != g_wifi_state)
     {
         g_wifi_state = getWifiRunningState();
     }
     if (RK_WIFI_State_CONNECTED == g_wifi_state)
     {
-        if (back_online == 0)
-        {
-            wifiScan();
-            sleep(1);
-        }
-        else
-        {
-            back_online = 0;
-        }
+        // if (back_online == 0)
+        // {
+        //     wifiScan();
+        //     sleep(1);
+        // }
+        // else
+        // {
+        //     back_online = 0;
+        // }
         return 1;
     }
     return 0;

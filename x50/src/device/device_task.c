@@ -9,7 +9,7 @@
 #include "link_bind_posix.h"
 #include "database_task.h"
 #include "gesture_uart.h"
-#include "rkwifi.h"
+#include "wifi_task.h"
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
@@ -95,9 +95,7 @@ static void *Reset_cb(void *ptr, void *arg)
     link_reset_report();
     sleep(1);
     database_task_reinit();
-    wifiEnable(1);
-    wifiDisconnect();
-    systemRun("wpa_cli remove_network all && wpa_cli save_config && wpa_cli reconfigure && sync");
+    wifi_reset();
     sleep(1);
     uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);
