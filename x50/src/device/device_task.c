@@ -70,14 +70,14 @@ static void *AfterSalesPhone_cb(void *ptr, void *arg)
     cJSON *item = cJSON_CreateString(cloud_dev->after_sales_phone);
     return item;
 }
-static void *AfterSalesQrCode_cb(void *ptr, void *arg)
-{
-    cloud_dev_t *cloud_dev = get_cloud_dev();
-    char buf[180];
-    sprintf(buf, "http://club.marssenger.com/hxr/download.html?pk=%s", cloud_dev->product_key);
-    cJSON *item = cJSON_CreateString(buf);
-    return item;
-}
+// static void *AfterSalesQrCode_cb(void *ptr, void *arg)
+// {
+//     cloud_dev_t *cloud_dev = get_cloud_dev();
+//     char buf[180];
+//     sprintf(buf, "http://club.marssenger.com/hxr/download.html?pk=%s", cloud_dev->product_key);
+//     cJSON *item = cJSON_CreateString(buf);
+//     return item;
+// }
 static void *Alarm_cb(void *ptr, void *arg)
 {
     gesture_auto_sync_time_alarm(1);
@@ -159,11 +159,11 @@ static set_attr_t g_device_set_attr[] = {
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : AfterSalesPhone_cb
     },
-    {
-        cloud_key : "AfterSalesQrCode",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-        cb : AfterSalesQrCode_cb
-    },
+    // {
+    //     cloud_key : "AfterSalesQrCode",
+    //     fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+    //     cb : AfterSalesQrCode_cb
+    // },
     {
         cloud_key : "Reset",
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
