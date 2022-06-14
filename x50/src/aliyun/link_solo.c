@@ -516,7 +516,7 @@ int link_model_start()
     uint16_t keep_alive = 110;
     uint32_t heartbeat_interval = 200 * 100;
     uint8_t heartbeat_max_lost = 3;
-    // uint32_t reconn_interval = 15 * 100;
+    uint32_t reconn_interval = 15 * 100;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
     /* 配置SDK的日志输出 */
@@ -568,7 +568,7 @@ int link_model_start()
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_INTERVAL_MS, (void *)&heartbeat_interval);
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_MAX_LOST, (void *)&heartbeat_max_lost);
 
-    // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECONN_INTERVAL_MS, (void *)&reconn_interval);
+    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECONN_INTERVAL_MS, (void *)&reconn_interval);
 
     link_fota_start(mqtt_handle);
     /* 创建DATA-MODEL实例 */
@@ -597,7 +597,7 @@ int link_model_start()
             printf("aiot_mqtt_connect failed: -0x%04X\n\r\n", -res);
             printf("please check variables like mqtt_host, produt_key, device_name, device_secret in demo\r\n");
             // return -1;
-            sleep(2);
+            sleep(1);
         }
         else
         {

@@ -8,6 +8,8 @@
 #include "rkwifi.h"
 #include "link_solo.h"
 
+static int wiFiReport(int event);
+
 static int g_wifi_state = 0, g_link_state = 0;
 // static int back_online = 0;
 int get_link_state(void)
@@ -22,7 +24,7 @@ void wifi_reset(void)
     g_link_state = 0;
     wifiEnable(1);
     wifiDisconnect();
-    systemRun("wpa_cli remove_network all && wpa_cli save_config");
+    systemRun("wpa_cli remove_network all && wpa_cli save_config && sync");
 }
 static void *WifiState_cb(void *ptr, void *arg)
 {
@@ -56,12 +58,23 @@ static void *WifiEnable_cb(void *ptr, void *arg)
         return NULL;
     cJSON *item = (cJSON *)arg;
 
+    if (item->valueint == 0)
+    {
+        link_disconnect();
+    }
+
     if (wifiEnable(item->valueint) < 0)
     {
         item = cJSON_CreateNumber(0);
     }
     else
+    {
+        if (item->valueint == 0)
+        {
+            wiFiReport(RK_WIFI_State_DISCONNECTED);
+        }
         item = cJSON_CreateNumber(item->valueint);
+    }
     return item;
 }
 
