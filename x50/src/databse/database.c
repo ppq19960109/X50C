@@ -265,14 +265,26 @@ int select_recipeid_from_table(const char *table_name, const int recipeid, int (
         return -1;
     }
     sqlite3_bind_int(stmt, 1, recipeid);
-    recipes_t recipes;
+    if (select_func != NULL)
+    {
+        recipes_t recipes;
+        while (sqlite3_step(stmt) == SQLITE_ROW)
+        {
+            select_stmt(&recipes, stmt);
+            if (select_func != NULL)
+                select_func(&recipes, arg);
+        }
+        return sqlite3_finalize(stmt);
+    }
+    int ret = -1;
+    recipes_t *recipes = (recipes_t *)arg;
     while (sqlite3_step(stmt) == SQLITE_ROW)
     {
-        select_stmt(&recipes, stmt);
-        if (select_func != NULL)
-            select_func(&recipes, arg);
+        select_stmt(recipes, stmt);
+        ret = 0;
     }
-    return sqlite3_finalize(stmt);
+    sqlite3_finalize(stmt);
+    return ret;
 }
 
 int select_dishname_from_table(const char *table_name, const char *dishname, void *arg)

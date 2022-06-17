@@ -62,7 +62,6 @@ static void *WifiEnable_cb(void *ptr, void *arg)
     {
         link_disconnect();
     }
-
     if (wifiEnable(item->valueint) < 0)
     {
         item = cJSON_CreateNumber(0);

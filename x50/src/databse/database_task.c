@@ -328,13 +328,19 @@ void cook_history(cJSON *root)
     cJSON *cookSteps = cJSON_CreateArray();
     int arraySize, i;
     cJSON *arrayItem, *arraySub, *Mode, *Temp, *Timer;
-    if (cJSON_HasObjectItem(root, "CookbookName") && cJSON_HasObjectItem(root, "CookbookParam"))
+    if (cJSON_HasObjectItem(root, "CookbookName") && cJSON_HasObjectItem(root, "CookbookParam") && cJSON_HasObjectItem(root, "CookbookID")) //
     {
-        cJSON *CookbookName = cJSON_GetObjectItem(root, "CookbookName");
-        if (select_dishname_from_table(RECIPE_TABLE_NAME, CookbookName->valuestring, &recipe) >= 0)
+        cJSON *CookbookID = cJSON_GetObjectItem(root, "CookbookID");
+        if (select_recipeid_from_table(RECIPE_TABLE_NAME, CookbookID->valueint, NULL, &recipe) >= 0)
         {
             goto recipe;
         }
+        cJSON *CookbookName = cJSON_GetObjectItem(root, "CookbookName");
+        // if (select_dishname_from_table(RECIPE_TABLE_NAME, CookbookName->valuestring, &recipe) >= 0)
+        // {
+        //     goto recipe;
+        // }
+
         arrayItem = cJSON_GetObjectItem(root, "CookbookParam");
         arraySize = cJSON_GetArraySize(arrayItem);
         for (i = 0; i < arraySize; ++i)
@@ -353,6 +359,7 @@ void cook_history(cJSON *root)
             cJSON_AddNumberToObject(cookStep, "temp", Temp->valueint);
             cJSON_AddNumberToObject(cookStep, "number", i + 1);
         }
+        recipe.recipeid = CookbookID->valueint;
         strcpy(recipe.dishName, CookbookName->valuestring);
     }
     else if (cJSON_HasObjectItem(root, "MultiStageContent"))

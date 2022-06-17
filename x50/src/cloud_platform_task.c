@@ -322,7 +322,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             {
                 char *buf = (char *)malloc(ptr->uart_byte_len + 1);
                 memcpy(buf, ptr->value, ptr->uart_byte_len);
-                ptr->value[ptr->uart_byte_len - 1] = 0;
+                buf[ptr->uart_byte_len] = 0;
                 item = cJSON_CreateString(buf);
                 free(buf);
             }
@@ -348,6 +348,15 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                 {
                     item = cJSON_CreateString(ptr->value);
                 }
+            }
+        }
+        else if (LINK_VALUE_TYPE_ARRAY == ptr->cloud_value_type)
+        {
+            // item = cJSON_CreateIntArray(ptr->value, ptr->uart_byte_len);
+            item = cJSON_CreateArray();
+            for (int i = 0; i < ptr->uart_byte_len; ++i)
+            {
+                cJSON_AddItemToArray(item, cJSON_CreateNumber(ptr->value[i]));
             }
         }
         else
@@ -1028,7 +1037,7 @@ void *cloud_task(void *arg) //云端任务
             {
                 sleep(1);
                 wifiScan();
-                sleep(4);
+                sleep(3);
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }

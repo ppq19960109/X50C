@@ -375,6 +375,27 @@
             "funType": 0,
             "uartCmd": 0,
             "uartByteLen": 64
+        },
+        {
+            "cloudKey": "LoadPowerSet",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 225,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LoadPowerState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 226,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "PCBInput",
+            "valueType": 4,
+            "funType": 1,
+            "uartCmd": 227,
+            "uartByteLen": 29
         }
     ],
     "event": [],
