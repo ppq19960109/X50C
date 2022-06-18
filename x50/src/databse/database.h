@@ -28,6 +28,7 @@ extern "C"
 
     int database_init(void);
     void database_deinit(void);
+    void database_reinit(void);
     int databse_drop_table(const char *table_name);
     int databse_clear_table(const char *table_name);
 

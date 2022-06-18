@@ -94,8 +94,8 @@ static void *Reset_cb(void *ptr, void *arg)
 {
     link_reset_report();
     sleep(1);
-    database_task_reinit();
     wifi_reset();
+    database_task_reinit();
     sleep(1);
     uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);

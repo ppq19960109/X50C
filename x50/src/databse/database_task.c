@@ -466,7 +466,8 @@ int database_histroy_select_cb(void *data, void *arg)
 void database_task_reinit(void)
 {
     wrapper_clearHistory();
-    databse_clear_table(HISTORY_TABLE_NAME);
+    // databse_clear_table(HISTORY_TABLE_NAME);
+    database_reinit();
 }
 
 int database_task_init(void)

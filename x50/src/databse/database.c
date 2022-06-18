@@ -447,3 +447,16 @@ int database_init(void)
     }
     return 0;
 }
+
+void database_reinit(void)
+{
+    databse_drop_table(HISTORY_TABLE_NAME);
+    databse_drop_table(RECIPE_TABLE_NAME);
+    
+    databse_create_table(HISTORY_TABLE_NAME);
+    if (databse_create_table(RECIPE_TABLE_NAME) == 0)
+    {
+        printf("%s,%s:first databse_create_table ...\n", __func__, RECIPE_TABLE_NAME);
+        get_dev_profile(".", NULL, RECIPES_FILE, recipes_parse_json);
+    }
+}
