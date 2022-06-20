@@ -1,7 +1,6 @@
 {
     "DeviceCategory": "集成灶",
     "DeviceModel": "X50BCZ",
-    "AfterSalesPhone": "400-888-8490",
     "HardwareVer": "1.0.0",
     "UpdateLog": "",
     "attr": [
@@ -346,6 +345,13 @@
             "valueType": 0,
             "funType": 2,
             "uartCmd": 81,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LocalOperate",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 241,
             "uartByteLen": 1
         },
         {

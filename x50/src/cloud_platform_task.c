@@ -791,12 +791,6 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
         dzlog_error("DeviceModel is NULL\n");
         goto fail;
     }
-    cJSON *AfterSalesPhone = cJSON_GetObjectItem(root, "AfterSalesPhone");
-    if (AfterSalesPhone == NULL)
-    {
-        dzlog_error("AfterSalesPhone is NULL\n");
-        goto fail;
-    }
     cJSON *HardwareVer = cJSON_GetObjectItem(root, "HardwareVer");
     if (HardwareVer == NULL)
     {
@@ -831,7 +825,6 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
 
     strcpy(cloud_dev->device_category, DeviceCategory->valuestring);
     strcpy(cloud_dev->device_model, DeviceModel->valuestring);
-    strcpy(cloud_dev->after_sales_phone, AfterSalesPhone->valuestring);
     strcpy(cloud_dev->update_log, UpdateLog->valuestring);
     strcpy(cloud_dev->hardware_ver, HardwareVer->valuestring);
 
