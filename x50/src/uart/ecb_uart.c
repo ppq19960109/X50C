@@ -61,50 +61,61 @@ int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
 {
     dzlog_warn("uart send to ecb--------------------------");
-    hdzlog_info(in, in_len);
     if (fd < 0)
     {
         dzlog_error("ecb_uart_send fd error\n");
         return -1;
     }
+    if (in == NULL || in_len <= 0)
+    {
+        return -1;
+    }
+    hdzlog_info(in, in_len);
+
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
-        if (in == NULL || in_len <= 0)
+        if (resend)
         {
-            res = 0;
-            goto fail;
+            uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
+            if (resend == NULL)
+            {
+                dzlog_error("malloc error\n");
+                goto resend_fail;
+            }
+            resend->send_len = in_len;
+            if (iscopy)
+            {
+                resend->send_data = (unsigned char *)malloc(resend->send_len);
+                if (resend->send_data == NULL)
+                {
+                    dzlog_error("malloc error\n");
+                    free(resend);
+                    goto resend_fail;
+                }
+                memcpy(resend->send_data, in, resend->send_len);
+            }
+            else
+                resend->send_data = (unsigned char *)in;
+
+            // resend->fd = fd;
+            if (resend->send_len >= 4)
+                resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
+            resend->resend_cnt = RESEND_CNT;
+            resend->resend_cb = ecb_uart_resend_cb;
+            resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
+            ecb_resend_list_add(resend);
         }
+    resend_fail:
         res = write(fd, in, in_len);
         if (resend)
             usleep(50000);
-    fail:
+
         pthread_mutex_unlock(&lock);
-        return res;
     }
     else
     {
         dzlog_error("pthread_mutex_lock error\n");
-    }
-    if (resend)
-    {
-        uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
-        resend->send_len = in_len;
-        if (iscopy)
-        {
-            resend->send_data = (unsigned char *)malloc(resend->send_len);
-            memcpy(resend->send_data, in, resend->send_len);
-        }
-        else
-            resend->send_data = (unsigned char *)in;
-
-        // resend->fd = fd;
-        if (resend->send_len >= 4)
-            resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
-        resend->resend_cnt = RESEND_CNT;
-        resend->resend_cb = ecb_uart_resend_cb;
-        resend->wait_tick = resend_tick_set(get_systime_ms(), RESEND_WAIT_TICK);
-        ecb_resend_list_add(resend);
     }
     return res;
 }
@@ -118,6 +129,11 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
 {
     int index = 0;
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
+    if (send_msg == NULL)
+    {
+        dzlog_error("malloc error\n");
+        return -1;
+    }
     send_msg[index++] = 0xe6;
     send_msg[index++] = 0xe6;
     if (seq_id < 0)
@@ -197,7 +213,7 @@ static int ecb_timeout_cb(void)
     {
         if (ecb_uart_heart_timeout(true) == MSG_HEART_TIME)
         {
-            send_error_to_cloud(POWER_BOARD_ERROR_CODE);
+            // send_error_to_cloud(POWER_BOARD_ERROR_CODE);
         }
     }
     return 0;

@@ -146,9 +146,10 @@ int CookHistory::updateHistory(history_t *single)
     {
         return -1;
     }
-    if (single->collect >= 0)
+
+    if (single->collect >= 0 && single->collect != iter->history.collect)
     {
-        if (single->collect != iter->history.collect)
+        if (single->collect)
         {
             if (historyList.size() - getHistoryCount() >= MAX_COLLECT)
             {
@@ -165,10 +166,11 @@ int CookHistory::updateHistory(history_t *single)
 
         if (lastId >= 0 && lastId != single->id)
         {
-            ret = history_delete_cb(single->id);
+            ret = history_delete_cb(lastId);
         }
     }
     ret = history_update_cb(single);
+
     return ret;
 }
 

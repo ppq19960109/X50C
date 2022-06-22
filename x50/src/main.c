@@ -63,7 +63,8 @@ int main(int argc, char **argv)
 
     uds_protocol_init(); // uds相关初始化
     cloud_init();        //阿里云相关初始化
-
+    uart_task_init();
+    
     pthread_create(&cloud_tid, NULL, cloud_task, NULL); //阿里云线程启动
     pthread_detach(cloud_tid);
 

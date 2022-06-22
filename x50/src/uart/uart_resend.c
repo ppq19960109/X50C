@@ -60,6 +60,7 @@ uart_resend_t *resend_list_get_by_id(struct list_head *head, const int resend_se
 {
     if (head == NULL)
     {
+        printf("%s,head is null\n", __func__);
         return NULL;
     }
     uart_resend_t *ptr = NULL;
@@ -79,6 +80,7 @@ int resend_list_del_by_id(struct list_head *head, const int resend_seq_id)
     uart_resend_t *ptr = resend_list_get_by_id(head, resend_seq_id);
     if (ptr == NULL)
     {
+        printf("%s,ptr is null\n", __func__);
         return -1;
     }
     resend_list_del(ptr);
@@ -90,8 +92,10 @@ void resend_list_each(struct list_head *head)
     uart_resend_t *ptr, *next;
     if (head == NULL)
     {
+        printf("%s,head is null\n", __func__);
         return;
     }
+
     unsigned long current_tick = get_systime_ms();
     list_for_each_entry_safe(ptr, next, head, node)
     {
@@ -101,9 +105,11 @@ void resend_list_each(struct list_head *head)
             {
                 ptr->wait_tick = resend_tick_set(current_tick, RESEND_WAIT_TICK);
                 --ptr->resend_cnt;
-                
+
                 if (ptr->resend_cb != NULL)
+                {
                     ptr->resend_cb(ptr->send_data, ptr->send_len);
+                }
             }
         }
         if (ptr->resend_cnt == 0)

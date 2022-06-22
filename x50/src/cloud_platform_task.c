@@ -260,7 +260,12 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             cJSON_AddNumberToObject(item, "remind", ptr->value[2]);
             if (ptr->value[2])
             {
-                cJSON_AddStringToObject(item, "RemindText", g_cloud_dev->remind[(int)ptr->value[1]]);
+                unsigned char remind_num = ptr->value[1];
+                if (remind_num > 3)
+                    remind_num = 2;
+                if (remind_num > 0)
+                    --remind_num;
+                cJSON_AddStringToObject(item, "RemindText", g_cloud_dev->remind[remind_num]);
             }
             else
             {
@@ -321,6 +326,11 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             if (ptr->uart_byte_len > 1)
             {
                 char *buf = (char *)malloc(ptr->uart_byte_len + 1);
+                if (buf == NULL)
+                {
+                    dzlog_error("malloc error\n");
+                    return -1;
+                }
                 memcpy(buf, ptr->value, ptr->uart_byte_len);
                 buf[ptr->uart_byte_len] = 0;
                 item = cJSON_CreateString(buf);
@@ -818,9 +828,19 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
     }
     int i;
     cloud_dev_t *cloud_dev = (cloud_dev_t *)malloc(sizeof(cloud_dev_t));
+    if (cloud_dev == NULL)
+    {
+        dzlog_error("malloc error\n");
+        goto fail;
+    }
     memset(cloud_dev, 0, sizeof(cloud_dev_t));
     cloud_dev->attr_len = arraySize;
     cloud_dev->attr = (cloud_attr_t *)malloc(sizeof(cloud_attr_t) * cloud_dev->attr_len);
+    if (cloud_dev->attr == NULL)
+    {
+        dzlog_error("malloc error\n");
+        goto fail;
+    }
     memset(cloud_dev->attr, 0, sizeof(cloud_attr_t) * cloud_dev->attr_len);
 
     strcpy(cloud_dev->device_category, DeviceCategory->valuestring);
@@ -853,6 +873,11 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
         if (cloud_dev->attr[i].uart_byte_len > 0)
         {
             cloud_dev->attr[i].value = (char *)malloc(cloud_dev->attr[i].uart_byte_len);
+            if (cloud_dev->attr[i].value == NULL)
+            {
+                dzlog_error("malloc error\n");
+                goto fail;
+            }
             memset(cloud_dev->attr[i].value, 0, cloud_dev->attr[i].uart_byte_len);
         }
     }
