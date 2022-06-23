@@ -291,11 +291,12 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
-            if (strcmp("SysPower", ptr->cloud_key) == 0)
-            {
-                set_gesture_power(cloud_val);
-            }
-            else if (strcmp("ErrorCode", ptr->cloud_key) == 0)
+            // if (strcmp("SysPower", ptr->cloud_key) == 0)
+            // {
+            //     set_gesture_power(cloud_val);
+            // }
+            // else
+            if (strcmp("ErrorCode", ptr->cloud_key) == 0)
             {
                 gesture_error_code_func(&cloud_val);
             }

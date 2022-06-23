@@ -19,7 +19,7 @@ static pthread_mutex_t lock;
 static unsigned char gesture_error_code = 0;
 static unsigned char gesture_alarm_status = 0, gesture_alarm_start_status = 0;
 static struct Select_Client_Event select_client_event;
-static unsigned char gesture_power = 0;
+// static unsigned char gesture_power = 0;
 static int gesture_send_error = 0;
 
 static unsigned short msg_verify(const unsigned char *data, int len)
@@ -70,9 +70,9 @@ int gesture_uart_send(unsigned char *in, int in_len)
 // aa 01 08 01 01 ff ff 4c fd
 int gesture_send_msg(unsigned char whole_show, unsigned char sync, unsigned char hour, unsigned char minute, int alarm)
 {
-    unsigned char data1 = 0;
-    if (gesture_power)
-        data1 |= (1 << 0);
+    unsigned char data1 = 1;
+    // if (gesture_power)
+    // data1 |= (1 << 0);
     if (sync)
         data1 |= (1 << 3);
     if (alarm)
@@ -198,15 +198,15 @@ void gesture_auto_sync_time_alarm(int alarm)
         gesture_sync_time_and_alarm(0, alarm);
     }
 }
-void set_gesture_power(const int power)
-{
-    if (gesture_power != power)
-    {
-        gesture_power = power;
+// void set_gesture_power(const int power)
+// {
+//     if (gesture_power != power)
+//     {
+//         gesture_power = power;
 
-        gesture_auto_sync_time_alarm(0);
-    }
-}
+//         gesture_auto_sync_time_alarm(0);
+//     }
+// }
 static int gesture_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
 {
     static int gesture_recv_error = 0;
