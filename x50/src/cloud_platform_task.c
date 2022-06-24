@@ -550,6 +550,12 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                         uart_buf[1] = attr[j].value[0];
                         ecb_uart_send_cloud_msg(uart_buf, 2);
                     }
+                    else if (strcmp("IceHoodLight", attr[j].cloud_key) == 0)
+                    {
+                        uart_buf[0] = 0x32;
+                        uart_buf[1] = attr[j].value[0];
+                        ecb_uart_send_cloud_msg(uart_buf, 2);
+                    }
                     i += attr[j].uart_byte_len;
                     break;
                 }

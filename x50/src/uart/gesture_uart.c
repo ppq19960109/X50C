@@ -46,13 +46,13 @@ static cloud_attr_t g_gesture_attr[] = {
         uart_cmd : 0x76,
         uart_byte_len : 2,
     },
-    // {
-    //     cloud_key : "IceStOvOrderTimer",
-    //     cloud_value_type : LINK_VALUE_TYPE_NUM,
-    //     cloud_fun_type : LINK_FUN_TYPE_ATTR_REPORT_CTRL,
-    //     uart_cmd : 0x79,
-    //     uart_byte_len : 2,
-    // },
+    {
+        cloud_key : "IceHoodLight",
+        cloud_value_type : LINK_VALUE_TYPE_NUM,
+        cloud_fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+        uart_cmd : 0x79,
+        uart_byte_len : 1,
+    },
     // {
     //     cloud_key : "IceStOvOrderTimerLeft",
     //     cloud_value_type : LINK_VALUE_TYPE_NUM,
