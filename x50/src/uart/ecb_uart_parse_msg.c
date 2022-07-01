@@ -103,9 +103,15 @@ void keypress_local_pro(unsigned char value)
         break;
     case KEYPRESS_LOCAL_STEAM_START: /* 启动蒸烤箱 */
     {
-        dzlog_info("SteamStart");
         cJSON *resp = cJSON_CreateObject();
         cJSON_AddNullToObject(resp, "SteamStart");
+        send_event_uds(resp, NULL);
+    }
+    break;
+    case KEYPRESS_LOCAL_DEMO_START: /* 启动demo */
+    {
+        cJSON *resp = cJSON_CreateObject();
+        cJSON_AddNullToObject(resp, "DemoStart");
         send_event_uds(resp, NULL);
     }
     break;

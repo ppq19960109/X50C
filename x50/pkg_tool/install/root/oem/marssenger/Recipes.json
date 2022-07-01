@@ -73,7 +73,7 @@
         },
         {
             "dishName": "蜜烤鸡翅",
-            "cookSteps": "[{\"device\":0,\"number\":1,\"mode\":36,\"temp\":180,\"time\":20}]",
+            "cookSteps": "[{\"device\":0,\"number\":1,\"mode\":38,\"temp\":180,\"time\":20}]",
             "recipeid": 566,
             "recipeType": 2,
             "cookPos": 0
