@@ -1,0 +1,46 @@
+#!/bin/sh
+export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=270
+export TZ='Asia/Shanghai'
+
+SERVER_APP_NAME="X8app"
+UI_APP_NAME="X8UI"
+DAEMON_APP_NAME="Daemon.sh"
+BASE_PATH="/oem/marssenger"
+
+start() {
+    echo "Starting marssenger: "
+    cd $(dirname $0)
+    ./$UI_APP_NAME &
+    ./$SERVER_APP_NAME &
+    ./$DAEMON_APP_NAME &
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+stop() {
+    echo "Stopping marssenger: "
+    killall -9 $DAEMON_APP_NAME
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+    killall -9 $UI_APP_NAME
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+    killall -9 $SERVER_APP_NAME 
+    [ $? = 0 ] && echo "OK" || echo "FAIL"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart|reload)
+        stop
+        sleep 1
+        start
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

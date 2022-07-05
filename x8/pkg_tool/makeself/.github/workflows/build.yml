@@ -1,0 +1,177 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Install Ubuntu packages
+      if: runner.os == 'Linux'
+      run: sudo env DEBIAN_FRONTEND=noninteractive apt-get -qq -y install pbzip2 zstd
+
+    - name: Install macOS packages
+      if: runner.os == 'macOS'
+      run: brew install pbzip2 coreutils zstd
+
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+      with:
+        submodules: 'true'
+
+    - name: Build release
+      run: make
+
+    - uses: actions/upload-artifact@v1
+      with:
+        name: Makeself-Build-${{ runner.os }}
+        path: release
+        
+    - name: Run tests
+      run: make test
+
+  test-make-alpine:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - name: install deps
+        run:  apk add --no-cache bash git make libarchive-tools gnupg coreutils
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+
+      - name: Run tests
+        run: make test
+
+  test-freebsd:
+    needs: test
+    runs-on: macos-10.15
+    name: Test Makeself on FreeBSD
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Linux
+        path: linux
+    - uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-macOS
+        path: mac
+    - uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Windows
+        path: windows
+    - name: Test on FreeBSD
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        prepare: pkg install -y pbzip2
+        run: |
+          pwd; freebsd-version
+          sh ./linux/makeself*.run --target /tmp/makeself-linux
+          sh ./mac/makeself*.run --target /tmp/makeself-mac
+          sh ./windows/makeself*.run --target /tmp/makeself-windows
+
+  test-solaris:
+    needs: test
+    runs-on: macos-10.15
+    name: Test Makeself on Solaris
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Linux
+        path: linux
+    - uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-macOS
+        path: mac
+    - uses: actions/download-artifact@v2
+      with:
+        name: Makeself-Build-Windows
+        path: windows
+    - name: Test on Solaris
+      uses: vmactions/solaris-vm@v0.0.3
+      with:
+        mem: 2048
+        prepare: pkgutil -y -i pbzip2
+        run: |
+          pwd
+          sh ./linux/makeself*.run --target /tmp/makeself-linux
+          sh ./mac/makeself*.run --target /tmp/makeself-mac
+          sh ./windows/makeself*.run --target /tmp/makeself-windows
+
+  test-alpine:
+    needs: test
+    name: Test Makeself on Alpine
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: Makeself-Build-Linux
+          path: linux
+      - uses: actions/download-artifact@v2
+        with:
+          name: Makeself-Build-macOS
+          path: mac
+      - uses: actions/download-artifact@v2
+        with:
+          name: Makeself-Build-Windows
+          path: windows
+      - name: Test on Alpine
+        run: |
+          sh ./linux/makeself*.run --target /tmp/makeself-linux
+          sh ./mac/makeself*.run --target /tmp/makeself-mac
+          sh ./windows/makeself*.run --target /tmp/makeself-windows
+
+  test-nanoserver:
+    needs: test
+    name: Test Makeself on Nanoserver
+    runs-on: windows-2022
+    env:
+      IMAGE_NAME: mcr.microsoft.com/windows/nanoserver:ltsc2022-amd64
+
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: Makeself-Build-Linux
+          path: linux
+      - uses: actions/download-artifact@v2
+        with:
+          name: Makeself-Build-macOS
+          path: mac
+      - uses: actions/download-artifact@v2
+        with:
+          name: Makeself-Build-Windows
+          path: windows
+
+      - name: pull windows container ${{ env.IMAGE_NAME }}
+        shell: cmd
+        run: |
+          docker pull ${{ env.IMAGE_NAME }}
+          docker images ${{ env.IMAGE_NAME }}
+
+      - name: Test on Nanoserver
+        shell: cmd
+        run: >
+          docker container run --rm --env CI=true -v ${{ github.workspace }}:C:\app -w C:\app ${{ env.IMAGE_NAME }}
+          curl --fail --silent --show-error --remote-name --location "https://frippery.org/files/busybox/busybox64.exe" && 
+          busybox64 sh .\linux\makeself*.run --target \tmp\makeself-linux &&
+          busybox64 sh .\mac\makeself*.run --target \tmp\makeself-mac &&
+          busybox64 sh .\windows\makeself*.run --target \tmp\makeself-windows
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Makeself
+      uses: actions/checkout@v2
+    - name: Run ShellCheck
+      uses: megastep/shell-linter@develop
+      with:
+        path: "makeself.sh"
+        severity: "error"

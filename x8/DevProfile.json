@@ -1,0 +1,409 @@
+{
+    "DeviceCategory": "集成灶",
+    "DeviceModel": "X50BCZ",
+    "HardwareVer": "1.0.0",
+    "UpdateLog": "",
+    "attr": [
+        {
+            "cloudKey": "ComSWVersion",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 0,
+            "uartByteLen": 0
+        },
+        {
+            "cloudKey": "WifiMac",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 0,
+            "uartByteLen": 0
+        },
+        {
+            "cloudKey": "",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 1,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 2,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "ElcSWVersion",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 3,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "ElcHWVersion",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 4,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "SysPower",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 5,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "ErrorCode",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 10,
+            "uartByteLen": 4
+        },
+        {
+            "cloudKey": "ErrorCodeShow",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 11,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStoveStatus",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 17,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStoveStatus",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 18,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodStoveLink",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 19,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodLightLink",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 20,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStoveTimingState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 21,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStoveTimingSet",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 23,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStoveTimingOpera",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 22,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStoveTimingLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 24,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodSpeed",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 49,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodLight",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 50,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodOffLeftTime",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 52,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodOffTimer",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 56,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodOffRemind",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 57,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "MultiMode",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 79,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStOvState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 66,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStOvMode",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 67,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStOvSetTemp",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 68,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "LStOvRealTemp",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 69,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "LStOvSetTimer",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 70,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "LStOvSetTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 71,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "LStOvOrderTimer",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 72,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "LStOvOrderTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 73,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "LStOvDoorState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 74,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStOvLightState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 75,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "MultiStageContent",
+            "valueType": 3,
+            "funType": 2,
+            "uartCmd": 76,
+            "uartByteLen": 13
+        },
+        {
+            "cloudKey": "CookbookParam",
+            "valueType": 3,
+            "funType": 2,
+            "uartCmd": 76,
+            "uartByteLen": 13
+        },
+        {
+            "cloudKey": "MultiStageState",
+            "valueType": 3,
+            "funType": 1,
+            "uartCmd": 77,
+            "uartByteLen": 3
+        },
+        {
+            "cloudKey": "CookbookID",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 80,
+            "uartByteLen": 4
+        },
+        {
+            "cloudKey": "LStOvOperation",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 65,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 82,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvSetTemp",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 83,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RStOvRealTemp",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 84,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RStOvSetTimer",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 85,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RStOvSetTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 86,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RStOvOrderTimer",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 87,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RStOvOrderTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 88,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RStOvDoorState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 89,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvLightState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 90,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvMode",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 91,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvOperation",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 81,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LocalOperate",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 241,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "DataReportReason",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 246,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "BuzControl",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 247,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "PermitSteamStartStatus",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 248,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "CookbookName",
+            "valueType": 2,
+            "funType": 0,
+            "uartCmd": 0,
+            "uartByteLen": 64
+        },
+        {
+            "cloudKey": "LoadPowerSet",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 225,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LoadPowerState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 226,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "PCBInput",
+            "valueType": 4,
+            "funType": 1,
+            "uartCmd": 227,
+            "uartByteLen": 29
+        }
+    ],
+    "event": [],
+    "service": []
+}
