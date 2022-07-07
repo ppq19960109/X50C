@@ -18,6 +18,7 @@ static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 static char first_uds_report = 0;
+static char demo_mode = 0;
 
 void uds_report_reset(void)
 {
@@ -291,12 +292,15 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         }
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
-            // if (strcmp("SysPower", ptr->cloud_key) == 0)
-            // {
-            //     set_gesture_power(cloud_val);
-            // }
-            // else
-            if (strcmp("ErrorCode", ptr->cloud_key) == 0)
+            if (strcmp("SysPower", ptr->cloud_key) == 0)
+            {
+                // set_gesture_power(cloud_val);
+                if (demo_mode != 0 && cloud_val == 0)
+                {
+                    demo_mode = 0;
+                }
+            }
+            else if (strcmp("ErrorCode", ptr->cloud_key) == 0)
             {
                 gesture_error_code_func(&cloud_val);
             }
@@ -343,7 +347,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                 {
                     item = cJSON_CreateString(g_cloud_dev->software_ver);
                 }
-                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0 || strcmp("ElcHWVersion", ptr->cloud_key) == 0)
+                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0 || strcmp("ElcHWVersion", ptr->cloud_key) == 0 || strcmp("PwrSWVersion", ptr->cloud_key) == 0 || strcmp("PwrHWVersion", ptr->cloud_key) == 0)
                 {
                     char buf[6];
                     sprintf(buf, "%d.%d", *ptr->value >> 4, *ptr->value & 0x0f);
@@ -485,6 +489,13 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         else if (LINK_VALUE_TYPE_NUM == ptr->cloud_value_type)
         {
             num = item->valueint;
+            if (strcmp("LoadPowerSet", ptr->cloud_key) == 0)
+            {
+                if (num == 4)
+                    demo_mode = 1;
+                else
+                    demo_mode = 0;
+            }
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
@@ -675,6 +686,8 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
 
 static int recv_data_from_cloud(unsigned long devid, char *value, int value_len) //阿里云下发接口回调函数，初始化时注册
 {
+    if (demo_mode != 0)
+        return -1;
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
     {
