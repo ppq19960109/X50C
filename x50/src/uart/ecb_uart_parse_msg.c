@@ -275,9 +275,13 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         // ecb_resend_list_del_by_id(seq_id);
         send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK);
     }
-    else if (command == ECB_UART_COMMAND_ACK || command == ECB_UART_COMMAND_NAK)
+    else if (command == ECB_UART_COMMAND_ACK)
     {
         ecb_resend_list_del_by_id(seq_id);
+    }
+    else if (command == ECB_UART_COMMAND_NAK)
+    {
+        dzlog_warn("uart nak:%d", payload[0]);
     }
     else
     {
