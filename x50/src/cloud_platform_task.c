@@ -1067,9 +1067,9 @@ void *cloud_task(void *arg) //云端任务
             // curl_weather();
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
-                sleep(1);
-                wifiScan();
-                sleep(3);
+                // sleep(1);
+                // wifiScan();
+                // sleep(3);
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }

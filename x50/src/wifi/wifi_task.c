@@ -287,7 +287,11 @@ static void linkkit_connected_cb(int connect)
     else
     {
         if (g_link_state != 0)
+        {
+            // if (RK_WIFI_State_CONNECTED == getWifiRunningState())
+            //     systemRun("(wpa_cli list_networks | tail -n +3 | grep 'TEMP-DISABLED' | awk '{system(\"wpa_cli remove_network \" $1)}' && wpa_cli save_config) &");
             wiFiReport(RK_WIFI_State_DISCONNECTED);
+        }
     }
 }
 static int link_wifi_state_cb()

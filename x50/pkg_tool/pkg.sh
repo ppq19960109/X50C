@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd `dirname $0`
-SOFTWARE_VERSION="1.2.5"
+SOFTWARE_VERSION="1.2.6"
 
 #compress directory and compress file name
 PKG_DIRNAME="install"

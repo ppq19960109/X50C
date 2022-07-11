@@ -513,9 +513,9 @@ int link_model_start()
     uint16_t port = 443;             /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
     aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
     uint8_t post_reply = 1;
-    uint16_t keep_alive = 110;
-    uint32_t heartbeat_interval = 200 * 100;
-    uint8_t heartbeat_max_lost = 3;
+    uint16_t keep_alive = 90;
+    // uint32_t heartbeat_interval = 200 * 100;
+    // uint8_t heartbeat_max_lost = 3;
     // uint32_t reconn_interval = 15 * 100;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
@@ -565,8 +565,8 @@ int link_model_start()
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_EVENT_HANDLER, (void *)demo_mqtt_event_handler);
 
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_KEEPALIVE_SEC, (void *)&keep_alive);
-    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_INTERVAL_MS, (void *)&heartbeat_interval);
-    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_MAX_LOST, (void *)&heartbeat_max_lost);
+    // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_INTERVAL_MS, (void *)&heartbeat_interval);
+    // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_MAX_LOST, (void *)&heartbeat_max_lost);
 
     // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECONN_INTERVAL_MS, (void *)&reconn_interval);
 
