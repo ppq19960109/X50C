@@ -567,10 +567,12 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
         dzlog_warn("%s,send NULL", __func__);
         return;
     }
-    char *json = cJSON_PrintUnformatted(root);
-    link_send_property_post(json);
-    cJSON_free(json);
-
+    if (cJSON_HasObjectItem(root, "LoadPowerState") == 0 && cJSON_HasObjectItem(root, "PCBInput") == 0)
+    {
+        char *json = cJSON_PrintUnformatted(root);
+        link_send_property_post(json);
+        cJSON_free(json);
+    }
     if (ECB_UART_COMMAND_GETACK == command)
     {
         if (first_uds_report >= 2)
