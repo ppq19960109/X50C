@@ -74,10 +74,27 @@ int histroy_select_seqid_func(void *data, void *arg)
     return 0;
 }
 
+int recipe_select_seqid_func(void *data, void *arg)
+{
+    recipes_t *recipe = (recipes_t *)data;
+    cJSON *item = (cJSON *)arg;
+    cJSON_AddNumberToObject(item, "id", recipe->id);
+    cJSON_AddNumberToObject(item, "seqid", recipe->seqid);
+    cJSON_AddStringToObject(item, "dishName", recipe->dishName);
+    cJSON_AddStringToObject(item, "cookSteps", recipe->cookSteps);
+    cJSON_AddNumberToObject(item, "collect", recipe->collect);
+    cJSON_AddNumberToObject(item, "timestamp", recipe->timestamp);
+    cJSON_AddNumberToObject(item, "recipeid", recipe->recipeid);
+    cJSON_AddNumberToObject(item, "recipeType", recipe->recipeType);
+    cJSON_AddNumberToObject(item, "cookPos", recipe->cookPos);
+
+    return 0;
+}
+
 int select_for_cookbookID(int cookbookID, char *name, int name_len)
 {
     cJSON *root = cJSON_CreateObject();
-    select_recipeid_from_table(RECIPE_TABLE_NAME, cookbookID, histroy_select_seqid_func, root);
+    select_recipeid_from_table(RECIPE_TABLE_NAME, cookbookID, recipe_select_seqid_func, root);
     if (cJSON_Object_isNull(root))
         goto fail;
     cJSON *dishName = cJSON_GetObjectItem(root, "dishName");
