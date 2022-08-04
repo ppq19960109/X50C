@@ -28,14 +28,14 @@ void *uart_task(void *arg)
     select_server_task(&select_server_event, 150);
 
     ecb_uart_deinit();
-    gesture_uart_deinit();
+    // gesture_uart_deinit();
     return NULL;
 }
 void uart_task_init(void)
 {
     select_server_init(&select_server_event);
     ecb_uart_init();
-    gesture_uart_init();
+    // gesture_uart_init();
 }
 void uart_task_deinit(void)
 {

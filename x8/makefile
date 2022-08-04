@@ -13,8 +13,6 @@ SRC_DIRS := $(shell find src -maxdepth 3 -type d)
 INC_DIRS += $(shell find ${ALI_PATH} -type d \( ! -name demos \))
 
 LINKTOOL_PATH:=liblinktool
-# LOG_PATH:=libzlog
-HISTORY_PATH:=libhistory
 
 CFLAGS += $(addprefix -I , $(SRC_DIRS))
 CFLAGS += $(addprefix -I , $(INC_DIRS))
@@ -27,8 +25,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(LINKTOOL_PATH)/include/md5
 CFLAGS += -I$(ALI_PATH)/include
-# CFLAGS += -I$(LOG_PATH)/include
-CFLAGS += -I$(HISTORY_PATH)
+
 CFLAGS += -Wall #-Werror
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
@@ -36,12 +33,10 @@ endif
 
 LDFLAGS += -L$(LINKTOOL_PATH)/lib
 LDFLAGS += -L$(ALI_PATH)
-# LDFLAGS += -L$(LOG_PATH)/lib
-LDFLAGS += -L$(HISTORY_PATH)
 LDFLAGS += -L$(TOPDIR)
 
 LIBS += -Wl,--start-group	\
-		-Wl,-Bstatic  -llinktool -lalisdk -lzlog -lhistory \
+		-Wl,-Bstatic  -llinktool -lalisdk -lzlog \
 		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lsqlite3	-lcurl -lDeviceIo -lasound \
 		-Wl,--end-group
 

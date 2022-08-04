@@ -5,7 +5,6 @@
 
 typedef struct
 {
-    sqlite3 *history_db;
     sqlite3 *recipe_db;
 } sqlHandle_t;
 
@@ -41,14 +40,9 @@ static const char *sql_drop_table = "DROP TABLE %s;";
 sqlite3 *get_db_from_table(const char *table_name)
 {
     sqlite3 *db = NULL;
-    if (strcmp(RECIPE_TABLE_NAME, table_name) == 0)
-    {
-        db = sqlHandle.recipe_db;
-    }
-    else
-    {
-        db = sqlHandle.history_db;
-    }
+
+    db = sqlHandle.recipe_db;
+
     return db;
 }
 int databse_drop_table(const char *table_name)
@@ -415,31 +409,20 @@ void database_deinit(void)
 {
     if (sqlHandle.recipe_db != NULL)
     {
-        sqlite3_close_v2(sqlHandle.history_db);
-    }
-    if (sqlHandle.recipe_db != NULL)
-    {
         sqlite3_close_v2(sqlHandle.recipe_db);
     }
 }
 
 int database_init(void)
 {
-    int rc = sqlite3_open_v2(HISTORY_DB_NAME, &sqlHandle.history_db,
+    int rc = sqlite3_open_v2(RECIPE_DB_NAME, &sqlHandle.recipe_db,
                              SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
-    if (SQLITE_OK != rc)
-    {
-        printf("%s,%s:sqlite3_open_v2 errmsg:%s\n", __func__, HISTORY_DB_NAME, sqlite3_errmsg(sqlHandle.history_db));
-        sqlite3_close_v2(sqlHandle.history_db);
-    }
-    rc = sqlite3_open_v2(RECIPE_DB_NAME, &sqlHandle.recipe_db,
-                         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
     if (SQLITE_OK != rc)
     {
         printf("%s,%s:sqlite3_open_v2 errmsg:%s\n", __func__, RECIPE_DB_NAME, sqlite3_errmsg(sqlHandle.recipe_db));
         sqlite3_close_v2(sqlHandle.recipe_db);
     }
-    databse_create_table(HISTORY_TABLE_NAME);
+
     if (databse_create_table(RECIPE_TABLE_NAME) == 0)
     {
         printf("%s,%s:first databse_create_table ...\n", __func__, RECIPE_TABLE_NAME);
@@ -450,10 +433,8 @@ int database_init(void)
 
 void database_reinit(void)
 {
-    databse_drop_table(HISTORY_TABLE_NAME);
     databse_drop_table(RECIPE_TABLE_NAME);
-    
-    databse_create_table(HISTORY_TABLE_NAME);
+
     if (databse_create_table(RECIPE_TABLE_NAME) == 0)
     {
         printf("%s,%s:first databse_create_table ...\n", __func__, RECIPE_TABLE_NAME);

@@ -82,9 +82,9 @@ int get_link_connected_state(void)
 /* 日志回调函数, SDK的日志会从这里输出 */
 int32_t demo_state_logcb(int32_t code, char *message)
 {
-    if (STATE_HTTP_LOG_RECV_CONTENT != code)
+    if (STATE_MQTT_LOG_HEXDUMP != code && STATE_HTTP_LOG_RECV_CONTENT != code)
     {
-        printf("%d,%.*s", code, 2048, message);
+        printf("%d,%.*s", code, 1024, message);
         // printf("%s", message);
     }
     return 0;
@@ -155,7 +155,7 @@ void *demo_mqtt_process_thread(void *args)
         }
         usleep(400000);
     }
-    printf("demo_mqtt_process_thread exit.....................\n");
+    printf("demo_mqtt_process_thread exit...\n");
     return NULL;
 }
 
@@ -176,19 +176,22 @@ void *demo_mqtt_recv_thread(void *args)
             usleep(400000);
         }
     }
-    printf("demo_mqtt_recv_thread exit.....................\n");
+    printf("demo_mqtt_recv_thread exit...\n");
     return NULL;
 }
 
 static void demo_dm_recv_generic_reply(void *dm_handle, const aiot_dm_recv_t *recv, void *userdata)
 {
-    printf("demo_dm_recv_generic_reply msg_id = %d, code = %d, data = %.*s, message = %.*s\r\n",
+    printf("demo_dm_recv_generic_reply msg_id = %d, code = %d\n",
            recv->data.generic_reply.msg_id,
-           recv->data.generic_reply.code,
-           recv->data.generic_reply.data_len,
-           recv->data.generic_reply.data,
-           recv->data.generic_reply.message_len,
-           recv->data.generic_reply.message);
+           recv->data.generic_reply.code);
+    // printf("demo_dm_recv_generic_reply msg_id = %d, code = %d, data = %.*s, message = %.*s\r\n",
+    //        recv->data.generic_reply.msg_id,
+    //        recv->data.generic_reply.code,
+    //        recv->data.generic_reply.data_len,
+    //        recv->data.generic_reply.data,
+    //        recv->data.generic_reply.message_len,
+    //        recv->data.generic_reply.message);
 }
 
 static void demo_dm_recv_property_set(void *dm_handle, const aiot_dm_recv_t *recv, void *userdata)
@@ -513,9 +516,9 @@ int link_model_start()
     uint16_t port = 443;             /* 无论设备是否使用TLS连接阿里云平台, 目的端口都是443 */
     aiot_sysdep_network_cred_t cred; /* 安全凭据结构体, 如果要用TLS, 这个结构体中配置CA证书等参数 */
     uint8_t post_reply = 1;
-    uint16_t keep_alive = 110;
-    uint32_t heartbeat_interval = 200 * 100;
-    uint8_t heartbeat_max_lost = 3;
+    uint16_t keep_alive = 90;
+    // uint32_t heartbeat_interval = 200 * 100;
+    // uint8_t heartbeat_max_lost = 3;
     // uint32_t reconn_interval = 15 * 100;
     /* 配置SDK的底层依赖 */
     aiot_sysdep_set_portfile(&g_aiot_sysdep_portfile);
@@ -565,8 +568,8 @@ int link_model_start()
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_EVENT_HANDLER, (void *)demo_mqtt_event_handler);
 
     aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_KEEPALIVE_SEC, (void *)&keep_alive);
-    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_INTERVAL_MS, (void *)&heartbeat_interval);
-    aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_MAX_LOST, (void *)&heartbeat_max_lost);
+    // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_INTERVAL_MS, (void *)&heartbeat_interval);
+    // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_HEARTBEAT_MAX_LOST, (void *)&heartbeat_max_lost);
 
     // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECONN_INTERVAL_MS, (void *)&reconn_interval);
 
@@ -675,7 +678,7 @@ int link_model_start()
             aiot_mqtt_process(mqtt_handle);
             aiot_mqtt_recv(mqtt_handle);
         }
-        usleep(300000);
+        usleep(200000);
         // sleep(5);
         /* TODO: 以下代码演示了简单的属性上报和事件上报, 用户可取消注释观察演示效果 */
         // link_send_property_post("{\"SysPower\": 1}");

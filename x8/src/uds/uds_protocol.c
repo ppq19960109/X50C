@@ -127,7 +127,7 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         cloud_resp_set(Data, resp);
         ota_resp_set(Data, resp);
         device_resp_set(Data, resp);
-        // database_resp_set(Data, resp);
+        database_resp_set(Data, resp);
     }
     else if (strcmp(TYPE_GETALL, Type->valuestring) == 0) //解析GETALL命令
     {

@@ -402,6 +402,13 @@
             "funType": 1,
             "uartCmd": 227,
             "uartByteLen": 29
+        },
+        {
+            "cloudKey": "SmartSmoke",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 53,
+            "uartByteLen": 1
         }
     ],
     "event": [],

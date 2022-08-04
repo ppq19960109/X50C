@@ -7,9 +7,7 @@ extern "C"
 #endif
 #include <stdbool.h>
 
-#define HISTORY_DB_NAME "history.db"
 #define RECIPE_DB_NAME "recipe.db"
-#define HISTORY_TABLE_NAME "history"
 #define RECIPE_TABLE_NAME "recipe"
 #define RECIPES_FILE "Recipes.json"
 

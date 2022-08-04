@@ -567,10 +567,12 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
         dzlog_warn("%s,send NULL", __func__);
         return;
     }
-    char *json = cJSON_PrintUnformatted(root);
-    link_send_property_post(json);
-    cJSON_free(json);
-
+    if (cJSON_HasObjectItem(root, "LoadPowerState") == 0 && cJSON_HasObjectItem(root, "PCBInput") == 0)
+    {
+        char *json = cJSON_PrintUnformatted(root);
+        link_send_property_post(json);
+        cJSON_free(json);
+    }
     if (ECB_UART_COMMAND_GETACK == command)
     {
         if (first_uds_report >= 2)
@@ -611,10 +613,6 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     link_send_property_post(json);
     cJSON_free(json);
     cJSON_Delete(root);
-
-    // json = get_link_CookHistory();
-    // link_send_property_post(json);
-    // cJSON_free(json);
     return 0;
 }
 
@@ -676,10 +674,6 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     {
         ecb_uart_send_cloud_msg(uart_buf, uart_buf_len);
     }
-
-    cJSON *resp_db = cJSON_CreateObject();
-    database_resp_set(root, resp_db);
-    report_msg_all_platform(resp_db);
     pthread_mutex_unlock(&mutex);
     return 0;
 }
@@ -909,14 +903,6 @@ fail:
 }
 static int recv_sync_service_invoke(char *service_id, char **data)
 {
-    if (strcmp("GetHistory", service_id) == 0)
-    {
-        *data = get_link_CookHistory();
-    }
-    else
-    {
-        return -1;
-    }
     return 0;
 }
 static void ota_complete_cb(void)
@@ -1067,9 +1053,6 @@ void *cloud_task(void *arg) //云端任务
             // curl_weather();
             if (strlen(g_cloud_dev->device_secret) > 0)
             {
-                sleep(1);
-                wifiScan();
-                sleep(3);
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }
