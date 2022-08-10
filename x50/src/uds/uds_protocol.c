@@ -170,38 +170,40 @@ int uds_event_all(void)
     return 0;
 }
 
-static int uds_recv(char *data, unsigned int len) // uds接受回调函数，初始化时注册
+static int uds_recv(char *bytes, unsigned int len) // uds接受回调函数，初始化时注册
 {
-    if (data == NULL)
+    if (bytes == NULL)
         return -1;
-    int ret = 0;
-    int msg_len, encry, seqid;
+    unsigned char *data = (unsigned char *)bytes;
+    unsigned short msg_len;
+    int seqid;
+    // int encry;
     unsigned char verify;
-
+    // hdzlog_info(data, len);
     for (int i = 0; i < len; ++i)
     {
         if (data[i] == FRAME_HEADER && data[i + 1] == FRAME_HEADER)
         {
-            encry = data[i + 2];
+            // encry = data[i + 2];
             seqid = (data[i + 3] << 8) + data[i + 4];
             msg_len = (data[i + 5] << 8) + data[i + 6];
             if (data[i + 6 + msg_len + 2] != FRAME_TAIL || data[i + 6 + msg_len + 3] != FRAME_TAIL)
             {
+                dzlog_error("tail error");
                 continue;
             }
             // hdzlog_info(&data[i], 6 + msg_len + 4);
-            dzlog_debug("uds_recv encry:%d seqid:%d msg_len:%d", encry, seqid, msg_len);
+            dzlog_debug("uds_recv seqid:%d msg_len:%d", seqid, msg_len);
             verify = data[i + 6 + msg_len + 1];
-            unsigned char verify_check = CheckSum((unsigned char *)&data[i + 2], msg_len + 5);
+            unsigned char verify_check = CheckSum(&data[i + 2], msg_len + 5);
             if (verify_check != verify)
             {
                 dzlog_error("CheckSum error:%d,%d", verify_check, verify);
-                // continue;
+                continue;
             }
             if (msg_len > 0)
             {
-                ret = uds_json_parse(&data[i + 6 + 1], msg_len);
-                if (ret == 0)
+                if (uds_json_parse((char *)&data[i + 6 + 1], msg_len) == 0)
                 {
                     i += 6 + msg_len + 3;
                 }
