@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     setenv("MALLOC_TRACE", "./memleak.log", 1);
     mtrace();
 #endif // DEBUG
-    setenv("TZ", "Asia/Shanghai", 1);
+    //setenv("TZ", "Asia/Shanghai", 1);
     // char val[4] = {6, 2, 3, 4};
     // char val2[4] = {0};
     // int len = 4;

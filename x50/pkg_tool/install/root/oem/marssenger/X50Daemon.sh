@@ -23,6 +23,13 @@ function check2() {
     return 0
   fi
 
+  # hour=$(date "+%H")
+  # echo "hour:$hour"
+  # if [ $hour -gt 3 ] || [ $hour -lt 1 ]; then
+  #   echo "time no arrive"
+  #   return 1
+  # fi
+
   size=$(echo $line | awk '{print $3}')
   echo "mem:$size"
 
@@ -31,7 +38,7 @@ function check2() {
     # echo "It's exist m"
     msize=$(echo $size | tr -cd "[0-9]")
     echo $msize
-    if [ "$msize" -gt "120" ]; then
+    if [ "$msize" -gt "124" ]; then
       echo "big,reboot"
       killall -10 $1
       # else
@@ -40,7 +47,7 @@ function check2() {
     ;;
   [0-9]*)
     # echo "It's number"
-    if [ $size -gt 120000 ]; then
+    if [ $size -gt 124000 ]; then
       echo "big,reboot"
       killall -10 $1
       # else
@@ -55,8 +62,7 @@ function check2() {
 }
 
 while true; do
-  sleep 10
+  sleep 30
   check X50app
   check2 X50QML
-  sleep 20
 done
