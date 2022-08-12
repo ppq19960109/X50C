@@ -13,6 +13,7 @@
 #include "gesture_uart.h"
 #include "POSIXTimer.h"
 #include "quad_burn.h"
+#include "cook_assist.h"
 
 static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
@@ -245,7 +246,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
 
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
-    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || strlen(ptr->cloud_key) == 0)
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd == 0 || strlen(ptr->cloud_key) == 0)
     {
         return -1;
     }
@@ -386,7 +387,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
 int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把阿里云下发数据解析，并解析成串口数据
 {
     long num = 0;
-    if (out == NULL)
+    if (out == NULL || ptr->uart_cmd == 0)
         return 0;
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
@@ -547,7 +548,9 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                 dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
                 hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
                 get_attr_report_value(root, attr);
-                if (strcmp("MultiMode", (*attr).cloud_key) == 0 && *((*attr).value) == 1)
+                switch ((*attr).uart_cmd)
+                {
+                case 0x4f:
                 {
                     cloud_attr_t *ptr = get_attr_ptr("CookbookName");
                     if (ptr != NULL)
@@ -555,6 +558,18 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                         get_attr_report_value(root, ptr);
                     }
                 }
+                break;
+                case 0x31:
+                    recv_ecb_gear(*((*attr).value));
+                    break;
+                case 0x35:
+                    cook_assist_set_smartSmoke(*((*attr).value));
+                    break;
+                case 0x20:
+                    recv_ecb_fire(*((*attr).value), INPUT_RIGHT);
+                    break;
+                }
+
                 i += (*attr).uart_byte_len;
                 break;
             }
@@ -609,6 +624,7 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
         get_attr_report_event(attr, (*attr).value, 1);
         get_attr_report_value(root, attr);
     }
+    cook_assist_report_all(root);
     json = cJSON_PrintUnformatted(root);
     link_send_property_post(json);
     cJSON_free(json);
@@ -655,6 +671,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
+    cook_assist_start_single_recv();
     unsigned char uart_buf[256];
     int uart_buf_len = 0;
 
@@ -667,13 +684,15 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
         if (((*attr).cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || (*attr).cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, (*attr).cloud_key))
         {
             cJSON *item = cJSON_GetObjectItem(root, (*attr).cloud_key);
-            uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
+            if (cook_assist_recv_property_set((*attr).cloud_key, item) != 0)
+                uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
         }
     }
     if (uart_buf_len > 0)
     {
         ecb_uart_send_cloud_msg(uart_buf, uart_buf_len);
     }
+    cook_assist_end_single_recv();
     pthread_mutex_unlock(&mutex);
     return 0;
 }
@@ -949,6 +968,7 @@ int cloud_init(void) //初始化
         }
     }
     quad_burn_init();
+
     return 0;
 }
 

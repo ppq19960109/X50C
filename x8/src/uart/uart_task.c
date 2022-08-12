@@ -1,7 +1,7 @@
 #include "main.h"
 #include "uart_task.h"
 #include "ecb_uart.h"
-#include "gesture_uart.h"
+#include "cook_assist.h"
 
 static struct Select_Server_Event select_server_event;
 
@@ -25,17 +25,17 @@ void *uart_task(void *arg)
 {
     if (select_uart_timeout_cb != NULL)
         select_server_event.timeout_cb = select_uart_timeout_cb;
-    select_server_task(&select_server_event, 150);
+    select_server_task(&select_server_event, 120);
 
     ecb_uart_deinit();
-    // gesture_uart_deinit();
+    cook_assist_init();
     return NULL;
 }
 void uart_task_init(void)
 {
     select_server_init(&select_server_event);
     ecb_uart_init();
-    // gesture_uart_init();
+    cook_assist_deinit();
 }
 void uart_task_deinit(void)
 {

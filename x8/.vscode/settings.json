@@ -131,6 +131,12 @@
         "rk_wifi.h": "c",
         "stdint.h": "c",
         "kv_linux.h": "c",
-        "ecb_uart.h": "c"
+        "ecb_uart.h": "c",
+        "ring_buffer.h": "c",
+        "mlog.h": "c",
+        "fsyd.h": "c",
+        "cook_wrapper.h": "c",
+        "quad_burn.h": "c",
+        "cook_assist.h": "c"
     }
 }

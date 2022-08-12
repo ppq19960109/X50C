@@ -20,6 +20,7 @@
 #include "link_dynregmq_posix.h"
 #include "link_remote_access.h"
 
+static pthread_mutex_t mutex;
 static void *g_dm_handle = NULL;
 static void *g_mqtt_handle = NULL;
 /* TODO: 替换为自己设备的三元组 */
@@ -401,7 +402,10 @@ int link_send_property_post(char *params)
     if (g_connected == 0)
         return -1;
     printf("%s,%s,%d\n", __func__, params, strlen(params));
-    return demo_send_property_post(g_dm_handle, params);
+    pthread_mutex_lock(&mutex);
+    int ret = demo_send_property_post(g_dm_handle, params);
+    pthread_mutex_unlock(&mutex);
+    return ret;
 }
 int32_t demo_send_property_batch_post(void *dm_handle, char *params)
 {
@@ -748,6 +752,7 @@ int link_model_start()
 
 int link_main(const char *productkey, const char *productsecret, const char *devicename, const char *devicesecret, const char *version)
 {
+    pthread_mutex_init(&mutex, NULL);
     printf("%s productkey:%s productsecret:%s devicename:%s devicesecret:%s version:%s\n", __func__, productkey, productsecret, devicename, devicesecret, version);
     strcpy(product_key, productkey);
     strcpy(product_secret, productsecret);
@@ -756,5 +761,7 @@ int link_main(const char *productkey, const char *productsecret, const char *dev
     strcpy(cur_version, version);
 
     sprintf(mqtt_host, "%s.iot-as-mqtt.cn-shanghai.aliyuncs.com", productkey); // a1YTZpQDGwn.iot-as-mqtt.cn-shanghai.aliyuncs.com
-    return link_model_start();
+    link_model_start();
+    pthread_mutex_destroy(&mutex);
+    return 0;
 }
