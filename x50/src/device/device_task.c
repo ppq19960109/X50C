@@ -78,11 +78,11 @@ static void *Alarm_cb(void *ptr, void *arg)
     return NULL;
 }
 
-static void *BindTokenState_cb(void *ptr, void *arg)
-{
-    cJSON *item = cJSON_CreateNumber(get_token_state());
-    return item;
-}
+// static void *BindTokenState_cb(void *ptr, void *arg)
+// {
+//     cJSON *item = cJSON_CreateNumber(get_token_state());
+//     return item;
+// }
 
 static void *Reset_cb(void *ptr, void *arg)
 {
@@ -163,11 +163,11 @@ static set_attr_t g_device_set_attr[] = {
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : Alarm_cb
     },
-    {
-        cloud_key : "BindTokenState",
-        fun_type : LINK_FUN_TYPE_ATTR_REPORT,
-        cb : BindTokenState_cb
-    },
+    // {
+    //     cloud_key : "BindTokenState",
+    //     fun_type : LINK_FUN_TYPE_ATTR_REPORT,
+    //     cb : BindTokenState_cb
+    // },
     {
         cloud_key : "QuadInfo",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
@@ -217,16 +217,16 @@ int device_resp_set(cJSON *root, cJSON *resp)
     return 0;
 }
 
-static void device_token_state_cb(int state)
-{
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "BindTokenState", state);
+// static void device_token_state_cb(int state)
+// {
+//     cJSON *root = cJSON_CreateObject();
+//     cJSON_AddNumberToObject(root, "BindTokenState", state);
 
-    send_event_uds(root, NULL);
-}
+//     send_event_uds(root, NULL);
+// }
 
 int device_task_init(void)
 {
-    register_token_state_cb(device_token_state_cb);
+    //register_token_state_cb(device_token_state_cb);
     return 0;
 }

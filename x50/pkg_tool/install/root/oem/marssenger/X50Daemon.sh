@@ -1,7 +1,7 @@
 #!/bin/sh
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=270
 export TZ='Asia/Shanghai'
-export QT_QPA_FB_DRM=0
+export QT_QPA_FB_DRM=1
 
 function check() {
   count=$(ps | grep $1 | grep -v "grep" | wc -l)
@@ -39,7 +39,7 @@ function check2() {
     # echo "It's exist m"
     msize=$(echo $size | tr -cd "[0-9]")
     echo $msize
-    if [ "$msize" -gt "130" ]; then
+    if [ "$msize" -gt "155" ]; then
       echo "big,reboot"
       killall -10 $1
       # else
@@ -48,7 +48,7 @@ function check2() {
     ;;
   [0-9]*)
     # echo "It's number"
-    if [ $size -gt 130000 ]; then
+    if [ $size -gt 155000 ]; then
       echo "big,reboot"
       killall -10 $1
       # else

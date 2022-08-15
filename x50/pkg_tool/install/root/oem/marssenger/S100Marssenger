@@ -1,7 +1,7 @@
 #!/bin/sh
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=270
 export TZ='Asia/Shanghai'
-export QT_QPA_FB_DRM=0
+export QT_QPA_FB_DRM=1
 
 SERVER_APP_NAME="X50app"
 UI_APP_NAME="X50QML"
