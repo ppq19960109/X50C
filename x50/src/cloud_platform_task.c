@@ -525,7 +525,7 @@ end:
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
 {
     // dzlog_debug("send_data_to_cloud...");
-    hdzlog_info(value, value_len);
+    // hdzlog_info(value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
@@ -604,7 +604,7 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
         attr = &cloud_attr[i];
-        if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
+        if (strcmp("DataReportReason", (*attr).cloud_key) == 0 || strcmp("HoodOffRemind", (*attr).cloud_key) == 0 || strcmp("LoadPowerState", (*attr).cloud_key) == 0 || strcmp("PCBInput", (*attr).cloud_key) == 0)
             continue;
         get_attr_report_event(attr, (*attr).value, 1);
         get_attr_report_value(root, attr);
@@ -648,7 +648,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
         attr = &cloud_attr[i];
         if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
             continue;
-        else if (strcmp("ElcSWVersion", (*attr).cloud_key) == 0)
+        else if (strcmp("PwrSWVersion", (*attr).cloud_key) == 0)
             continue;
         get_attr_report_value(resp, attr);
     }
@@ -864,7 +864,7 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
     strcpy(cloud_dev->update_log, UpdateLog->valuestring);
     strcpy(cloud_dev->hardware_ver, HardwareVer->valuestring);
 
-    cJSON *arraySub, *cloudKey, *valueType, *uartCmd, *uartByteLen;
+    cJSON *arraySub, *cloudKey, *valueType, *funType, *uartCmd, *uartByteLen;
     for (i = 0; i < arraySize; i++)
     {
         arraySub = cJSON_GetArrayItem(attr, i);
@@ -878,7 +878,8 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
         }
         valueType = cJSON_GetObjectItem(arraySub, "valueType");
         cloud_dev->attr[i].cloud_value_type = valueType->valueint;
-
+        funType = cJSON_GetObjectItem(arraySub, "funType");
+        cloud_dev->attr[i].cloud_fun_type = funType->valueint;
         uartCmd = cJSON_GetObjectItem(arraySub, "uartCmd");
         cloud_dev->attr[i].uart_cmd = uartCmd->valueint;
         if (cJSON_HasObjectItem(arraySub, "uartByteLen"))
