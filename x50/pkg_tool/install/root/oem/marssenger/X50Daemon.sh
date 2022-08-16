@@ -39,7 +39,7 @@ function check2() {
     # echo "It's exist m"
     msize=$(echo $size | tr -cd "[0-9]")
     echo $msize
-    if [ "$msize" -gt "155" ]; then
+    if [ "$msize" -gt "160" ]; then
       echo "big,reboot"
       killall -10 $1
       # else
@@ -48,7 +48,7 @@ function check2() {
     ;;
   [0-9]*)
     # echo "It's number"
-    if [ $size -gt 155000 ]; then
+    if [ $size -gt 160000 ]; then
       echo "big,reboot"
       killall -10 $1
       # else
