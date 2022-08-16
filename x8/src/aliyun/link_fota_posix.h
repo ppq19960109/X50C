@@ -14,13 +14,11 @@ enum OTA_TYPE
     OTA_INSTALL_FAIL,
     OTA_INSTALL_SUCCESS,
 };
-
-void register_reboot_cb(void (*cb)());
 int link_fota_start(void *mqtt_handle);
 int link_fota_report_version(char *cur_version);
 void link_fota_stop(void);
-int link_download_firmware(void);
-int link_query_firmware(void);
+int link_fota_download_firmware(void);
+int link_fota_query_firmware(void);
 
 int get_ota_state(void);
 void register_ota_progress_cb(void (*cb)(const int));

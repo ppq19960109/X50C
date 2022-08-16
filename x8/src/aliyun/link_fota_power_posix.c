@@ -8,10 +8,11 @@
 #include "aiot_state_api.h"
 #include "aiot_sysdep_api.h"
 #include "aiot_ota_api.h"
-#include "link_fota_posix.h"
 #include "link_solo.h"
+#include "link_fota_power_posix.h"
 
-#define OTA_FILE "/userdata/upgrade.bin"
+#define OTA_FILE "/userdata/power_upgrade.bin"
+static char version[64] = {0};
 static FILE *ota_fp = NULL;
 static void *ota_handle = NULL;
 static pthread_t g_download_thread; /* 用于HTTP的固件下载线程 */
@@ -22,46 +23,46 @@ static int query_firmware_flag = 0;
 static int download_fail_count = 0;
 
 static int (*ota_state_cb)(const int, void *);
-void register_ota_state_cb(int (*cb)(const int, void *))
+void register_ota_power_state_cb(int (*cb)(const int, void *))
 {
     ota_state_cb = cb;
 }
 static void (*ota_progress_cb)(const int);
-void register_ota_progress_cb(void (*cb)(const int))
+void register_ota_power_progress_cb(void (*cb)(const int))
 {
     ota_progress_cb = cb;
 }
 static void (*ota_complete_cb)(void);
-void register_ota_complete_cb(void (*cb)(void))
+void register_ota_power_complete_cb(void (*cb)(void))
 {
     ota_complete_cb = cb;
 }
 static int (*ota_timer_start_cb)(void);
-void register_ota_query_timer_start_cb(int (*cb)(void))
+void register_ota_power_query_timer_start_cb(int (*cb)(void))
 {
     ota_timer_start_cb = cb;
 }
 static int (*ota_timer_stop_cb)(void);
-void register_ota_query_timer_stop_cb(int (*cb)(void))
+void register_ota_power_query_timer_stop_cb(int (*cb)(void))
 {
     ota_timer_stop_cb = cb;
 }
 
-int get_ota_state(void)
+int get_ota_power_state(void)
 {
     return g_ota_state;
 }
 
-void set_ota_state(enum OTA_TYPE ota_state, void *arg)
+void set_ota_power_state(enum OTA_TYPE ota_state, void *arg)
 {
     g_ota_state = ota_state;
     if (ota_state_cb != NULL)
         ota_state_cb(ota_state, arg);
 }
 
-void ota_query_timer_cb(void)
+void ota_power_query_timer_cb(void)
 {
-    set_ota_state(OTA_NO_FIRMWARE, NULL);
+    set_ota_power_state(OTA_NO_FIRMWARE, NULL);
     query_firmware_flag = 0;
 }
 
@@ -90,10 +91,10 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
     /* 如果 percent 为负数, 说明发生了收包异常或者digest校验错误 */
     if (percent < 0)
     {
-        printf("exception: percent = %d\r\n", percent);
+        printf("power exception: percent = %d\r\n", percent);
         return;
     }
-    printf("%s,percent = %d\r\n", __func__, percent);
+    printf("power %s,percent = %d\r\n", __func__, percent);
     /*
      * TODO: 下载一段固件成功, 这个时候, 用户应该将
      *       起始地址为 packet->data.buffer, 长度为 packet->data.len 的内存, 保存到flash上
@@ -112,7 +113,7 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
     /* 简化输出, 只有距离上次的下载进度增加5%以上时, 才会打印进度, 并向服务器上报进度 */
     if (percent - last_percent >= 5 || percent == 100)
     {
-        printf("download %03d%% done, +%d bytes\r\n", percent, data_buffer_len);
+        printf("power download %03d%% done, +%d bytes\r\n", percent, data_buffer_len);
         aiot_download_report_progress(handle, percent);
 
         last_percent = percent;
@@ -133,7 +134,7 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
                  云平台收到了新的版本号上报后, 才会判定升级成功, 否则会认为本次升级失败了
                  如果下载成功后升级失败, 还应该调用 aiot_download_report_progress(handle, -1) 将失败上报给云平台
          */
-        printf("ota end,start install...\n");
+        printf("power ota end,start install...\n");
         if (ota_fp != NULL)
         {
             fclose(ota_fp);
@@ -141,10 +142,11 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
         }
         sync();
 
-        set_ota_state(OTA_INSTALL_START, NULL);
-        system("sh " OTA_FILE);
-        system("rm -rf " OTA_FILE);
-        set_ota_state(OTA_INSTALL_SUCCESS, NULL);
+        set_ota_power_state(OTA_INSTALL_START, NULL);
+        aiot_download_report_progress(handle, AIOT_OTAERR_FETCH_FAILED);
+        // link_fota_power_report_version("1.5.1");
+        // system("rm -rf " OTA_FILE);
+        set_ota_power_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
         sleep(1);
         if (ota_complete_cb)
@@ -156,7 +158,7 @@ static void *demo_ota_download_thread(void *dl_handle)
 {
     int32_t ret = 0;
 
-    printf("starting download thread in 2 seconds ......\r\n");
+    printf("power starting download thread in 2 seconds ......\r\n");
     // if (last_percent < 0)
     // aiot_download_report_progress(dl_handle, AIOT_OTAERR_UPGRADE_FAILED);
     sleep(2);
@@ -174,7 +176,7 @@ static void *demo_ota_download_thread(void *dl_handle)
      *
      */
 
-    set_ota_state(OTA_DOWNLOAD_START, NULL);
+    set_ota_power_state(OTA_DOWNLOAD_START, NULL);
     download_fail_count = 0;
     ota_fp = fopen(OTA_FILE, "w+");
 
@@ -189,17 +191,17 @@ static void *demo_ota_download_thread(void *dl_handle)
         /* 固件全部下载完时, aiot_download_recv() 的返回值会等于 STATE_DOWNLOAD_FINISHED, 否则是当次获取的字节数 */
         if (STATE_DOWNLOAD_FINISHED == ret)
         {
-            printf("download completed\r\n");
+            printf("power download completed\r\n");
             break;
         }
         if (STATE_DOWNLOAD_RENEWAL_REQUEST_SENT == ret)
         {
-            printf("download renewal request has been sent successfully\r\n");
+            printf("power download renewal request has been sent successfully\r\n");
             continue;
         }
         if (ret <= STATE_SUCCESS)
         {
-            printf("download failed, error code is %d, try to send renewal request :%d\r\n", ret, download_fail_count);
+            printf("power download failed, error code is %d, try to send renewal request :%d\r\n", ret, download_fail_count);
             if (++download_fail_count > 5)
             {
                 aiot_download_report_progress(dl_handle, AIOT_OTAERR_FETCH_FAILED);
@@ -213,19 +215,19 @@ static void *demo_ota_download_thread(void *dl_handle)
         }
     }
     /* 下载所有固件内容完成, 销毁下载会话, 线程自行退出 */
-    printf("download thread exit:%d\r\n", ret);
+    printf("power download thread exit:%d\r\n", ret);
 
     if (STATE_DOWNLOAD_FINISHED != ret || OTA_INSTALL_SUCCESS != g_ota_state)
     {
         last_percent = -1;
-        set_ota_state(OTA_DOWNLOAD_FAIL, NULL);
+        set_ota_power_state(OTA_DOWNLOAD_FAIL, NULL);
     }
     else
     {
         last_percent = 0;
         // aiot_download_deinit(&dl_handle);
         // g_dl_handle = NULL;
-        set_ota_state(OTA_IDLE, NULL);
+        set_ota_power_state(OTA_IDLE, NULL);
     }
     if (ota_fp != NULL)
     {
@@ -235,14 +237,14 @@ static void *demo_ota_download_thread(void *dl_handle)
     return NULL;
 }
 
-int link_fota_download_firmware(void)
+int link_fota_power_download_firmware(void)
 {
     int res = 0;
     /* 启动专用的下载线程, 去完成固件内容的下载 */
     res = pthread_create(&g_download_thread, NULL, demo_ota_download_thread, g_dl_handle);
     if (res != 0)
     {
-        printf("pthread_create demo_ota_download_thread failed: %d\r\n", res);
+        printf("power pthread_create demo_ota_download_thread failed: %d\r\n", res);
         aiot_download_deinit(&g_dl_handle);
         g_dl_handle = NULL;
     }
@@ -267,24 +269,24 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
         }
         if (ota_timer_stop_cb)
             ota_timer_stop_cb();
-        printf("OTA target firmware version: %s, size: %u Bytes \r\n", ota_msg->task_desc->version,
+        printf("power OTA target firmware version: %s, size: %u Bytes \r\n", ota_msg->task_desc->version,
                ota_msg->task_desc->size_total);
         if (NULL != ota_msg->task_desc->extra_data)
         {
-            printf("extra data: %s\r\n", ota_msg->task_desc->extra_data);
+            printf("power extra data: %s\r\n", ota_msg->task_desc->extra_data);
         }
         if (NULL != ota_msg->task_desc->module)
         {
-            printf("module: %s\r\n", ota_msg->task_desc->module);
+            printf("power module: %s\r\n", ota_msg->task_desc->module);
         }
-        set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
+        set_ota_power_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;
         uint32_t max_buffer_len = (8 * 1024);
         aiot_sysdep_network_cred_t cred;
         if (g_dl_handle != NULL)
         {
-            printf("g_dl_handle deinit\r\n");
+            printf("power g_dl_handle deinit\r\n");
             aiot_download_deinit(&g_dl_handle);
             g_dl_handle = NULL;
         }
@@ -315,7 +317,7 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
         aiot_download_setopt(g_dl_handle, AIOT_DLOPT_USERDATA, (void *)NULL);
         if (query_firmware_flag == 0)
         {
-            link_fota_download_firmware();
+            link_fota_power_download_firmware();
         }
         break;
     }
@@ -325,7 +327,7 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
     }
 }
 
-int link_fota_start(void *mqtt_handle)
+int link_fota_power_start(void *mqtt_handle)
 {
     /* 与MQTT例程不同的是, 这里需要增加创建OTA会话实例的语句 */
     ota_handle = aiot_ota_init();
@@ -339,46 +341,49 @@ int link_fota_start(void *mqtt_handle)
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MQTT_HANDLE, mqtt_handle);
     /* 用以下语句, 设置OTA会话的数据接收回调, SDK收到OTA相关推送时, 会进入这个回调函数 */
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_RECV_HANDLER, demo_ota_recv_handler);
+    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "power");
     return 0;
 }
 
-int link_fota_report_version(char *cur_version)
+int link_fota_power_report_version(char *cur_version)
 {
     if (NULL == ota_handle)
     {
         printf("%s,ota_handle NULL\r\n", __func__);
         return -1;
     }
+    if (get_link_connected_state() == 0)
+    {
+        printf("%s,not link_connected\r\n", __func__);
+        return -1;
+    }
+    if (strcmp(version, cur_version) == 0)
+    {
+        printf("%s,version is same\r\n", __func__);
+        return -1;
+    }
     int32_t res = STATE_SUCCESS;
-    /*   TODO: 非常重要!!!
-     *
-     *   cur_version 要根据用户实际情况, 改成从设备的配置区获取, 要反映真实的版本号, 而不能像示例这样写为固定值
-     *
-     *   1. 如果设备从未上报过版本号, 在控制台网页将无法部署升级任务
-     *   2. 如果设备升级完成后, 上报的不是新的版本号, 在控制台网页将会显示升级失败
-     *
-     */
 
-    /* 演示MQTT连接建立起来之后, 就可以上报当前设备的版本号了 */
-    // cur_version = "1.0.0";
-    printf("aiot_ota_report_version %s\r\n", cur_version);
     res = aiot_ota_report_version(ota_handle, cur_version);
     if (res < STATE_SUCCESS)
     {
-        printf("aiot_ota_report_version failed: -0x%04X\r\n", -res);
+        printf("power aiot_ota_report_version failed: -0x%04X\r\n", -res);
     }
+    else
+        strcpy(version, cur_version);
+    printf("power aiot_ota_report_version %s res:%d\r\n", cur_version, res);
     return res;
 }
 
-void link_fota_stop(void)
+void link_fota_power_stop(void)
 {
     /* 销毁OTA实例, 一般不会运行到这里 */
     aiot_ota_deinit(&ota_handle);
 }
 
-int link_fota_query_firmware(void)
+int link_fota_power_query_firmware(void)
 {
-    set_ota_state(OTA_IDLE, NULL);
+    set_ota_power_state(OTA_IDLE, NULL);
     int res = aiot_ota_query_firmware(ota_handle);
     if (STATE_SUCCESS == res)
     {
@@ -388,7 +393,7 @@ int link_fota_query_firmware(void)
     }
     else
     {
-        set_ota_state(OTA_NO_FIRMWARE, NULL);
+        set_ota_power_state(OTA_NO_FIRMWARE, NULL);
     }
     return res;
 }

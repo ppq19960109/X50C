@@ -3,13 +3,13 @@
 
 #include "cJSON.h"
 
-#define DEFAULT_PRODUCT_KEY "a1YTZpQDGwn"
-#define DEFAULT_PRODUCT_SECRET "oE99dmyBcH5RAWE3"
+#define DEFAULT_PRODUCT_KEY "a1h3msfxU9d"
+#define DEFAULT_PRODUCT_SECRET "4Q27bIDkFlqDqIPm"
 
 #define PROFILE_NAME "DevProfile.json"
 #define QUAD_NAME "DevQuad.json"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "1.2.5"
+#define SOFTER_VER "0.0.3"
 
 enum LINK_VALUE_TYPE
 {

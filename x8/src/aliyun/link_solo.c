@@ -14,6 +14,7 @@
 
 #include "link_solo.h"
 #include "link_fota_posix.h"
+#include "link_fota_power_posix.h"
 #include "link_ntp_posix.h"
 #include "link_reset_posix.h"
 #include "link_bind_posix.h"
@@ -578,6 +579,7 @@ int link_model_start()
     // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECONN_INTERVAL_MS, (void *)&reconn_interval);
 
     link_fota_start(mqtt_handle);
+    link_fota_power_start(mqtt_handle);
     /* 创建DATA-MODEL实例 */
     dm_handle = aiot_dm_init();
     if (dm_handle == NULL)
@@ -643,6 +645,7 @@ int link_model_start()
     // }
 
     link_fota_report_version(cur_version);
+    
     link_ntp_request();
     // link_reset_report();
     // link_bind_token_report(mqtt_handle);
@@ -735,6 +738,7 @@ int link_model_start()
         return -1;
     }
     link_fota_stop();
+    link_fota_power_stop();
     link_ntp_stop();
 
     /* 销毁MQTT实例, 一般不会运行到这里 */

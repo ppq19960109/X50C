@@ -21,11 +21,11 @@ static void *OTARquest_cb(void *ptr, void *arg)
     cJSON *item = (cJSON *)arg;
     if (item->valueint == 0)
     {
-        link_query_firmware();
+        link_fota_query_firmware();
     }
     else
     {
-        link_download_firmware();
+        link_fota_download_firmware();
     }
     return NULL;
 }

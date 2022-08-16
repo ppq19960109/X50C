@@ -137,6 +137,7 @@
         "fsyd.h": "c",
         "cook_wrapper.h": "c",
         "quad_burn.h": "c",
-        "cook_assist.h": "c"
+        "cook_assist.h": "c",
+        "link_fota_power_posix.h": "c"
     }
 }

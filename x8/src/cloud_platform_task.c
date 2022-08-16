@@ -6,7 +6,7 @@
 #include "ecb_uart_parse_msg.h"
 #include "link_solo.h"
 #include "link_dynregmq_posix.h"
-#include "link_fota_posix.h"
+#include "link_fota_power_posix.h"
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
@@ -246,7 +246,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
 
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
-    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd == 0 || strlen(ptr->cloud_key) == 0)
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd == 0 || strlen(ptr->cloud_key) < 0)
     {
         return -1;
     }
@@ -353,6 +353,8 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                     char buf[6];
                     sprintf(buf, "%d.%d", *ptr->value >> 4, *ptr->value & 0x0f);
                     item = cJSON_CreateString(buf);
+                    if (ptr->uart_cmd == 3)
+                        link_fota_power_report_version(buf);
                 }
                 else if (strcmp("WifiMac", ptr->cloud_key) == 0)
                 {
@@ -619,7 +621,7 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
         attr = &cloud_attr[i];
-        if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
+        if (strcmp("DataReportReason", (*attr).cloud_key) == 0 || strcmp("HoodOffRemind", (*attr).cloud_key) == 0 || strcmp("LoadPowerState", (*attr).cloud_key) == 0 || strcmp("PCBInput", (*attr).cloud_key) == 0)
             continue;
         get_attr_report_event(attr, (*attr).value, 1);
         get_attr_report_value(root, attr);
@@ -660,7 +662,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
         attr = &cloud_attr[i];
         if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
             continue;
-        else if (strcmp("ElcSWVersion", (*attr).cloud_key) == 0)
+        else if (strcmp("PwrSWVersion", (*attr).cloud_key) == 0)
             continue;
         get_attr_report_value(resp, attr);
     }
@@ -875,7 +877,7 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
     strcpy(cloud_dev->update_log, UpdateLog->valuestring);
     strcpy(cloud_dev->hardware_ver, HardwareVer->valuestring);
 
-    cJSON *arraySub, *cloudKey, *valueType, *uartCmd, *uartByteLen;
+    cJSON *arraySub, *cloudKey, *valueType, *funType, *uartCmd, *uartByteLen;
     for (i = 0; i < arraySize; i++)
     {
         arraySub = cJSON_GetArrayItem(attr, i);
@@ -889,6 +891,8 @@ static void *cloud_parse_json(void *input, const char *str) //启动时解析转
         }
         valueType = cJSON_GetObjectItem(arraySub, "valueType");
         cloud_dev->attr[i].cloud_value_type = valueType->valueint;
+        funType = cJSON_GetObjectItem(arraySub, "funType");
+        cloud_dev->attr[i].cloud_fun_type = funType->valueint;
 
         uartCmd = cJSON_GetObjectItem(arraySub, "uartCmd");
         cloud_dev->attr[i].uart_cmd = uartCmd->valueint;
