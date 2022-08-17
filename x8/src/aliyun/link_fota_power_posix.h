@@ -10,6 +10,7 @@ int link_fota_power_query_firmware(void);
 
 int get_ota_power_state(void);
 void register_ota_power_progress_cb(void (*cb)(const int));
+void register_ota_power_install_cb(int (*cb)(char *));
 void register_ota_power_state_cb(int (*cb)(const int, void *));
 void register_ota_power_query_timer_start_cb(int (*cb)(void));
 void register_ota_power_query_timer_stop_cb(int (*cb)(void));

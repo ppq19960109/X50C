@@ -32,6 +32,11 @@ void register_ota_power_progress_cb(void (*cb)(const int))
 {
     ota_progress_cb = cb;
 }
+static int (*ota_install_cb)(char *);
+void register_ota_power_install_cb(int (*cb)(char *))
+{
+    ota_install_cb = cb;
+}
 static void (*ota_complete_cb)(void);
 void register_ota_power_complete_cb(void (*cb)(void))
 {
@@ -78,12 +83,6 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
     {
         return;
     }
-    // if (last_percent < 0)
-    // {
-    //     last_percent = 0;
-    //     aiot_download_report_progress(handle, 0);
-    //     return;
-    // }
     percent = packet->data.percent;
 
     data_buffer_len = packet->data.len;
@@ -110,17 +109,6 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
      */
     fwrite(packet->data.buffer, packet->data.len, 1, ota_fp);
 
-    /* 简化输出, 只有距离上次的下载进度增加5%以上时, 才会打印进度, 并向服务器上报进度 */
-    if (percent - last_percent >= 5 || percent == 100)
-    {
-        printf("power download %03d%% done, +%d bytes\r\n", percent, data_buffer_len);
-        aiot_download_report_progress(handle, percent);
-
-        last_percent = percent;
-        if (ota_progress_cb)
-            ota_progress_cb(percent);
-    }
-
     /* percent 入参的值为 100 时, 说明SDK已经下载固件内容全部完成 */
     if (percent == 100)
     {
@@ -143,14 +131,40 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
         sync();
 
         set_ota_power_state(OTA_INSTALL_START, NULL);
-        aiot_download_report_progress(handle, AIOT_OTAERR_FETCH_FAILED);
-        // link_fota_power_report_version("1.5.1");
-        // system("rm -rf " OTA_FILE);
+        // aiot_download_report_progress(handle, AIOT_OTAERR_FETCH_FAILED);
+        // link_fota_power_report_version("1.5");
+        if (ota_install_cb == NULL)
+        {
+            aiot_download_report_progress(handle, AIOT_OTAERR_UPGRADE_FAILED);
+            return;
+        }
+        else
+        {
+            if (ota_install_cb(OTA_FILE) != 0)
+            {
+                aiot_download_report_progress(handle, AIOT_OTAERR_UPGRADE_FAILED);
+                return;
+            }
+        }
         set_ota_power_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
+        if (ota_progress_cb)
+            ota_progress_cb(percent);
         sleep(1);
         if (ota_complete_cb)
             ota_complete_cb();
+    }
+
+    /* 简化输出, 只有距离上次的下载进度增加5%以上时, 才会打印进度, 并向服务器上报进度 */
+    if (percent - last_percent >= 5 || percent == 100)
+    {
+        printf("power download %03d%% done, +%d bytes\r\n", percent, data_buffer_len);
+        if (percent != 100)
+            aiot_download_report_progress(handle, percent);
+
+        last_percent = percent;
+        if (ota_progress_cb)
+            ota_progress_cb(percent);
     }
 }
 /* 执行aiot_download_recv的线程, 实现固件内容的请求和接收 */
@@ -159,8 +173,6 @@ static void *demo_ota_download_thread(void *dl_handle)
     int32_t ret = 0;
 
     printf("power starting download thread in 2 seconds ......\r\n");
-    // if (last_percent < 0)
-    // aiot_download_report_progress(dl_handle, AIOT_OTAERR_UPGRADE_FAILED);
     sleep(2);
 
     /* 向固件服务器请求下载 */
@@ -216,7 +228,13 @@ static void *demo_ota_download_thread(void *dl_handle)
     }
     /* 下载所有固件内容完成, 销毁下载会话, 线程自行退出 */
     printf("power download thread exit:%d\r\n", ret);
+    aiot_download_deinit(&dl_handle);
 
+    if (ota_fp != NULL)
+    {
+        fclose(ota_fp);
+        ota_fp = NULL;
+    }
     if (STATE_DOWNLOAD_FINISHED != ret || OTA_INSTALL_SUCCESS != g_ota_state)
     {
         last_percent = -1;
@@ -225,14 +243,7 @@ static void *demo_ota_download_thread(void *dl_handle)
     else
     {
         last_percent = 0;
-        // aiot_download_deinit(&dl_handle);
-        // g_dl_handle = NULL;
         set_ota_power_state(OTA_IDLE, NULL);
-    }
-    if (ota_fp != NULL)
-    {
-        fclose(ota_fp);
-        ota_fp = NULL;
     }
     return NULL;
 }
@@ -246,13 +257,13 @@ int link_fota_power_download_firmware(void)
     {
         printf("power pthread_create demo_ota_download_thread failed: %d\r\n", res);
         aiot_download_deinit(&g_dl_handle);
-        g_dl_handle = NULL;
     }
     else
     {
         /* 下载线程被设置为 detach 类型, 固件内容获取完毕后可自主退出 */
         pthread_detach(g_download_thread);
     }
+    g_dl_handle = NULL;
     return 0;
 }
 
@@ -284,18 +295,14 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
         uint16_t port = 443;
         uint32_t max_buffer_len = (8 * 1024);
         aiot_sysdep_network_cred_t cred;
-        if (g_dl_handle != NULL)
-        {
-            printf("power g_dl_handle deinit\r\n");
-            aiot_download_deinit(&g_dl_handle);
-            g_dl_handle = NULL;
-        }
-        g_dl_handle = aiot_download_init();
-        if (NULL == g_dl_handle)
+        void *dl_handle = NULL;
+
+        dl_handle = aiot_download_init();
+        if (NULL == dl_handle)
         {
             break;
         }
-
+        g_dl_handle = dl_handle;
         memset(&cred, 0, sizeof(aiot_sysdep_network_cred_t));
         cred.option = AIOT_SYSDEP_NETWORK_CRED_SVRCERT_CA;
         cred.max_tls_fragment = 16384;
@@ -303,18 +310,19 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
         cred.x509_server_cert_len = strlen(ali_ca_cert);
 
         /* 设置下载时为TLS下载 */
-        aiot_download_setopt(g_dl_handle, AIOT_DLOPT_NETWORK_CRED, (void *)(&cred));
+        aiot_download_setopt(dl_handle, AIOT_DLOPT_NETWORK_CRED, (void *)(&cred));
         /* 设置下载时访问的服务器端口号 */
-        aiot_download_setopt(g_dl_handle, AIOT_DLOPT_NETWORK_PORT, (void *)(&port));
+        aiot_download_setopt(dl_handle, AIOT_DLOPT_NETWORK_PORT, (void *)(&port));
         /* 设置下载的任务信息, 通过输入参数 ota_msg 中的 task_desc 成员得到, 内含下载地址, 固件大小, 固件签名等 */
-        aiot_download_setopt(g_dl_handle, AIOT_DLOPT_TASK_DESC, (void *)(ota_msg->task_desc));
+        aiot_download_setopt(dl_handle, AIOT_DLOPT_TASK_DESC, (void *)(ota_msg->task_desc));
         /* 设置下载内容到达时, SDK将调用的回调函数 */
-        aiot_download_setopt(g_dl_handle, AIOT_DLOPT_RECV_HANDLER, (void *)(demo_download_recv_handler));
+        aiot_download_setopt(dl_handle, AIOT_DLOPT_RECV_HANDLER, (void *)(demo_download_recv_handler));
         /* 设置单次下载最大的buffer长度, 每当这个长度的内存读满了后会通知用户 */
-        aiot_download_setopt(g_dl_handle, AIOT_DLOPT_BODY_BUFFER_MAX_LEN, (void *)(&max_buffer_len));
+        aiot_download_setopt(dl_handle, AIOT_DLOPT_BODY_BUFFER_MAX_LEN, (void *)(&max_buffer_len));
         /* 设置 AIOT_DLOPT_RECV_HANDLER 的不同次调用之间共享的数据, 比如例程把进度存在这里 */
 
-        aiot_download_setopt(g_dl_handle, AIOT_DLOPT_USERDATA, (void *)NULL);
+        aiot_download_setopt(dl_handle, AIOT_DLOPT_USERDATA, (void *)NULL);
+
         if (query_firmware_flag == 0)
         {
             link_fota_power_download_firmware();
