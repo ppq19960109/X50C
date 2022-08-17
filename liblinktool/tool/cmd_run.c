@@ -20,13 +20,13 @@ int popenRun(const char *cmdline, const char *mode, char *buf, int bufSize)
     FILE *pFile = popen(cmdline, mode);
     if (pFile == NULL)
     {
+        printf("popenRun pFile NULL\n");
         return -1;
     }
     char *str = fgets(buf, bufSize, pFile);
     if (str == NULL)
     {
-        pclose(pFile);
-        return -1;
+        printf("popenRun fgets NULL\n");
     }
     pclose(pFile);
     return 0;

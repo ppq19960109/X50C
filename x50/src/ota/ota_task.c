@@ -2,6 +2,7 @@
 
 #include "uds_protocol.h"
 #include "uds_tcp_server.h"
+#include "cmd_run.h"
 
 #include "cloud_platform_task.h"
 #include "ota_task.h"
@@ -130,20 +131,37 @@ static void POSIXTimer_cb(union sigval val)
 {
     ota_query_timer_cb();
 }
-int ota_query_timer_start_cb(void)
+static int ota_query_timer_start_cb(void)
 {
     POSIXTimerSet(g_ota_timer, 0, 12);
     return 0;
 }
-int ota_query_timer_stop_cb(void)
+static int ota_query_timer_stop_cb(void)
 {
     POSIXTimerSet(g_ota_timer, 0, 0);
     return 0;
+}
+static int ota_install_cb(char *text)
+{
+    int ret = -1;
+    // system("sh " OTA_FILE);
+    long size = getFileSize(text);
+    dzlog_warn("ota_install_cb size:%ld", size);
+    if (size <= 0)
+        return ret;
+    char cmd[48] = {0};
+    sprintf(cmd, "sh %s", text);
+    ret = system(cmd);
+    dzlog_warn("ota_install_cb ret:%d", ret);
+    sprintf(cmd, "rm -rf %s", text);
+    system(cmd);
+    return ret;
 }
 int ota_task_init(void)
 {
     register_ota_state_cb(ota_state_event);
     register_ota_progress_cb(ota_progress_cb);
+    register_ota_install_cb(ota_install_cb);
     register_ota_query_timer_start_cb(ota_query_timer_start_cb);
     register_ota_query_timer_stop_cb(ota_query_timer_stop_cb);
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);

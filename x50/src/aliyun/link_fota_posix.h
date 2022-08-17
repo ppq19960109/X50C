@@ -24,6 +24,7 @@ int link_query_firmware(void);
 
 int get_ota_state(void);
 void register_ota_progress_cb(void (*cb)(const int));
+void register_ota_install_cb(int (*cb)(char *));
 void register_ota_state_cb(int (*cb)(const int, void *));
 void register_ota_query_timer_start_cb(int (*cb)(void));
 void register_ota_query_timer_stop_cb(int (*cb)(void));

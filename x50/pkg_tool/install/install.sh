@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "start install pwd:"$(pwd)
+#echo "Start install pwd:"$(pwd)
 
 #Add operation permission
 chmod -R 700 ./
@@ -23,5 +23,5 @@ rm -f /oem/marssenger/recipe.db
 sync
 echo "Successfully installed"
 
-echo "App reboot......"
+#echo "App reboot......"
 # reboot
