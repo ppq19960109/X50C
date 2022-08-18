@@ -1,7 +1,7 @@
 #!/bin/sh
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=270
 export TZ='Asia/Shanghai'
-export QT_QPA_FB_DRM=1
+# export QT_QPA_FB_DRM=1
 
 function check() {
   count=$(ps | grep $1 | grep -v "grep" | wc -l)

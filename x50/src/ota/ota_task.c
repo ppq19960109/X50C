@@ -148,11 +148,12 @@ static int ota_install_cb(char *text)
     long size = getFileSize(text);
     dzlog_warn("ota_install_cb size:%ld", size);
     if (size <= 0)
-        return ret;
+        goto fail;
     char cmd[48] = {0};
     sprintf(cmd, "sh %s", text);
     ret = system(cmd);
     dzlog_warn("ota_install_cb ret:%d", ret);
+fail:
     sprintf(cmd, "rm -rf %s", text);
     system(cmd);
     return ret;
