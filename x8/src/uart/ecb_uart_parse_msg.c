@@ -6,6 +6,7 @@
 #include "ecb_uart_parse_msg.h"
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
+#include "ota_power_task.h"
 
 static int msg_get_timeout_count = 0;
 static int ecb_heart_count = 0;
@@ -61,6 +62,10 @@ int ecb_uart_heart_timeout(bool increase)
 int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
+}
+int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len)
+{
+    return ecb_uart_send_msg(ECB_UART_COMMAND_OTA, msg, msg_len, 0, -1);
 }
 int ecb_uart_send_ack(int seq_id)
 {
@@ -282,6 +287,11 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     else if (command == ECB_UART_COMMAND_NAK)
     {
         dzlog_warn("uart nak:%d", payload[0]);
+    }
+    else if (command == ECB_UART_COMMAND_OTAACK)
+    {
+        if (payload[0] == 0xfa)
+            ota_power_ack(&payload[1]);
     }
     else
     {

@@ -138,6 +138,9 @@
         "cook_wrapper.h": "c",
         "quad_burn.h": "c",
         "cook_assist.h": "c",
-        "link_fota_power_posix.h": "c"
+        "link_fota_power_posix.h": "c",
+        "link_fota_posix.h": "c",
+        "ota_task.h": "c",
+        "ota_power_task.h": "c"
     }
 }

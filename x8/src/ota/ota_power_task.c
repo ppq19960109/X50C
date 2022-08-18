@@ -4,13 +4,14 @@
 #include "uds_tcp_server.h"
 
 #include "cloud_platform_task.h"
-#include "ota_task.h"
-#include "link_fota_posix.h"
+#include "ota_power_task.h"
+#include "link_fota_power_posix.h"
 #include "link_solo.h"
+#include "ecb_uart_parse_msg.h"
 
 static void *OTAState_cb(void *ptr, void *arg)
 {
-    cJSON *item = cJSON_CreateNumber(get_ota_state());
+    cJSON *item = cJSON_CreateNumber(get_ota_power_state());
     return item;
 }
 
@@ -21,11 +22,11 @@ static void *OTARquest_cb(void *ptr, void *arg)
     cJSON *item = (cJSON *)arg;
     if (item->valueint == 0)
     {
-        link_fota_query_firmware();
+        link_fota_power_query_firmware();
     }
     else
     {
-        link_fota_download_firmware();
+        link_fota_power_download_firmware();
     }
     return NULL;
 }
@@ -44,23 +45,23 @@ static void *OTANewVersion_cb(void *ptr, void *arg)
 
 static set_attr_t g_ota_set_attr[] = {
     {
-        cloud_key : "OTAState",
+        cloud_key : "OTAPowerState",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : OTAState_cb
     },
     {
-        cloud_key : "OTARquest",
+        cloud_key : "OTAPowerRquest",
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : OTARquest_cb
 
     },
     {
-        cloud_key : "OTAProgress",
+        cloud_key : "OTAPowerProgress",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : OTAProgress_cb
     },
     {
-        cloud_key : "OTANewVersion",
+        cloud_key : "OTAPowerNewVersion",
         fun_type : LINK_FUN_TYPE_ATTR_REPORT,
         cb : OTANewVersion_cb,
         value : {p : NewVersion}
@@ -69,7 +70,7 @@ static set_attr_t g_ota_set_attr[] = {
 static const int attr_len = sizeof(g_ota_set_attr) / sizeof(g_ota_set_attr[0]);
 static set_attr_t *attr = g_ota_set_attr;
 
-int ota_resp_get(cJSON *root, cJSON *resp)
+int ota_power_resp_get(cJSON *root, cJSON *resp)
 {
 
     for (int i = 0; i < attr_len; ++i)
@@ -82,7 +83,7 @@ int ota_resp_get(cJSON *root, cJSON *resp)
     return 0;
 }
 
-int ota_resp_getall(cJSON *root, cJSON *resp)
+int ota_power_resp_getall(cJSON *root, cJSON *resp)
 {
     for (int i = 0; i < attr_len; ++i)
     {
@@ -91,7 +92,7 @@ int ota_resp_getall(cJSON *root, cJSON *resp)
     return 0;
 }
 
-int ota_resp_set(cJSON *root, cJSON *resp)
+int ota_power_resp_set(cJSON *root, cJSON *resp)
 {
     for (int i = 0; i < attr_len; ++i)
     {
@@ -140,10 +141,25 @@ static int ota_query_timer_stop_cb(void)
     POSIXTimerSet(g_ota_timer, 0, 0);
     return 0;
 }
+enum ota_cmd_status_t
+{
+    OTA_CMD_START = 0,
+    OTA_CMD_DATA,
+    OTA_CMD_STOP,
+    OTA_CMD_END,
+};
+static char ota_power_steps = 0;
+static int ota_power_send_data(const char cmd)
+{
+
+    return 0;
+}
+void ota_power_ack(const unsigned char *data)
+{
+}
 static int ota_install_cb(char *text)
 {
     int ret = -1;
-    // system("sh " OTA_FILE);
     long size = getFileSize(text);
     dzlog_warn("ota_install_cb size:%ld", size);
     if (size <= 0)
@@ -151,23 +167,29 @@ static int ota_install_cb(char *text)
     char cmd[48] = {0};
     sprintf(cmd, "sh %s", text);
     ret = system(cmd);
-    dzlog_warn("ota_install_cb ret:%d", ret);
+    if (ret != 0)
+        goto fail;
+
+    while (ota_power_steps > 0)
+        ;
+    ret = ota_power_steps;
 fail:
+    dzlog_warn("ota_install_cb ret:%d", ret);
     sprintf(cmd, "rm -rf %s", text);
     system(cmd);
     return ret;
 }
-int ota_task_init(void)
+int ota_power_task_init(void)
 {
-    register_ota_state_cb(ota_state_event);
-    register_ota_progress_cb(ota_progress_cb);
-    register_ota_install_cb(ota_install_cb);
-    register_ota_query_timer_start_cb(ota_query_timer_start_cb);
-    register_ota_query_timer_stop_cb(ota_query_timer_stop_cb);
+    register_ota_power_state_cb(ota_state_event);
+    register_ota_power_progress_cb(ota_progress_cb);
+    register_ota_power_install_cb(ota_install_cb);
+    register_ota_power_query_timer_start_cb(ota_query_timer_start_cb);
+    register_ota_power_query_timer_stop_cb(ota_query_timer_stop_cb);
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     return 0;
 }
-void ota_task_deinit(void)
+void ota_power_task_deinit(void)
 {
     if (g_ota_timer != NULL)
     {
