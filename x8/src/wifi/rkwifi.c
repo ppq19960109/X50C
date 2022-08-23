@@ -172,10 +172,10 @@ char *getWifiScanR()
  * @brief checkNetWorkOnline 检测网络是否接通
  * @return true->OK false->NG
  */
-bool WifiPing()
+bool WifiPing(char *addr)
 {
     bool status = false;
-    int ret = RK_wifi_ping();
+    int ret = RK_wifi_ping(addr);
     if (ret == 0x01)
     {
         status = true;

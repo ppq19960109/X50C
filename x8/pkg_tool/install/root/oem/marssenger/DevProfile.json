@@ -1,6 +1,6 @@
 {
     "DeviceCategory": "集成灶",
-    "DeviceModel": "X50BCZ",
+    "DeviceModel": "X8GCZ",
     "HardwareVer": "1.0.0",
     "UpdateLog": "",
     "attr": [
@@ -19,28 +19,28 @@
             "uartByteLen": 0
         },
         {
-            "cloudKey": "",
+            "cloudKey": "ElcSWVersion",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 1,
             "uartByteLen": 1
         },
         {
-            "cloudKey": "",
+            "cloudKey": "ElcHWVersion",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 2,
             "uartByteLen": 1
         },
         {
-            "cloudKey": "ElcSWVersion",
+            "cloudKey": "PwrSWVersion",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 3,
             "uartByteLen": 1
         },
         {
-            "cloudKey": "ElcHWVersion",
+            "cloudKey": "PwrHWVersion",
             "valueType": 2,
             "funType": 1,
             "uartCmd": 4,
@@ -402,6 +402,69 @@
             "funType": 1,
             "uartCmd": 227,
             "uartByteLen": 29
+        },
+        {
+            "cloudKey": "ValveSwitch",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 32,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "SmartSmokeSwitch",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 53,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RAuxiliarySwitch",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": -1,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RAuxiliaryTemp",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": -1,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "CookingCurveSwitch",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": -1,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LOilTemp",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": -1,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "ROilTemp",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": -1,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "OilTempSwitch",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": -1,
+            "uartByteLen": 2
+        },
+        {
+            "cloudKey": "RMovePotLowHeatSwitch",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": -1,
+            "uartByteLen": 1
         }
     ],
     "event": [],

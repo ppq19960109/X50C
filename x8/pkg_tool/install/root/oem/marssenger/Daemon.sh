@@ -1,6 +1,7 @@
 #!/bin/sh
-export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=270
+export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=90
 export TZ='Asia/Shanghai'
+export QT_LINUXFB_DRM_LOGO=/oem/logo.bmp
 
 function check(){
   count=`ps -ef |grep $1 |grep -v "grep" |wc -l`
@@ -14,8 +15,7 @@ function check(){
 
 while true
 do
-    sleep 10
+    sleep 30
     check X8app
     check X8UI
-    sleep 20
 done

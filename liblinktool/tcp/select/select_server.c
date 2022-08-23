@@ -121,7 +121,7 @@ void *select_server_task(struct Select_Server_Event *server_event, int time_out)
         {
             // printf("select timeout\n");
             if (server_event->timeout_cb != NULL)
-                server_event->timeout_cb((void *)n);
+                server_event->timeout_cb(NULL);
             continue;
         }
         else

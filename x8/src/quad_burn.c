@@ -89,7 +89,7 @@ static int curl_http_quad(const char *path, const char *body)
 
 size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-    printf("http_quad_cb size:%u,nmemb:%u\n", size, nmemb);
+    printf("http_quad_cb size:%lu,nmemb:%lu\n", size, nmemb);
     printf("http_quad_cb data:%s\n", (char *)ptr);
     // iotx_linkkit_dev_meta_info_t *master_meta_info = (iotx_linkkit_dev_meta_info_t *)stream;
     int res = 2, quad_rupleId = 0;

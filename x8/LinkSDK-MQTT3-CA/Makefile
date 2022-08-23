@@ -4,7 +4,7 @@ TOP_DIR := $(shell pwd)
 DEMOS_DIR := demos
 OUT_DIR := output
 
-CROSS_COMPILE = arm-rockchip-linux-gnueabihf-
+CROSS_COMPILE = /home/ppq/rk3308sdk/rk3308_linux_v1.00_220210/buildroot/output/rockchip_rk3308_bs_release/host/bin/aarch64-rockchip-linux-gnu-
 CC := $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar -rcs
 

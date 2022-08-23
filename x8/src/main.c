@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     // printf("H_Kv_Get:%d\n",H_Kv_Get("test",val2,&len));
     // printf("len:%d value:%d %d %d %d\n",len,val2[0],val2[1],val2[2],val2[3]);
     running = 1;
-    int rc = dzlog_init("x50zlog.conf", "default"); // zlog初始化
+    int rc = dzlog_init("zlog.conf", "default"); // zlog初始化
     if (rc)
     {
         printf("dzlog_init failed\n");

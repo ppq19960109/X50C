@@ -402,7 +402,7 @@ int link_send_property_post(char *params)
     }
     if (g_connected == 0)
         return -1;
-    printf("%s,%s,%d\n", __func__, params, strlen(params));
+    printf("%s,%s\n", __func__, params);
     pthread_mutex_lock(&mutex);
     int ret = demo_send_property_post(g_dm_handle, params);
     pthread_mutex_unlock(&mutex);
@@ -444,7 +444,7 @@ int link_send_event_post(char *event_id, char *params)
     {
         params = "{}";
     }
-    printf("%s, %s %s %d\n", __func__, event_id, params, strlen(params));
+    printf("%s, %s %s\n", __func__, event_id, params);
     return demo_send_event_post(g_dm_handle, event_id, params);
 }
 /* 演示了获取属性LightSwitch的期望值, 用户可将此函数加入到main函数中运行演示 */

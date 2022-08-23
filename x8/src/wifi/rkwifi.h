@@ -18,7 +18,7 @@ extern "C"
     int getWifiConnectionInfo(RK_WIFI_INFO_Connection_s *wifiInfo);                               //获取当前WiFi信息
     int wifiScan();                                                                               //获取扫描结果
     char *getWifiScanR();                                                                         //获取扫描结果
-    bool wifiPing();                                                                              //检测网络是否接通
+    bool wifiPing(char *addr);                                                                              //检测网络是否接通
 
 #ifdef __cplusplus
 }

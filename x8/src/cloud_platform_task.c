@@ -398,7 +398,6 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         {
             if (strcmp("MultiStageContent", ptr->cloud_key) == 0)
             {
-                dzlog_warn("get_attr_set_value remind size:%d", sizeof(g_cloud_dev->remind));
                 memset(g_cloud_dev->remind, 0, sizeof(g_cloud_dev->remind));
             }
 

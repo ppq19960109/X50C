@@ -5,8 +5,8 @@
 
 static struct Select_Server_Event select_server_event;
 
-int (*select_uart_timeout_cb)();
-void register_select_uart_timeout_cb(int (*cb)())
+int (*select_uart_timeout_cb)(void *arg);
+void register_select_uart_timeout_cb(int (*cb)(void *))
 {
     select_uart_timeout_cb = cb;
 }

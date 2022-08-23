@@ -151,8 +151,8 @@ void *uds_tcp_server_task(void *arg) // uds任务
     }
     select_server_init(&select_server_event);
     
-    // app_select_client_Tcp_Server.select_client_event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT); // uds server fd初始化 
-    app_select_client_Tcp_Server.select_client_event.fd = tcpServerListen(NULL,"0.0.0.0",9999,SELECT_TCP_MAX_CLIENT); //htonl(INADDR_ANY)
+    app_select_client_Tcp_Server.select_client_event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT); // uds server fd初始化 
+    // app_select_client_Tcp_Server.select_client_event.fd = tcpServerListen(NULL,"0.0.0.0",9999,SELECT_TCP_MAX_CLIENT); //htonl(INADDR_ANY)
     app_select_client_Tcp_Server.select_client_event.read_cb = app_select_tcp_server_accetp_cb;
     app_select_client_Tcp_Server.select_client_event.except_cb = app_select_tcp_server_except_cb;
     app_select_client_Tcp_Server.recv_cb = uds_recv_cb;

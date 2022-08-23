@@ -226,7 +226,7 @@ void cook_assist_init()
 
     cook_assistant_init(INPUT_LEFT);
     cook_assistant_init(INPUT_RIGHT);
-    fd = uart_init("/dev/ttyS3", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
+    fd = uart_init("/dev/ttyS0", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
         dzlog_error("cook_assist uart init error:%d,%s", errno, strerror(errno));

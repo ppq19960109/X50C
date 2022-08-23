@@ -186,7 +186,7 @@ static int ecb_except_cb(void *arg)
     return 0;
 }
 
-static int ecb_timeout_cb(void)
+static int ecb_timeout_cb(void *arg)
 {
     resend_list_each(&ECB_LIST_RESEND);
 
@@ -213,7 +213,7 @@ static int ecb_timeout_cb(void)
     {
         if (ecb_uart_heart_timeout(true) == MSG_HEART_TIME)
         {
-            send_error_to_cloud(POWER_BOARD_ERROR_CODE);
+            // send_error_to_cloud(POWER_BOARD_ERROR_CODE);
         }
     }
     return 0;
@@ -232,7 +232,7 @@ void ecb_uart_deinit(void)
  **********************************************************************************/
 void ecb_uart_init(void)
 {
-    fd = uart_init("/dev/ttyS0", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
+    fd = uart_init("/dev/ttyS4", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
         dzlog_error("ecb_uart uart init error:%d,%s", errno, strerror(errno));
