@@ -9,6 +9,8 @@
 #include "link_solo.h"
 #include "ecb_uart_parse_msg.h"
 
+#define POWER_OTA_FILE "/tmp/power_upgrade"
+
 static void *OTAState_cb(void *ptr, void *arg)
 {
     cJSON *item = cJSON_CreateNumber(get_ota_power_state());
@@ -148,14 +150,52 @@ enum ota_cmd_status_t
     OTA_CMD_STOP,
     OTA_CMD_END,
 };
+
 static char ota_power_steps = 0;
 static int ota_power_send_data(const char cmd)
 {
+    static char buf[256 + 16];
+    int len = 0;
+    buf[len++] = 0xf9;
+    buf[len++] = 0x01;
+    buf[len++] = cmd;
+    switch (cmd)
+    {
+    case 0:
 
+        break;
+    case 1:
+
+        break;
+    case 3:
+
+        break;
+    case 4:
+
+        break;
+    }
+    if (len != 0)
+        ecb_uart_send_ota_msg(buf, len);
     return 0;
 }
 void ota_power_ack(const unsigned char *data)
 {
+    if (data[0] = 0)
+    {
+        if (ota_power_steps == 0)
+        {
+        }
+        else if (ota_power_steps == 1)
+        {
+        }
+        else if (ota_power_steps == 2)
+        {
+        }
+    }
+    else
+    {
+        dzlog_error("ota_power_ack error:%d", data[1]);
+    }
 }
 static int ota_install_cb(char *text)
 {
