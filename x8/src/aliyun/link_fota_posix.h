@@ -14,7 +14,7 @@ enum OTA_TYPE
     OTA_INSTALL_FAIL,
     OTA_INSTALL_SUCCESS,
 };
-int link_fota_start(void *mqtt_handle);
+void *link_fota_start(void *mqtt_handle);
 int link_fota_report_version(char *cur_version);
 void link_fota_stop(void);
 int link_fota_download_firmware(void);
@@ -26,6 +26,6 @@ void register_ota_install_cb(int (*cb)(char *));
 void register_ota_state_cb(int (*cb)(const int, void *));
 void register_ota_query_timer_start_cb(int (*cb)(void));
 void register_ota_query_timer_stop_cb(int (*cb)(void));
-void ota_query_timer_cb(void);
+void ota_query_timer_end(void);
 void register_ota_complete_cb(void (*cb)(void));
 #endif

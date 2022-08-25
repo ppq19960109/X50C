@@ -9,9 +9,10 @@
 #include "aiot_sysdep_api.h"
 #include "aiot_ota_api.h"
 #include "link_solo.h"
+#include "link_fota_posix.h"
 #include "link_fota_power_posix.h"
 
-#define OTA_FILE "/userdata/power_upgrade.bin"
+#define OTA_FILE "/tmp/power_upgrade.bin"
 static char version[64] = {0};
 static FILE *ota_fp = NULL;
 static void *ota_handle = NULL;
@@ -65,7 +66,7 @@ void set_ota_power_state(enum OTA_TYPE ota_state, void *arg)
         ota_state_cb(ota_state, arg);
 }
 
-void ota_power_query_timer_cb(void)
+void ota_power_query_timer_end(void)
 {
     set_ota_power_state(OTA_NO_FIRMWARE, NULL);
     query_firmware_flag = 0;
@@ -140,6 +141,8 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
         }
         else
         {
+            // link_fota_power_report_version("0.1");
+            // return;
             if (ota_install_cb(OTA_FILE) != 0)
             {
                 aiot_download_report_progress(handle, AIOT_OTAERR_UPGRADE_FAILED);
@@ -148,9 +151,9 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
         }
         set_ota_power_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
-        if (ota_progress_cb)
-            ota_progress_cb(percent);
-        sleep(1);
+        // if (ota_progress_cb)
+        //     ota_progress_cb(percent);
+        // sleep(1);
         if (ota_complete_cb)
             ota_complete_cb();
     }
@@ -268,7 +271,7 @@ int link_fota_power_download_firmware(void)
 }
 
 /* 用户通过 aiot_ota_setopt() 注册的OTA消息处理回调, 如果SDK收到了OTA相关的MQTT消息, 会自动识别, 调用这个回调函数 */
-static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *userdata)
+void ota_power_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *userdata)
 {
     switch (ota_msg->type)
     {
@@ -335,22 +338,9 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
     }
 }
 
-int link_fota_power_start(void *mqtt_handle)
+void link_fota_power_start(void *fota_handle)
 {
-    /* 与MQTT例程不同的是, 这里需要增加创建OTA会话实例的语句 */
-    ota_handle = aiot_ota_init();
-    if (NULL == ota_handle)
-    {
-        printf("aiot_ota_init failed\r\n");
-        return -2;
-    }
-
-    /* 用以下语句, 把OTA会话和MQTT会话关联起来 */
-    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MQTT_HANDLE, mqtt_handle);
-    /* 用以下语句, 设置OTA会话的数据接收回调, SDK收到OTA相关推送时, 会进入这个回调函数 */
-    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_RECV_HANDLER, demo_ota_recv_handler);
-    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "power");
-    return 0;
+    ota_handle = fota_handle;
 }
 
 int link_fota_power_report_version(char *cur_version)
@@ -360,18 +350,13 @@ int link_fota_power_report_version(char *cur_version)
         printf("%s,ota_handle NULL\r\n", __func__);
         return -1;
     }
-    if (get_link_connected_state() == 0)
-    {
-        printf("%s,not link_connected\r\n", __func__);
-        return -1;
-    }
     if (strcmp(version, cur_version) == 0)
     {
         printf("%s,version is same\r\n", __func__);
         return -1;
     }
     int32_t res = STATE_SUCCESS;
-
+    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "power");
     res = aiot_ota_report_version(ota_handle, cur_version);
     if (res < STATE_SUCCESS)
     {
@@ -383,15 +368,10 @@ int link_fota_power_report_version(char *cur_version)
     return res;
 }
 
-void link_fota_power_stop(void)
-{
-    /* 销毁OTA实例, 一般不会运行到这里 */
-    aiot_ota_deinit(&ota_handle);
-}
-
 int link_fota_power_query_firmware(void)
 {
     set_ota_power_state(OTA_IDLE, NULL);
+    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "power");
     int res = aiot_ota_query_firmware(ota_handle);
     if (STATE_SUCCESS == res)
     {

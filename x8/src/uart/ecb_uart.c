@@ -8,7 +8,7 @@
 static unsigned short ecb_seq_id = 0;
 static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
-
+static char ota_power_state = 0;
 static int fd = -1;
 static pthread_mutex_t lock;
 // LIST_HEAD(ECB_LIST_RESEND);
@@ -57,8 +57,13 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
     }
     return (wCRCin ^ 0xFFFF);
 }
+
+void set_ecb_ota_power_state(char state)
+{
+    ota_power_state = state;
+}
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
-int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
+int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag, unsigned char iscopy)
 {
     dzlog_warn("uart send to ecb--------------------------");
     if (fd < 0)
@@ -75,12 +80,13 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
-        if (resend)
+        if (resend_flag)
         {
             uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
             if (resend == NULL)
             {
                 dzlog_error("malloc error\n");
+                resend_flag = -1;
                 goto resend_fail;
             }
             resend->send_len = in_len;
@@ -91,6 +97,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
                 {
                     dzlog_error("malloc error\n");
                     free(resend);
+                    resend_flag = -1;
                     goto resend_fail;
                 }
                 memcpy(resend->send_data, in, resend->send_len);
@@ -107,10 +114,16 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
             ecb_resend_list_add(resend);
         }
     resend_fail:
-        res = write(fd, in, in_len);
-        if (resend)
-            usleep(50000);
-
+        write(fd, in, in_len);
+        if (resend_flag < 0)
+        {
+            res = -1;
+        }
+        else
+        {
+            if (resend_flag)
+                usleep(50000);
+        }
         pthread_mutex_unlock(&lock);
     }
     else
@@ -127,6 +140,10 @@ int ecb_uart_resend_cb(const unsigned char *in, int in_len)
 
 int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id)
 {
+    if (ota_power_state != 0 && ECB_UART_COMMAND_OTA != command)
+    {
+        return -1;
+    }
     int index = 0;
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     if (send_msg == NULL)
@@ -155,7 +172,7 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
     int res = ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
-    if (resend == 0)
+    if (resend == 0 || res < 0)
     {
         free(send_msg);
     }

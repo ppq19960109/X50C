@@ -18,4 +18,5 @@ void ecb_uart_deinit(void);
 
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy);
 int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id);
+void set_ecb_ota_power_state(char state);
 #endif

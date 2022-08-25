@@ -8,8 +8,8 @@
 #include "link_reset_posix.h"
 #include "link_bind_posix.h"
 #include "database_task.h"
-#include "gesture_uart.h"
 #include "wifi_task.h"
+
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
@@ -72,11 +72,6 @@ static void *UpdateLog_cb(void *ptr, void *arg)
 //     cJSON *item = cJSON_CreateString(buf);
 //     return item;
 // }
-static void *Alarm_cb(void *ptr, void *arg)
-{
-    gesture_auto_sync_time_alarm(1);
-    return NULL;
-}
 
 static void *BindTokenState_cb(void *ptr, void *arg)
 {
@@ -157,11 +152,6 @@ static set_attr_t g_device_set_attr[] = {
         cloud_key : "Reset",
         fun_type : LINK_FUN_TYPE_ATTR_CTRL,
         cb : Reset_cb
-    },
-    {
-        cloud_key : "Alarm",
-        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
-        cb : Alarm_cb
     },
     {
         cloud_key : "BindTokenState",

@@ -6,11 +6,11 @@
 #include "ecb_uart_parse_msg.h"
 #include "link_solo.h"
 #include "link_dynregmq_posix.h"
+#include "link_fota_posix.h"
 #include "link_fota_power_posix.h"
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
-#include "gesture_uart.h"
 #include "POSIXTimer.h"
 #include "quad_burn.h"
 #include "cook_assist.h"
@@ -246,7 +246,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
 
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
-    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd == 0 || strlen(ptr->cloud_key) < 0)
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd < 0 || strlen(ptr->cloud_key) < 0)
     {
         return -1;
     }
@@ -303,11 +303,9 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             }
             else if (strcmp("ErrorCode", ptr->cloud_key) == 0)
             {
-                gesture_error_code_func(&cloud_val);
             }
             else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
             {
-                gesture_error_show_func(&cloud_val);
             }
             else if (strcmp("CookbookID", ptr->cloud_key) == 0)
             {

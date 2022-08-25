@@ -8,8 +8,10 @@
 #include "aiot_state_api.h"
 #include "aiot_sysdep_api.h"
 #include "aiot_ota_api.h"
-#include "link_fota_posix.h"
+
 #include "link_solo.h"
+#include "link_fota_posix.h"
+#include "link_fota_power_posix.h"
 
 #define OTA_FILE "/userdata/upgrade.bin"
 static FILE *ota_fp = NULL;
@@ -64,7 +66,7 @@ void set_ota_state(enum OTA_TYPE ota_state, void *arg)
         ota_state_cb(ota_state, arg);
 }
 
-void ota_query_timer_cb(void)
+void ota_query_timer_end(void)
 {
     set_ota_state(OTA_NO_FIRMWARE, NULL);
     query_firmware_flag = 0;
@@ -78,8 +80,9 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
     int32_t percent = 0;
 
     /* 目前只支持 packet->type 为 AIOT_DLRECV_HTTPBODY 的情况 */
-    if (!packet || AIOT_DLRECV_HTTPBODY != packet->type)
+    if (!packet || AIOT_DLRECV_HTTPBODY != packet->type || handle == NULL)
     {
+        printf("demo_download_recv_handler error...\r\n");
         return;
     }
     percent = packet->data.percent;
@@ -137,6 +140,8 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
         }
         else
         {
+            // link_fota_report_version("0.0.2");
+            return;
             if (ota_install_cb(OTA_FILE) != 0)
             {
                 aiot_download_report_progress(handle, AIOT_OTAERR_UPGRADE_FAILED);
@@ -286,6 +291,11 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
         if (NULL != ota_msg->task_desc->module)
         {
             printf("module: %s\r\n", ota_msg->task_desc->module);
+            if (strcmp("power", ota_msg->task_desc->module) == 0)
+            {
+                ota_power_recv_handler(ota_handle, ota_msg, userdata);
+                break;
+            }
         }
         set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
@@ -332,21 +342,21 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
     }
 }
 
-int link_fota_start(void *mqtt_handle)
+void *link_fota_start(void *mqtt_handle)
 {
     /* 与MQTT例程不同的是, 这里需要增加创建OTA会话实例的语句 */
     ota_handle = aiot_ota_init();
     if (NULL == ota_handle)
     {
         printf("aiot_ota_init failed\r\n");
-        return -2;
+        return NULL;
     }
 
     /* 用以下语句, 把OTA会话和MQTT会话关联起来 */
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MQTT_HANDLE, mqtt_handle);
     /* 用以下语句, 设置OTA会话的数据接收回调, SDK收到OTA相关推送时, 会进入这个回调函数 */
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_RECV_HANDLER, demo_ota_recv_handler);
-    return 0;
+    return ota_handle;
 }
 
 int link_fota_report_version(char *cur_version)
@@ -369,6 +379,7 @@ int link_fota_report_version(char *cur_version)
     /* 演示MQTT连接建立起来之后, 就可以上报当前设备的版本号了 */
     // cur_version = "1.0.0";
     printf("aiot_ota_report_version %s\r\n", cur_version);
+    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "default");
     res = aiot_ota_report_version(ota_handle, cur_version);
     if (res < STATE_SUCCESS)
     {
@@ -386,6 +397,7 @@ void link_fota_stop(void)
 int link_fota_query_firmware(void)
 {
     set_ota_state(OTA_IDLE, NULL);
+    aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "default");
     int res = aiot_ota_query_firmware(ota_handle);
     if (STATE_SUCCESS == res)
     {

@@ -141,6 +141,7 @@
         "link_fota_power_posix.h": "c",
         "link_fota_posix.h": "c",
         "ota_task.h": "c",
-        "ota_power_task.h": "c"
+        "ota_power_task.h": "c",
+        "aiot_ota_api.h": "c"
     }
 }

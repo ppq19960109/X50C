@@ -5,10 +5,13 @@
 
 #include "cloud_platform_task.h"
 #include "ota_power_task.h"
-#include "link_fota_power_posix.h"
 #include "link_solo.h"
 #include "ecb_uart_parse_msg.h"
+#include "ecb_uart.h"
+#include "link_fota_posix.h"
+#include "link_fota_power_posix.h"
 
+#define POWER_OTA_CONFIG_FILE "/tmp/power.json"
 #define POWER_OTA_FILE "/tmp/power_upgrade"
 
 static void *OTAState_cb(void *ptr, void *arg)
@@ -129,10 +132,7 @@ static void ota_progress_cb(const int precent)
     send_event_uds(root, NULL);
 }
 static timer_t g_ota_timer = NULL;
-static void POSIXTimer_cb(union sigval val)
-{
-    ota_query_timer_cb();
-}
+
 static int ota_query_timer_start_cb(void)
 {
     POSIXTimerSet(g_ota_timer, 0, 12);
@@ -143,6 +143,7 @@ static int ota_query_timer_stop_cb(void)
     POSIXTimerSet(g_ota_timer, 0, 0);
     return 0;
 }
+//--------------------------------------------
 enum ota_cmd_status_t
 {
     OTA_CMD_START = 0,
@@ -150,58 +151,178 @@ enum ota_cmd_status_t
     OTA_CMD_STOP,
     OTA_CMD_END,
 };
+static int ota_power_steps = 0;
+static FILE *ota_fp = NULL;
+static timer_t ota_power_timer;
+static unsigned short ota_total_packages = 0;
+static unsigned short ota_current_package = 0;
+static void *cloud_parse_power_json(void *input, const char *str)
+{
+    cJSON *root = cJSON_Parse(str);
+    if (root == NULL)
+    {
+        return NULL;
+    }
+    cJSON *FileSize = cJSON_GetObjectItem(root, "FileSize");
+    if (FileSize == NULL)
+    {
+        dzlog_error("FileSize is NULL\n");
+        goto fail;
+    }
+    cJSON *FileVersion = cJSON_GetObjectItem(root, "FileVersion");
+    if (FileVersion == NULL)
+    {
+        dzlog_error("FileVersion is NULL\n");
+        goto fail;
+    }
+    cJSON *FileCRC = cJSON_GetObjectItem(root, "FileCRC");
+    if (FileCRC == NULL)
+    {
+        dzlog_error("FileCRC is NULL\n");
+        goto fail;
+    }
+    long file_size = getFileSize(POWER_OTA_FILE);
+    dzlog_warn("%s,getFileSize size:%ld", __func__, file_size);
+    if (file_size <= 0)
+        goto fail;
+    if (file_size != FileSize->valueint)
+    {
+        dzlog_error("FileSize is error:%ld %d\n", file_size, FileSize->valueint);
+        // goto fail;
+    }
+    ota_total_packages = file_size / 0xff + (file_size % 0xff > 0 ? 1 : 0);
+    ota_current_package = 0;
+    char *data = (char *)input;
+    data[0] = FileSize->valueint >> 24;
+    data[1] = FileSize->valueint >> 16;
+    data[2] = FileSize->valueint >> 8;
+    data[3] = FileSize->valueint;
 
-static char ota_power_steps = 0;
+    data[4] = FileVersion->valueint;
+
+    data[5] = FileCRC->valueint >> 8;
+    data[6] = FileCRC->valueint;
+    cJSON_Delete(root);
+    return data;
+fail:
+    cJSON_Delete(root);
+    return NULL;
+}
+
 static int ota_power_send_data(const char cmd)
 {
-    static char buf[256 + 16];
+    static unsigned char buf[256 + 16];
     int len = 0;
     buf[len++] = 0xf9;
     buf[len++] = 0x01;
     buf[len++] = cmd;
     switch (cmd)
     {
-    case 0:
-
+    case OTA_CMD_START:
+        if (get_dev_profile("/tmp", &buf[len], "power.json", cloud_parse_power_json) == NULL)
+        {
+            ota_power_steps = -1;
+            break;
+        }
+        len += 7;
+        buf[len++] = 0xff;
+        ota_power_steps = OTA_CMD_START + 1;
         break;
-    case 1:
-
+    case OTA_CMD_DATA:
+    {
+        buf[len++] = ota_total_packages >> 8;
+        buf[len++] = ota_total_packages;
+        buf[len++] = ota_current_package >> 8;
+        buf[len++] = ota_current_package;
+        ++ota_current_package;
+        buf[len++] = 0;
+        size_t read_len = fread(&buf[len], 0xff, 1, ota_fp);
+        buf[len - 1] = read_len;
+        len += read_len;
+        if (read_len < 0xff)
+            ota_power_steps = OTA_CMD_END + 1;
+        else if (read_len == 0)
+        {
+            buf[len] = OTA_CMD_END;
+            ota_power_steps = OTA_CMD_END + 2;
+        }
+        else
+            ota_power_steps = OTA_CMD_DATA + 2;
+    }
+    break;
+    case OTA_CMD_STOP:
+        ota_power_steps = OTA_CMD_STOP + 1;
         break;
-    case 3:
-
-        break;
-    case 4:
-
+    case OTA_CMD_END:
+        ota_power_steps = OTA_CMD_END + 2;
         break;
     }
-    if (len != 0)
-        ecb_uart_send_ota_msg(buf, len);
+
+    ecb_uart_send_ota_msg(buf, len);
+    POSIXTimerSet(ota_power_timer, 0, 5);
     return 0;
 }
 void ota_power_ack(const unsigned char *data)
 {
-    if (data[0] = 0)
+    if (data[0] == 0)
     {
-        if (ota_power_steps == 0)
+        if (ota_power_steps == OTA_CMD_START + 1)
         {
+            if (ota_fp != NULL)
+            {
+                fclose(ota_fp);
+                ota_fp = NULL;
+            }
+            ota_fp = fopen(POWER_OTA_FILE, "r");
+            if (ota_fp == NULL)
+            {
+                dzlog_error("fopen error NULL");
+                ota_power_steps = 0;
+                return;
+            }
+            ota_power_send_data(OTA_CMD_DATA);
         }
-        else if (ota_power_steps == 1)
+        else if (ota_power_steps == OTA_CMD_DATA + 1)
         {
+            ota_power_send_data(OTA_CMD_DATA);
         }
-        else if (ota_power_steps == 2)
+        else if (ota_power_steps == OTA_CMD_STOP + 1)
+        {
+            ota_power_steps = -1;
+        }
+        else if (ota_power_steps == OTA_CMD_END + 1)
+        {
+            if (ota_fp != NULL)
+            {
+                fclose(ota_fp);
+                ota_fp = NULL;
+            }
+            ota_power_send_data(OTA_CMD_END);
+        }
+        else if (ota_power_steps == OTA_CMD_END + 2)
+        {
+            if (ota_fp != NULL)
+            {
+                fclose(ota_fp);
+                ota_fp = NULL;
+            }
+            ota_power_steps = 0;
+        }
+        else
         {
         }
     }
     else
     {
         dzlog_error("ota_power_ack error:%d", data[1]);
+        ota_power_steps = -1;
     }
 }
 static int ota_install_cb(char *text)
 {
     int ret = -1;
     long size = getFileSize(text);
-    dzlog_warn("ota_install_cb size:%ld", size);
+    dzlog_warn("ota_power_install_cb size:%ld", size);
     if (size <= 0)
         goto fail;
     char cmd[48] = {0};
@@ -209,15 +330,31 @@ static int ota_install_cb(char *text)
     ret = system(cmd);
     if (ret != 0)
         goto fail;
-
+    set_ecb_ota_power_state(1);
+    ota_power_send_data(OTA_CMD_START);
     while (ota_power_steps > 0)
-        ;
+    {
+    }
+    dzlog_warn("ota_power_install_cb end...");
+    POSIXTimerSet(ota_power_timer, 0, 0);
+    set_ecb_ota_power_state(0);
     ret = ota_power_steps;
 fail:
-    dzlog_warn("ota_install_cb ret:%d", ret);
+    dzlog_warn("ota_power_install_cb ret:%d", ret);
     sprintf(cmd, "rm -rf %s", text);
     system(cmd);
     return ret;
+}
+static void POSIXTimer_cb(union sigval val)
+{
+    if (val.sival_int == 0)
+    {
+        ota_power_query_timer_end();
+    }
+    else if (val.sival_int == 1)
+    {
+        ota_power_steps = -1;
+    }
 }
 int ota_power_task_init(void)
 {
@@ -227,10 +364,21 @@ int ota_power_task_init(void)
     register_ota_power_query_timer_start_cb(ota_query_timer_start_cb);
     register_ota_power_query_timer_stop_cb(ota_query_timer_stop_cb);
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+    ota_power_timer = POSIXTimerCreate(1, POSIXTimer_cb);
     return 0;
 }
 void ota_power_task_deinit(void)
 {
+    if (ota_fp != NULL)
+    {
+        fclose(ota_fp);
+        ota_fp = NULL;
+    }
+    if (ota_power_timer != NULL)
+    {
+        POSIXTimerDelete(ota_power_timer);
+        ota_power_timer = NULL;
+    }
     if (g_ota_timer != NULL)
     {
         POSIXTimerDelete(g_ota_timer);

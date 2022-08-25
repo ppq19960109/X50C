@@ -125,7 +125,7 @@ void cook_assist_report_all(cJSON *root)
 }
 static void POSIXTimer_cb(union sigval val)
 {
-    if (val.sival_int == 10)
+    if (val.sival_int == 0)
     {
         if (resp_all_flag == 0)
         {
@@ -224,8 +224,6 @@ void cook_assist_init()
     register_hood_gear_cb(cook_assistant_hood_speed_cb);
     register_fire_gear_cb(cook_assistant_fire_cb);
 
-    cook_assistant_init(INPUT_LEFT);
-    cook_assistant_init(INPUT_RIGHT);
     fd = uart_init("/dev/ttyS0", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
@@ -234,13 +232,16 @@ void cook_assist_init()
     }
     dzlog_info("cook_assist,fd:%d", fd);
 
+    cook_assistant_init(INPUT_LEFT);
+    cook_assistant_init(INPUT_RIGHT);
+
     select_client_event.fd = fd;
     select_client_event.read_cb = cook_assist_recv_cb;
     select_client_event.except_cb = cook_assist_except_cb;
 
     add_select_client_uart(&select_client_event);
 
-    cook_assist_timer = POSIXTimerCreate(10, POSIXTimer_cb);
+    cook_assist_timer = POSIXTimerCreate(0, POSIXTimer_cb);
 }
 void cook_assist_deinit()
 {

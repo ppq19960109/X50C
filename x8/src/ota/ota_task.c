@@ -128,7 +128,7 @@ static void ota_progress_cb(const int precent)
 static timer_t g_ota_timer = NULL;
 static void POSIXTimer_cb(union sigval val)
 {
-    ota_query_timer_cb();
+    ota_query_timer_end();
 }
 static int ota_query_timer_start_cb(void)
 {
@@ -142,6 +142,7 @@ static int ota_query_timer_stop_cb(void)
 }
 static int ota_install_cb(char *text)
 {
+    // return -1;
     int ret = -1;
     // system("sh " OTA_FILE);
     long size = getFileSize(text);

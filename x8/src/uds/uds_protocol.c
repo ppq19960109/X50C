@@ -8,6 +8,7 @@
 #include "database.h"
 #include "database_task.h"
 #include "ota_task.h"
+#include "ota_power_task.h"
 #include "device_task.h"
 
 static pthread_mutex_t mutex;
@@ -217,6 +218,7 @@ int uds_protocol_init(void) // uds协议相关初始化
     device_task_init();
     wifi_task_init();
     ota_task_init();
+    ota_power_task_init();
     database_init();
     database_task_init();
     register_uds_recv_cb(uds_recv);
@@ -227,5 +229,6 @@ void uds_protocol_deinit(void) // uds协议相关反初始化
     uds_tcp_server_task_deinit();
     database_deinit();
     ota_task_deinit();
+    ota_power_task_deinit();
     pthread_mutex_destroy(&mutex);
 }

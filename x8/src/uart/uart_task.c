@@ -28,14 +28,14 @@ void *uart_task(void *arg)
     select_server_task(&select_server_event, 120);
 
     ecb_uart_deinit();
-    cook_assist_init();
+    cook_assist_deinit();
     return NULL;
 }
 void uart_task_init(void)
 {
     select_server_init(&select_server_event);
     ecb_uart_init();
-    cook_assist_deinit();
+    cook_assist_init();
 }
 void uart_task_deinit(void)
 {

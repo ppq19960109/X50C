@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-
 #include "POSIXTimer.h"
 
 // static void POSIXTTimerThreadHandler(union sigval v)
@@ -54,11 +53,12 @@ timer_t POSIXTimerCreate(int sival, POSIXTimerFunc POSIXTimerFun)
     // sigaction(SIGUSR1, &act, NULL);
 #endif
 
-    if (timer_create(CLOCK_REALTIME, &evp, &timerid) == -1)
+    if (timer_create(CLOCK_REALTIME, &evp, &timerid) != 0)
     {
-        perror("fail to timer_create");
+        perror("fail to timer_create............................");
         return NULL;
     }
+    printf("timer_create success:%d, %ld\n", sival, timerid);
     return timerid;
 }
 
