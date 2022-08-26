@@ -429,7 +429,7 @@ static int gesture_recv_cb(void *arg)
     return 0;
 }
 
-static void gesture_link_timestamp_cb(const unsigned int timestamp)
+static void gesture_link_timestamp_cb(const unsigned long timestamp)
 {
     time_t time = timestamp;
     dzlog_warn("gesture_link_timestamp_cb:%ld", time);

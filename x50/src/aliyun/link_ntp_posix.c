@@ -7,8 +7,8 @@
 #include "aiot_state_api.h"
 #include "aiot_ntp_api.h"
 
-void (*link_timestamp_cb)(const unsigned int);
-void register_link_timestamp_cb(void (*cb)(const unsigned int))
+void (*link_timestamp_cb)(const unsigned long);
+void register_link_timestamp_cb(void (*cb)(const unsigned long))
 {
     link_timestamp_cb = cb;
 }
