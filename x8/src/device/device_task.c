@@ -81,6 +81,8 @@ static void *BindTokenState_cb(void *ptr, void *arg)
 
 static void *Reset_cb(void *ptr, void *arg)
 {
+    // reboot(RB_AUTOBOOT);
+    // return NULL;
     link_reset_report();
     sleep(1);
     wifi_reset();

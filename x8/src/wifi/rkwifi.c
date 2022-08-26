@@ -48,7 +48,7 @@ void wifiInit()
     printf("RK_wifi hostname_get:%s\n", hostname_get);
 
     char hostname[16] = {0};
-    sprintf(hostname, "X50BCZ_%c%c%c%c", mac[12], mac[13], mac[15], mac[16]);
+    sprintf(hostname, "X8GCZ_%c%c%c%c", mac[12], mac[13], mac[15], mac[16]);
     // char cmd[64] = {0};
     printf("RK_wifi hostname_set:%s\n", hostname);
     if (strcmp(hostname_get, hostname) != 0)

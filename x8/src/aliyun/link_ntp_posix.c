@@ -6,9 +6,10 @@
 
 #include "aiot_state_api.h"
 #include "aiot_ntp_api.h"
+#include "link_solo.h"
 
-void (*link_timestamp_cb)(const unsigned int);
-void register_link_timestamp_cb(void (*cb)(const unsigned int))
+void (*link_timestamp_cb)(const unsigned long);
+void register_link_timestamp_cb(void (*cb)(const unsigned long))
 {
     link_timestamp_cb = cb;
 }
@@ -50,7 +51,7 @@ void demo_ntp_recv_handler(void *handle, const aiot_ntp_recv_t *packet, void *us
                packet->data.local_time.sec, packet->data.local_time.msec);
 
         if (link_timestamp_cb != NULL)
-            link_timestamp_cb((long long unsigned int)packet->data.local_time.timestamp/1000);
+            link_timestamp_cb((long long unsigned int)packet->data.local_time.timestamp / 1000);
     }
     break;
 
@@ -110,6 +111,8 @@ int link_ntp_start(void *mqtt_handle)
 
 int link_ntp_request(void)
 {
+    if (get_link_connected_state() == 0)
+        return -1;
     int32_t res = STATE_SUCCESS;
     /* 发送NTP查询请求给云平台 */
     res = aiot_ntp_send_request(ntp_handle);

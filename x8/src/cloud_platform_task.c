@@ -8,6 +8,7 @@
 #include "link_dynregmq_posix.h"
 #include "link_fota_posix.h"
 #include "link_fota_power_posix.h"
+#include "link_ntp_posix.h"
 #include "cloud_platform_task.h"
 #include "database_task.h"
 #include "device_task.h"
@@ -664,6 +665,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
         get_attr_report_value(resp, attr);
     }
     uds_report_reset();
+    link_ntp_request();
     return 0;
 }
 
@@ -938,6 +940,17 @@ static void quad_burn_success()
     systemRun("wpa_cli remove_network all && wpa_cli save_config && sync");
 }
 
+static void link_timestamp_cb(const unsigned long timestamp)
+{
+    dzlog_warn("link_timestamp_cb:%ld", timestamp);
+    struct timeval tv;
+    tv.tv_sec = timestamp;
+    settimeofday(&tv, NULL);
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "NtpTimestamp", timestamp);
+    send_event_uds(root, NULL);
+}
 int cloud_init(void) //初始化
 {
     pthread_mutex_init(&mutex, NULL);
@@ -945,6 +958,7 @@ int cloud_init(void) //初始化
     register_report_message_cb(report_msg_quad_uds);
     register_quad_burn_success_cb(quad_burn_success);
     register_ota_complete_cb(ota_complete_cb);
+    register_link_timestamp_cb(link_timestamp_cb);
     register_recv_sync_service_invoke_cb(recv_sync_service_invoke);
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
 #ifdef DYNREGMQ

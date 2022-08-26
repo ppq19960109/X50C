@@ -13,6 +13,7 @@
 
 #define POWER_OTA_CONFIG_FILE "/tmp/power.json"
 #define POWER_OTA_FILE "/tmp/power_upgrade"
+static const unsigned short ench_package_len = 256;
 
 static void *OTAState_cb(void *ptr, void *arg)
 {
@@ -225,7 +226,8 @@ static int ota_power_send_data(const char cmd)
             break;
         }
         len += 7;
-        buf[len++] = 0xff;
+        buf[len++] = ench_package_len >> 8;
+        buf[len++] = ench_package_len;
         ota_power_steps = OTA_CMD_START + 1;
         break;
     case OTA_CMD_DATA:
@@ -236,10 +238,12 @@ static int ota_power_send_data(const char cmd)
         buf[len++] = ota_current_package;
         ++ota_current_package;
         buf[len++] = 0;
-        size_t read_len = fread(&buf[len], 0xff, 1, ota_fp);
+        buf[len++] = 0;
+        size_t read_len = fread(&buf[len], ench_package_len, 1, ota_fp);
+        buf[len - 2] = read_len >> 8;
         buf[len - 1] = read_len;
         len += read_len;
-        if (read_len < 0xff)
+        if (read_len < ench_package_len)
             ota_power_steps = OTA_CMD_END + 1;
         else if (read_len == 0)
         {

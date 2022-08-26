@@ -4,5 +4,5 @@
 int link_ntp_start(void *mqtt_handle);
 int link_ntp_stop(void);
 int link_ntp_request(void);
-void register_link_timestamp_cb(void (*cb)(const unsigned int));
+void register_link_timestamp_cb(void (*cb)(const unsigned long));
 #endif

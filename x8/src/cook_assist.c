@@ -12,6 +12,7 @@
 #include "ecb_uart_parse_msg.h"
 typedef struct
 {
+    char workMode;
     char OilTempSwitch;
     char CookingCurveSwitch;
     char RMovePotLowHeatSwitch;
@@ -33,6 +34,7 @@ static timer_t cook_assist_timer;
 
 void cook_assist_set_smartSmoke(const char status)
 {
+    g_cook_assist.workMode = status;
     set_work_mode(status);
 }
 
@@ -179,10 +181,12 @@ static int cook_assistant_fire_cb(const int gear, enum INPUT_DIR input_dir)
 
 static int cook_assist_recv_cb(void *arg)
 {
-    static unsigned char uart_read_buf[32];
+    static unsigned char uart_read_buf[45];
     int uart_read_len;
 
     uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));
+    if (g_cook_assist.workMode == 0)
+        return -1;
     if (uart_read_len > 0)
     {
         printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
@@ -242,6 +246,7 @@ void cook_assist_init()
     add_select_client_uart(&select_client_event);
 
     cook_assist_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+    // cook_assist_set_smartSmoke(1);
 }
 void cook_assist_deinit()
 {
