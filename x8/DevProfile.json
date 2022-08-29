@@ -457,7 +457,7 @@
             "valueType": 0,
             "funType": 0,
             "uartCmd": -1,
-            "uartByteLen": 2
+            "uartByteLen": 1
         },
         {
             "cloudKey": "RMovePotLowHeatSwitch",

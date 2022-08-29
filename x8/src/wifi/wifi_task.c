@@ -248,7 +248,7 @@ static int wiFiReport(int event)
             wifi_connected_cb(0);
         }
     }
-    g_link_state = g_wifi_state = event;
+    g_link_state = event;
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
 
@@ -293,10 +293,10 @@ static void linkkit_connected_cb(int connect)
 static int link_wifi_state_cb()
 {
     dzlog_warn("link_wifi_state_cb:%d", g_wifi_state);
-    if (RK_WIFI_State_CONNECTED != g_wifi_state)
-    {
-        g_wifi_state = getWifiRunningState();
-    }
+    // if (RK_WIFI_State_CONNECTED != g_wifi_state)
+    // {
+    //     g_wifi_state = getWifiRunningState();
+    // }
     if (RK_WIFI_State_CONNECTED == g_wifi_state)
     {
         // if (back_online == 0)

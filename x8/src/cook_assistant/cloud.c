@@ -56,6 +56,8 @@ void set_work_mode(unsigned char mode)
 {
     state_hood_t *hood_handle = get_hood_handle();
     mlogPrintf("%s,set_work_mode:%d\n", get_current_time_format(), mode);
+    if (hood_handle->work_mode == mode)
+        return;
     hood_handle->work_mode = mode;
 
     if (hood_handle->work_mode)

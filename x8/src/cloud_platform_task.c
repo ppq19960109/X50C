@@ -193,7 +193,7 @@ int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) //调用相关
 
 static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int event_all)
 {
-    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || strlen(ptr->cloud_key) == 0)
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd < 0 || strlen(ptr->cloud_key) == 0)
     {
         return -1;
     }
@@ -247,7 +247,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
 
 int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
 {
-    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd < 0 || strlen(ptr->cloud_key) < 0)
+    if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || ptr->uart_cmd < 0 || strlen(ptr->cloud_key) == 0)
     {
         return -1;
     }
@@ -388,7 +388,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
 int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把阿里云下发数据解析，并解析成串口数据
 {
     long num = 0;
-    if (out == NULL || ptr->uart_cmd == 0)
+    if (out == NULL || ptr->uart_cmd < 0)
         return 0;
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
@@ -664,6 +664,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
             continue;
         get_attr_report_value(resp, attr);
     }
+    cook_assist_report_all(resp);
     uds_report_reset();
     link_ntp_request();
     return 0;

@@ -33,7 +33,7 @@ typedef struct
     char cloud_key[28];
     enum LINK_VALUE_TYPE cloud_value_type;
     enum LINK_FUN_TYPE cloud_fun_type;
-    unsigned char uart_cmd;
+    signed short uart_cmd;
     unsigned char uart_byte_len;
     char *value;
 } cloud_attr_t;

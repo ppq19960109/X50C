@@ -1708,11 +1708,12 @@ void prepare_gear_change_task()
  ***********************************************************/
 void cook_assistant_input(enum INPUT_DIR input_dir, unsigned short temp, unsigned short environment_temp)
 {
-    if (!state_hood.work_mode)
-        return;
     state_handle_t *state_handle = get_input_handle(input_dir);
     if (oil_temp_cb != NULL)
         oil_temp_cb(temp, input_dir);
+
+    if (!state_hood.work_mode)
+        return;
     if (environment_temp > 750)
     {
         if (state_hood.lock == 0)

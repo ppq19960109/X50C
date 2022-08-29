@@ -17,6 +17,7 @@ typedef struct
     char CookingCurveSwitch;
     char RMovePotLowHeatSwitch;
     char RAuxiliarySwitch;
+    char SmartSmokeSwitch;
     unsigned short RAuxiliaryTemp;
 } cook_assist_t;
 static int fd = -1;
@@ -28,7 +29,15 @@ static unsigned short right_environment_temp = 0;
 
 //-----------------------------------------------
 static char resp_all_flag = 0;
-static cook_assist_t g_cook_assist;
+static cook_assist_t g_cook_assist = {
+    workMode : 0,
+    OilTempSwitch : 0,
+    CookingCurveSwitch : 0,
+    RMovePotLowHeatSwitch : 0,
+    RAuxiliarySwitch : 0,
+    SmartSmokeSwitch : 1,
+    RAuxiliaryTemp : 0
+};
 static cJSON *resp = NULL;
 static timer_t cook_assist_timer;
 
@@ -74,11 +83,11 @@ int cook_assist_recv_property_set(const char *key, cJSON *value)
 }
 static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
 {
-    static unsigned char report_temp_count = 0;
+    static unsigned char report_temp_count = 18;
     static unsigned short left_oil_temp = 0;
     static unsigned short right_oil_temp = 0;
 
-    if (g_cook_assist.OilTempSwitch == 0)
+    if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0)
         return;
     if (INPUT_LEFT == input_dir)
     {
@@ -88,12 +97,12 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
     {
         right_oil_temp = temp;
     }
-    if (++report_temp_count > 8)
+    if (++report_temp_count >= 20)
     {
         report_temp_count = 0;
         cJSON *root = cJSON_CreateObject();
-        cJSON_AddNumberToObject(root, "LOilTemp", left_oil_temp);
-        cJSON_AddNumberToObject(root, "ROilTemp", right_oil_temp);
+        cJSON_AddNumberToObject(root, "LOilTemp", left_oil_temp / 10);
+        cJSON_AddNumberToObject(root, "ROilTemp", right_oil_temp / 10);
         report_msg_all_platform(root);
     }
 }
@@ -161,6 +170,8 @@ void cook_assist_end_single_recv()
 //-----------------------------------------------------------------
 static int cook_assistant_hood_speed_cb(const int gear)
 {
+    // if (SmartSmokeSwitch == 0)
+    //     return -1;
     unsigned char uart_buf[2];
     uart_buf[0] = 0x31;
     uart_buf[1] = gear;
@@ -185,13 +196,14 @@ static int cook_assist_recv_cb(void *arg)
     int uart_read_len;
 
     uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));
-    if (g_cook_assist.workMode == 0)
-        return -1;
+    // if (g_cook_assist.workMode == 0)
+    //     return -1;
+    // if (g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
+    //     return -1;
     if (uart_read_len > 0)
     {
-        printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
-        hdzlog_info(uart_read_buf, uart_read_len);
-
+        // printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
+        // hdzlog_info(uart_read_buf, uart_read_len);
         if (uart_read_len < 15 || uart_read_buf[0] != 0x55 || uart_read_buf[1] != 0x2b)
             return -1;
 
@@ -235,7 +247,7 @@ void cook_assist_init()
         return;
     }
     dzlog_info("cook_assist,fd:%d", fd);
-
+    dzlog_warn("cook_assist init,OilTempSwitch:%d", g_cook_assist.OilTempSwitch);
     cook_assistant_init(INPUT_LEFT);
     cook_assistant_init(INPUT_RIGHT);
 
