@@ -28,13 +28,13 @@ stop() {
 }
 
 case "$1" in
-    start)
+    start|START)
         start
         ;;
-    stop)
+    stop|STOP)
         stop
         ;;
-    restart|reload)
+    restart|reload|RESTART|RELOAD)
         stop
         sleep 1
         start

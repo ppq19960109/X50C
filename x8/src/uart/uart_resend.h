@@ -5,7 +5,7 @@
 #include "list.h"
 
 #define RESEND_CNT (2)
-#define RESEND_WAIT_TICK (600)
+#define RESEND_WAIT_TICK (800)
 typedef struct
 {
     unsigned char resend_cnt; /* 等待的时序号 */

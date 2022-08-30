@@ -65,7 +65,7 @@ void set_ecb_ota_power_state(char state)
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag, unsigned char iscopy)
 {
-    dzlog_warn("uart send to ecb--------------------------");
+    dzlog_warn("uart send to ecb--------------------------%ld",get_systime_ms());
     if (fd < 0)
     {
         dzlog_error("ecb_uart_send fd error\n");

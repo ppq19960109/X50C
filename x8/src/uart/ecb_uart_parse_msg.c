@@ -76,14 +76,6 @@ int ecb_uart_send_nak(unsigned char error_code, int seq_id)
     return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0, seq_id);
 }
 
-// int ecb_uart_send_factory(ft_ret_t ret)
-// {
-//     unsigned char send[2] = {0};
-//     send[0] = UART_STORE_FT_RESULT;
-//     send[1] = ret;
-//     return ecb_uart_send_msg(ECB_UART_COMMAND_STORE, send, sizeof(send), 1, -1);
-// }
-
 void keypress_local_pro(unsigned char value)
 {
     switch (value)
@@ -93,9 +85,6 @@ void keypress_local_pro(unsigned char value)
     case KEYPRESS_LOCAL_FT_START: /* 厂测开始 */
     {
         dzlog_warn("Factory test began");
-        cJSON *resp = cJSON_CreateObject();
-        cJSON_AddNullToObject(resp, "ProductionTest");
-        send_event_uds(resp, NULL);
     }
     break;
     case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
@@ -106,20 +95,6 @@ void keypress_local_pro(unsigned char value)
     case KEYPRESS_LOCAL_FT_WIFI: /* 整机厂测，通讯及WIFI检测 */
         dzlog_info("factory test: wifi test ");
         break;
-    case KEYPRESS_LOCAL_STEAM_START: /* 启动蒸烤箱 */
-    {
-        cJSON *resp = cJSON_CreateObject();
-        cJSON_AddNullToObject(resp, "SteamStart");
-        send_event_uds(resp, NULL);
-    }
-    break;
-    case KEYPRESS_LOCAL_DEMO_START: /* 启动demo */
-    {
-        cJSON *resp = cJSON_CreateObject();
-        cJSON_AddNullToObject(resp, "DemoStart");
-        send_event_uds(resp, NULL);
-    }
-    break;
     case KEYPRESS_LOCAL_FT_BT: /* 整机厂测，蓝牙检测 */
         dzlog_info("factory test: bluetooth test ");
         break;
@@ -128,14 +103,6 @@ void keypress_local_pro(unsigned char value)
         break;
     case KEYPRESS_LOCAL_FT_RESET: /* 整机厂测，恢复出厂设置 */
         dzlog_info("factory test: reset test ");
-        // if (0 != link_reset_report())
-        // {
-        //     dzlog_error("factory test: reset error ");
-        //     ecb_uart_send_factory(FT_RET_ERR_RESET);
-        //     break;
-        // }
-        // sleep(1);
-        // ecb_uart_send_factory(FT_RET_OK_RESET);
         break;
     case KEYPRESS_LOCAL_RESET: /* 通讯板重启（主要用于强制断电前进行通知和追溯） */
     case 0xFF:                 /*重启 */

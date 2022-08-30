@@ -24,6 +24,7 @@ static char demo_mode = 0;
 
 void uds_report_reset(void)
 {
+    dzlog_warn("%s", __func__);
     first_uds_report = 0;
     ecb_uart_msg_get(true);
 }
@@ -652,6 +653,7 @@ int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
 
 int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 {
+
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
     cloud_attr_t *attr;
@@ -665,8 +667,12 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
         get_attr_report_value(resp, attr);
     }
     cook_assist_report_all(resp);
-    uds_report_reset();
     link_ntp_request();
+    if (root != NULL)
+    {
+        if (!cJSON_IsNull(root))
+            uds_report_reset();
+    }
     return 0;
 }
 
