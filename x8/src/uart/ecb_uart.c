@@ -65,7 +65,6 @@ void set_ecb_ota_power_state(char state)
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag, unsigned char iscopy)
 {
-    dzlog_warn("uart send to ecb--------------------------%ld",get_systime_ms());
     if (fd < 0)
     {
         dzlog_error("ecb_uart_send fd error\n");
@@ -75,8 +74,11 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
     {
         return -1;
     }
-    hdzlog_info(in, in_len);
-
+    if (in_len > 5 && in[4] != 0x0e)
+    {
+        dzlog_warn("uart send to ecb--------------------------%ld", get_systime_ms());
+        hdzlog_info(in, in_len);
+    }
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
@@ -189,10 +191,10 @@ static int ecb_recv_cb(void *arg)
     if (uart_read_len > 0)
     {
         uart_read_buf_index += uart_read_len;
-        dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
-        hdzlog_info(uart_read_buf, uart_read_buf_index);
+        //dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+        //hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        //dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;

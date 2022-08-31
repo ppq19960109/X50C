@@ -115,7 +115,7 @@ extern "C"
 
         unsigned char ignition_switch;
         unsigned short ignition_switch_close_temp;
-
+        
         unsigned char fire_gear;
         unsigned char hood_gear;
         unsigned int current_tick;
@@ -138,6 +138,7 @@ extern "C"
     typedef struct
     {
         unsigned char work_mode;
+        unsigned char smart_smoke_switch;
         unsigned char lock;
         unsigned char gear;
         unsigned char prepare_gear;

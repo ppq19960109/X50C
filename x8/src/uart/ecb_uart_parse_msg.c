@@ -184,7 +184,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     unsigned short crc16 = CRC16_MAXIM(&in[index + 2], msg_index - 2);
     unsigned short check_sum = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    dzlog_info("crc16:%x,check_sum:%x", crc16, check_sum);
+    //dzlog_info("crc16:%x,check_sum:%x", crc16, check_sum);
     msg_index += 2;
     msg_index += 2;
 
@@ -196,9 +196,13 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
-    dzlog_info("command:%d", command);
-    if (data_len > 0)
-        hdzlog_info((unsigned char *)payload, data_len);
+    if (command != ECB_UART_COMMAND_HEART)
+    {
+        dzlog_info("read from ecb-------------------- command:%d", command);
+        // if (data_len > 0)
+        //     hdzlog_info((unsigned char *)payload, data_len);
+        hdzlog_info(in, msg_index);
+    }
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {
         ecb_uart_send_ack(seq_id);
@@ -275,7 +279,7 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
     ecb_uart_read_status_t status;
     for (;;)
     {
-        dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
+        //dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
         status = func(&in[index], msg_len, &end);
         msg_len -= end;
         index += end;

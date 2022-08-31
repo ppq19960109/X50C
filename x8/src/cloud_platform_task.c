@@ -527,7 +527,7 @@ end:
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
 {
     // dzlog_debug("send_data_to_cloud...");
-    hdzlog_info((unsigned char *)value, value_len);
+    // hdzlog_info((unsigned char *)value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
@@ -546,8 +546,8 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
             {
                 get_attr_report_event(attr, (char *)&value[i + 1], 0);
                 memcpy((*attr).value, &value[i + 1], (*attr).uart_byte_len);
-                dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
-                hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
+                // dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
+                // hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
                 get_attr_report_value(root, attr);
                 switch ((*attr).uart_cmd)
                 {
@@ -568,6 +568,12 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                     break;
                 case 0x20:
                     recv_ecb_fire(*((*attr).value), INPUT_RIGHT);
+                    break;
+                case 0x11:
+                    set_ignition_switch(*((*attr).value), INPUT_LEFT);
+                    break;
+                case 0x12:
+                    set_ignition_switch(*((*attr).value), INPUT_RIGHT);
                     break;
                 }
 

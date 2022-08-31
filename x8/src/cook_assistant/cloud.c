@@ -16,6 +16,11 @@ void register_work_mode_cb(int (*cb)(const unsigned char))
 {
     work_mode_cb = cb;
 }
+static int (*smart_smoke_switch_cb)(const unsigned char);
+void register_smart_smoke_switch_cb(int (*cb)(const unsigned char))
+{
+    smart_smoke_switch_cb = cb;
+}
 static int (*pan_fire_switch_cb)(const unsigned char, enum INPUT_DIR);
 void register_pan_fire_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR))
 {
@@ -79,11 +84,53 @@ void set_work_mode(unsigned char mode)
         work_mode_cb(mode);
 }
 
+void set_smart_smoke_switch(unsigned char smart_smoke_switch)
+{
+    state_hood_t *hood_handle = get_hood_handle();
+    mlogPrintf("%s,set_smart_smoke_switch:%d\n", get_current_time_format(), smart_smoke_switch);
+    hood_handle->smart_smoke_switch = smart_smoke_switch;
+    if (smart_smoke_switch)
+    {
+    }
+    else
+    {
+        hood_handle->lock = 0;
+        hood_handle->close_delay_tick = 0;
+        hood_handle->prepare_gear = GEAR_INVALID;
+        hood_handle->gear_tick = 0;
+
+        state_handle_t *state_handle = get_input_handle(INPUT_LEFT);
+        state_handle->hood_gear = GEAR_CLOSE;
+        state_handle->shake_permit_start_tick = 0;
+        state_handle->shake_exit_tick = 0;
+        state_handle->shake_long = 0;
+        state_handle = get_input_handle(INPUT_RIGHT);
+        state_handle->hood_gear = GEAR_CLOSE;
+        state_handle->shake_permit_start_tick = 0;
+        state_handle->shake_exit_tick = 0;
+        state_handle->shake_long = 0;
+    }
+    if (smart_smoke_switch_cb != NULL)
+        smart_smoke_switch_cb(smart_smoke_switch);
+}
+
 void set_pan_fire_switch(unsigned char pan_fire_switch, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);
     mlogPrintf("%s,set_pan_fire_switch:%d\n", get_current_time_format(), pan_fire_switch);
     state_handle->pan_fire_switch = pan_fire_switch;
+    if (pan_fire_switch)
+    {
+    }
+    else
+    {
+        state_handle->pan_fire_state = PAN_FIRE_CLOSE;
+        state_handle->pan_fire_high_temp_exit_lock_tick = 0;
+        state_handle->pan_fire_rise_jump_exit_lock_tick = 0;
+        state_handle->pan_fire_first_error = 0;
+        state_handle->pan_fire_error_lock_tick = 0;
+        set_fire_gear(FIRE_BIG, state_handle, 0);
+    }
     if (pan_fire_switch_cb != NULL)
         pan_fire_switch_cb(pan_fire_switch, input_dir);
 }
@@ -93,6 +140,13 @@ void set_dry_switch(unsigned char dry_switch, enum INPUT_DIR input_dir)
     state_handle_t *state_handle = get_input_handle(input_dir);
     mlogPrintf("%s,set_dry_switch:%d\n", get_current_time_format(), dry_switch);
     state_handle->dry_switch = dry_switch;
+    if (dry_switch)
+    {
+    }
+    else
+    {
+        state_handle->dry_state = DRY_CLOSE;
+    }
     if (dry_switch_cb != NULL)
         dry_switch_cb(dry_switch, input_dir);
 }
@@ -113,6 +167,8 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
         }
         else
         {
+            state_handle->temp_control_first = 0;
+            state_handle->temp_control_lock_countdown = 0;
             if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_DRY)
                 set_fire_gear(FIRE_BIG, state_handle, 1);
         }

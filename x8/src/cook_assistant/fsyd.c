@@ -238,8 +238,8 @@ void set_ignition_switch(unsigned char ignition_switch, enum INPUT_DIR input_dir
     }
     if (ignition_switch)
     {
-        if (hood_gear_cb != NULL && state_handle_another->hood_gear == 0)
-            hood_gear_cb(0);
+        // if (hood_gear_cb != NULL && state_handle_another->hood_gear == 0)
+        //     hood_gear_cb(0);
 
         state_hood.close_delay_tick = 0;
         // cook_assistant_reinit(state_handle);
@@ -267,12 +267,12 @@ void set_ignition_switch(unsigned char ignition_switch, enum INPUT_DIR input_dir
 void recv_ecb_gear(unsigned char gear)
 {
     mlogPrintf("%s,recv ecb gear:%d hood_gear:%d\n", __func__, gear, state_hood.gear);
-    if (state_hood.work_mode)
+    if (state_hood.smart_smoke_switch)
     {
         if (gear != state_hood.gear)
         {
             if (hood_gear_cb != NULL)
-                hood_gear_cb(state_hood.gear);
+                hood_gear_cb(-1);
         }
     }
     else
@@ -285,7 +285,7 @@ void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);
     mlogPrintf("%s,recv ecb fire:%d fire_gear:%d\n", __func__, fire, state_handle->fire_gear);
-    if (state_hood.work_mode)
+    if (state_handle->pan_fire_switch)
     {
         if (fire != state_handle->fire_gear)
         {
@@ -1009,22 +1009,18 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
 
     state_handle->ignition_switch = 0;
     state_handle->ignition_switch_close_temp = 0;
-    // state_hood.gear = GEAR_CLOSE;
 
     state_handle->input_dir = INPUT_MAX;
 
     if (input_dir == INPUT_LEFT)
         set_pan_fire_switch(0, input_dir);
     else
-        set_pan_fire_switch(1, input_dir);
+        set_pan_fire_switch(0, input_dir);
 
-    set_dry_switch(0, input_dir);
-    set_temp_control_switch(0, input_dir);
-
+    // set_dry_switch(0, input_dir);
+    // set_temp_control_switch(0, input_dir);
     set_temp_control_target_temp(150, input_dir);
-    // set_temp_control_p(0.5);
-    // set_temp_control_i(0.0009);
-    // set_temp_control_d(0.4);
+
     state_handle->input_dir = input_dir;
 }
 
@@ -1607,6 +1603,11 @@ static void change_state(state_handle_t *state_handle)
     if (state_handle->temp_control_switch)
     {
         temp_control_func(state_handle);
+    }
+    if (state_hood.smart_smoke_switch == 0 && state_handle->pan_fire_switch == 0 && state_handle->dry_switch == 0)
+    {
+        state_handle->state = STATE_IDLE;
+        return;
     }
     //翻炒允许温度
     if (state_handle->last_temp > SHAKE_PERMIT_TEMP)
