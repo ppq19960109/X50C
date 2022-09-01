@@ -46,6 +46,7 @@ typedef struct
     char device_secret[33];
     char device_category[33];
     char device_model[16];
+    char mac[16];
     char hardware_ver[6];
     char software_ver[6];
     char remind[3][48];

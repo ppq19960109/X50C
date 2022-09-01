@@ -11,6 +11,7 @@
 #include "uart_task.h"
 #include "ecb_uart_parse_msg.h"
 #include "uds_protocol.h"
+#include "curl/curl.h"
 
 typedef struct
 {
@@ -20,6 +21,7 @@ typedef struct
     char RMovePotLowHeatSwitch;
     char RAuxiliarySwitch;
     char SmartSmokeSwitch;
+    char RStoveStatus;
     unsigned short RAuxiliaryTemp;
 } cook_assist_t;
 static int fd = -1;
@@ -28,7 +30,7 @@ static unsigned short left_temp = 0;
 static unsigned short left_environment_temp = 0;
 static unsigned short right_temp = 0;
 static unsigned short right_environment_temp = 0;
-
+static unsigned long curveKey = 0;
 //-----------------------------------------------
 static char resp_all_flag = 0;
 static cook_assist_t g_cook_assist = {
@@ -94,6 +96,81 @@ int cook_assist_recv_property_set(const char *key, cJSON *value)
     cook_assist_judge_work_mode();
     return 0;
 }
+void set_stove_status(unsigned char status, enum INPUT_DIR input_dir)
+{
+    set_ignition_switch(status, input_dir);
+    if (input_dir == INPUT_RIGHT)
+    {
+        if (g_cook_assist.RStoveStatus == 0 && status > 0)
+        {
+            ++curveKey;
+        }
+        g_cook_assist.RStoveStatus = status;
+    }
+}
+size_t http_post_cb(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+    printf("http_post_cb size:%lu,nmemb:%lu\n", size, nmemb);
+    printf("http_post_cb data:%s\n", (char *)ptr);
+
+    cJSON *root = cJSON_Parse(ptr);
+    if (root == NULL)
+        return -1;
+    char *json = cJSON_PrintUnformatted(root);
+    printf("http_post_cb json:%s\n", json);
+    free(json);
+    return size * nmemb;
+}
+static int curl_http_post(const char *path, const char *body)
+{
+    CURLcode res;
+    struct curl_slist *headers = NULL;
+    // get a curl handle
+    CURL *curl = curl_easy_init();
+    if (curl)
+    {
+        headers = curl_slist_append(headers, "Content-Type:application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        curl_easy_setopt(curl, CURLOPT_URL, path);
+
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_post_cb);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2L);
+        curl_easy_setopt(curl, CURLOPT_POST, 1);
+
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+        // perform the request, res will get the return code
+        res = curl_easy_perform(curl);
+        // check for errors
+        if (res != CURLE_OK)
+        {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        }
+        else
+        {
+            fprintf(stdout, "curl_easy_perform() success.\n");
+        }
+        // always cleanup
+        curl_easy_cleanup(curl);
+    }
+    return 0;
+}
+static void cookingCurve_post(const unsigned short temp)
+{
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(resp, "deviceMac", cloud_dev->mac);
+    cJSON_AddStringToObject(resp, "iotId", cloud_dev->device_name);
+    cJSON_AddNumberToObject(resp, "Temp", temp);
+    cJSON_AddNumberToObject(resp, "curveKey", curveKey);
+
+    char *json = cJSON_PrintUnformatted(root);
+    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/", json);
+    free(json);
+    cJSON_Delete(root);
+}
 static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
 {
     static unsigned char report_temp_count = 15;
@@ -120,6 +197,10 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
         {
             report_temp_count = 0;
             report_msg_all_platform(root);
+            if (g_cook_assist.RStoveStatus > 0 && g_cook_assist.CookingCurveSwitch > 0)
+            {
+                cookingCurve_post(right_oil_temp / 10);
+            }
         }
         else
         {
@@ -235,7 +316,7 @@ static int cook_assistant_fire_cb(const int gear, enum INPUT_DIR input_dir)
 
 static int cook_assist_recv_cb(void *arg)
 {
-    static unsigned char uart_read_buf[45];
+    static unsigned char uart_read_buf[32];
     int uart_read_len;
 
     uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));

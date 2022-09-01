@@ -358,9 +358,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                 }
                 else if (strcmp("WifiMac", ptr->cloud_key) == 0)
                 {
-                    char mac[16];
-                    getNetworkMac(ETH_NAME, mac, sizeof(mac), "");
-                    item = cJSON_CreateString(mac);
+                    item = cJSON_CreateString(g_cloud_dev->mac);
                 }
                 else
                 {
@@ -570,10 +568,10 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                     recv_ecb_fire(*((*attr).value), INPUT_RIGHT);
                     break;
                 case 0x11:
-                    set_ignition_switch(*((*attr).value), INPUT_LEFT);
+                    set_stove_status(*((*attr).value), INPUT_LEFT);
                     break;
                 case 0x12:
-                    set_ignition_switch(*((*attr).value), INPUT_RIGHT);
+                    set_stove_status(*((*attr).value), INPUT_RIGHT);
                     break;
                 }
 
@@ -996,7 +994,7 @@ int cloud_init(void) //初始化
         }
     }
     quad_burn_init();
-
+    getNetworkMac(ETH_NAME, g_cloud_dev->mac, sizeof(g_cloud_dev->mac), "");
     return 0;
 }
 
@@ -1091,7 +1089,7 @@ void *cloud_task(void *arg) //云端任务
     }
     if (strlen(g_cloud_dev->device_name) == 0)
     {
-        getNetworkMac(ETH_NAME, g_cloud_dev->device_name, sizeof(g_cloud_dev->device_name), "");
+        strcpy(g_cloud_dev->device_name, g_cloud_dev->mac);
     }
 #if 1
     do
