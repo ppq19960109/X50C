@@ -33,6 +33,7 @@ extern "C"
 
     void register_thread_lock_cb(int (*cb)());
     void register_thread_unlock_cb(int (*cb)());
+    void register_cook_assist_remind_cb(int (*cb)());
     //云端对外函数
     void set_work_mode(unsigned char mode);
     void set_smart_smoke_switch(unsigned char smart_smoke_switch);

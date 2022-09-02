@@ -105,9 +105,11 @@ extern "C"
         unsigned int pan_fire_error_lock_tick;           //移锅小火判断错误，锁定时间
         unsigned int pan_fire_tick;                      //移锅小火进入判断时间
         unsigned char pan_fire_enter_type;               //移锅小火进入类型 1:翻炒进入 0:其他进入 2:防干烧进入
+        unsigned short pan_fire_enter_start_tick;
 
         unsigned short temp_control_first;
         unsigned char temp_control_lock_countdown; //控温，锁定时间
+        unsigned short temp_control_enter_start_tick;
 
         unsigned int shake_permit_start_tick; //允许翻炒开始的时间
         unsigned int shake_exit_tick;

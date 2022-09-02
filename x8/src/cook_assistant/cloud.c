@@ -172,6 +172,7 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
             if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_DRY)
                 set_fire_gear(FIRE_BIG, state_handle, 1);
         }
+        state_handle->temp_control_enter_start_tick = 0;
     }
     if (temp_control_switch_cb != NULL)
         temp_control_switch_cb(temp_control_switch, input_dir);
@@ -184,6 +185,7 @@ void set_temp_control_target_temp(unsigned short temp, enum INPUT_DIR input_dir)
     mlogPrintf("%s,set_temp_control_target_temp:%d\n", get_current_time_format(), state_handle->PID_Type.Target_value);
     if (temp_control_target_temp_cb != NULL)
         temp_control_target_temp_cb(temp, input_dir);
+    state_handle->temp_control_enter_start_tick = 0;
 }
 
 void set_temp_control_p(float kp)

@@ -102,6 +102,12 @@ void register_thread_unlock_cb(int (*cb)())
 {
     thread_unlock_cb = cb;
 }
+static int (*cook_assist_remind_cb)();
+void register_cook_assist_remind_cb(int (*cb)(int))
+{
+    cook_assist_remind_cb = cb;
+}
+
 /***********************************************************
  * 火焰档位切换函数
  * 1.type:0 无效 type:1 火焰档位同步
@@ -794,6 +800,15 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     }
     else if (state_handle->pan_fire_state == PAN_FIRE_ENTER) //开关小火，温度跳降，确定是移锅小火
     {
+        if (state_handle->pan_fire_enter_start_tick < INPUT_DATA_HZ * 60 * 3)
+        {
+            ++state_handle->pan_fire_enter_start_tick;
+            if (state_handle->pan_fire_enter_start_tick == INPUT_DATA_HZ * 60 * 3)
+            {
+                if (cook_assist_remind_cb != NULL)
+                    cook_assist_remind_cb(1);
+            }
+        }
         if (state_handle->pan_fire_tick == 0)
         {
             state_handle->pan_fire_tick = state_handle->current_tick;
@@ -922,6 +937,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
 exit:
     state_handle->pan_fire_state = PAN_FIRE_CLOSE;
 end:
+    state_handle->pan_fire_enter_start_tick = 0;
     set_fire_gear(FIRE_BIG, state_handle, 0);
     mlogPrintf("%s,%s :%s\n", __func__, state_info[STATE_PAN_FIRE], "set big fire");
     return prepare_state;
@@ -1545,6 +1561,7 @@ static void temp_control_func(state_handle_t *state_handle)
     {
         if (state_handle->PID_Type.Target_value - 40 < average)
         {
+            state_handle->temp_control_enter_start_tick = INPUT_DATA_HZ * 60 * 3;
             set_fire_gear(FIRE_SMALL, state_handle, 0);
             state_handle->temp_control_first = 1;
             state_handle->temp_control_lock_countdown = 0;
@@ -1570,6 +1587,15 @@ static void temp_control_func(state_handle_t *state_handle)
         }
     }
 #endif
+    if (state_handle->temp_control_enter_start_tick < INPUT_DATA_HZ * 60 * 3)
+    {
+        ++state_handle->temp_control_enter_start_tick;
+        if (state_handle->temp_control_enter_start_tick == INPUT_DATA_HZ * 60 * 3)
+        {
+            if (cook_assist_remind_cb != NULL)
+                cook_assist_remind_cb(0);
+        }
+    }
 }
 
 /***********************************************************
@@ -1586,6 +1612,8 @@ static void change_state(state_handle_t *state_handle)
     //点火开关判断
     if (!state_handle->ignition_switch)
     {
+        state_handle->temp_control_enter_start_tick = 0;
+        state_handle->pan_fire_enter_start_tick = 0;
         state_handle->ignition_switch_close_temp = state_handle->last_temp_data[state_handle->temp_data_size - 5];
         return;
     }

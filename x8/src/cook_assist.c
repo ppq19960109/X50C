@@ -352,6 +352,14 @@ static int cook_assist_except_cb(void *arg)
     return 0;
 }
 
+static int cook_assist_remind_cb(int index)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "CookAssistRemind", index);
+    send_event_uds(root, NULL);
+    return 0;
+}
+
 void cook_assist_init()
 {
     register_oil_temp_cb(oil_temp_cb);
@@ -359,6 +367,8 @@ void cook_assist_init()
     register_smart_smoke_switch_cb(smart_smoke_switch_cb);
     register_temp_control_switch_cb(temp_control_cb);
     register_temp_control_target_temp_cb(temp_control_target_temp_cb);
+
+    register_cook_assist_remind_cb(cook_assist_remind_cb);
 
     register_hood_gear_cb(cook_assistant_hood_speed_cb);
     register_fire_gear_cb(cook_assistant_fire_cb);
