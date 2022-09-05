@@ -432,10 +432,14 @@ static int gesture_recv_cb(void *arg)
 static void gesture_link_timestamp_cb(const unsigned long timestamp)
 {
     time_t time = timestamp;
-    dzlog_warn("gesture_link_timestamp_cb:%ld", time);
 
     struct tm *local_tm = localtime(&time);
     gesture_send_msg(0, 1, local_tm->tm_hour, local_tm->tm_min, 0);
+
+    struct timeval tv;
+    tv.tv_sec = time;
+    int res = settimeofday(&tv, NULL);
+    dzlog_warn("gesture_link_timestamp_cb:%ld settimeofday:%d", time, res);
 }
 
 void gesture_uart_deinit(void)
