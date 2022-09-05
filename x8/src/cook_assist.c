@@ -357,6 +357,19 @@ static int cook_assist_remind_cb(int index)
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "CookAssistRemind", index);
     send_event_uds(root, NULL);
+    if (index == 0)
+    {
+    }
+    else if (index == 1)
+    {
+        unsigned char uart_buf[2];
+        uart_buf[0] = 0x1d;
+        uart_buf[1] = 0x01;
+        ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
+    }
+    else
+    {
+    }
     return 0;
 }
 
