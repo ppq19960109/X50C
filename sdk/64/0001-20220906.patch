@@ -1,0 +1,5046 @@
+From 3990fd9a34112596402fa11dfe3aa3200a842ffc Mon Sep 17 00:00:00 2001
+From: pangpengqiang <pangpengqiang@163.com>
+Date: Tue, 6 Sep 2022 12:42:07 +0800
+Subject: [PATCH] 20220906
+
+Change-Id: If7b7ff4c4362c96282fc4e3d2b7d971249e27c1f
+---
+ arch/arm64/boot/dts/rockchip/rk3308.dtsi      |    2 +-
+ .../boot/dts/rockchip/rk3308b-evb-v10.dtsi    |   10 +-
+ .../dts/rockchip/rk3308bs-evb-amic-v11.dts    |   30 +-
+ .../dts/rockchip/rk3308bs-evb-ext-v10.dtsi    |  235 ++
+ .../boot/dts/rockchip/rk3308bs-evb-v11.dtsi   |   24 +-
+ drivers/gpu/drm/panel/panel-simple-0.c        | 2460 +++++++++++++++++
+ drivers/gpu/drm/panel/panel-simple.c          |  147 +-
+ drivers/gpu/drm/panel/panel_ssd2828.c         |  632 +++++
+ drivers/input/touchscreen/Kconfig             |   11 +
+ drivers/input/touchscreen/Makefile            |    1 +
+ drivers/input/touchscreen/hy4635_ts.c         |  389 +++
+ logo.bmp                                      |  Bin 170326 -> 256118 bytes
+ logo_kernel.bmp                               |  Bin 19160 -> 256118 bytes
+ 13 files changed, 3890 insertions(+), 51 deletions(-)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
+ create mode 100644 drivers/gpu/drm/panel/panel-simple-0.c
+ mode change 100644 => 100755 drivers/gpu/drm/panel/panel-simple.c
+ create mode 100755 drivers/gpu/drm/panel/panel_ssd2828.c
+ create mode 100755 drivers/input/touchscreen/hy4635_ts.c
+ mode change 100644 => 100755 logo.bmp
+ mode change 100644 => 100755 logo_kernel.bmp
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3308.dtsi b/arch/arm64/boot/dts/rockchip/rk3308.dtsi
+index 4b6058e30858..8693e4dac4f2 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3308.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3308.dtsi
+@@ -221,7 +221,7 @@
+ 			route_rgb: route-rgb {
+ 				status = "disabled";
+ 				logo,uboot = "logo.bmp";
+-				/* logo,kernel = "logo_kernel.bmp"; */
++				logo,kernel = "logo_kernel.bmp";
+ 				logo,mode = "center";
+ 				charge_logo,mode = "center";
+ 				connect = <&vop_out_rgb>;
+diff --git a/arch/arm64/boot/dts/rockchip/rk3308b-evb-v10.dtsi b/arch/arm64/boot/dts/rockchip/rk3308b-evb-v10.dtsi
+index fc7a899e710e..17a538f94a1f 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3308b-evb-v10.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3308b-evb-v10.dtsi
+@@ -12,7 +12,7 @@
+ 	compatible = "rockchip,rk3308b-evb-v10", "rockchip,rk3308";
+ 
+ 	chosen {
+-		bootargs = "earlycon=uart8250,mmio32,0xff0e0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7 snd_aloop.use_raw_jiffies=1";
++		bootargs = "earlycon=uart8250,mmio32,0xff0c0000 swiotlb=1 console=ttyFIQ0 root=PARTUUID=614e0000-0000 rootfstype=squashfs rootwait snd_aloop.index=7 snd_aloop.use_raw_jiffies=1";
+ 	};
+ 
+ 	acodec_sound: acodec-sound {
+@@ -106,7 +106,7 @@
+ 		 * - SDIO_RESET_L_WL_REG_ON
+ 		 * - PDN (power down when low)
+ 		 */
+-		reset-gpios = <&gpio4 RK_PD6 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio4 RK_PB3 GPIO_ACTIVE_LOW>;
+ 	};
+ 
+ 	spdif_rx_sound: spdif-rx-sound {
+@@ -297,7 +297,7 @@
+ };
+ 
+ &fiq_debugger {
+-	rockchip,serial-id = <4>;
++	// rockchip,serial-id = <4>;
+ 	status = "okay";
+ };
+ 
+@@ -699,13 +699,13 @@
+ 
+ 	sdio-pwrseq {
+ 		wifi_enable_h: wifi-enable-h {
+-			rockchip,pins = <4 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <4 RK_PB3 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
+ 
+ 	wireless-wlan {
+ 		wifi_wake_host: wifi-wake-host {
+-			rockchip,pins = <2 RK_PB4 RK_FUNC_GPIO &pcfg_pull_up>;
++			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_up>;
+ 		};
+ 	};
+ };
+diff --git a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-amic-v11.dts b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-amic-v11.dts
+index 099c6de3e58f..d884a1232cbd 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-amic-v11.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-amic-v11.dts
+@@ -6,7 +6,7 @@
+ /dts-v1/;
+ 
+ #include "rk3308bs-evb-v11.dtsi"
+-
++#include "rk3308bs-evb-ext-v10.dtsi"
+ / {
+ 	model = "Rockchip RK3308B-S evb analog mic v11 board";
+ 	compatible = "rockchip,rk3308bs-evb-amic-v11", "rockchip,rk3308";
+@@ -29,20 +29,20 @@
+ 	rockchip,adc-grps-route = <1 2 3 0>;
+ };
+ 
+-&bluetooth_sound {
+-	status = "okay";
+-};
+-
+-&i2s_8ch_0 {
+-	status = "okay";
+-	#sound-dai-cells = <0>;
+-	rockchip,clk-trcm = <1>;
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&i2s_8ch_0_sclktx
+-		     &i2s_8ch_0_lrcktx
+-		     &i2s_8ch_0_sdi0
+-		     &i2s_8ch_0_sdo2>;
+-};
++// &bluetooth_sound {
++// 	status = "okay";
++// };
++
++// &i2s_8ch_0 {
++// 	status = "okay";
++// 	#sound-dai-cells = <0>;
++// 	rockchip,clk-trcm = <1>;
++// 	pinctrl-names = "default";
++// 	pinctrl-0 = <&i2s_8ch_0_sclktx
++// 		     &i2s_8ch_0_lrcktx
++// 		     &i2s_8ch_0_sdi0
++// 		     &i2s_8ch_0_sdo2>;
++// };
+ 
+ &is31fl3236 {
+ 	reg = <0x3f>;
+diff --git a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
+new file mode 100644
+index 000000000000..84772c294373
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
+@@ -0,0 +1,235 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
++ *
++ */
++
++/ {
++	backlight: backlight {
++		status = "okay";
++		compatible = "pwm-backlight";
++		pwms = <&pwm10 0 50000 0>;
++		brightness-levels = <
++			  0   1   2   3   4   5   6   7
++			  8   9  10  11  12  13  14  15
++			 16  17  18  19  20  21  22  23
++			 24  25  26  27  28  29  30  31
++			 32  33  34  35  36  37  38  39
++			 40  41  42  43  44  45  46  47
++			 48  49  50  51  52  53  54  55
++			 56  57  58  59  60  61  62  63
++			 64  65  66  67  68  69  70  71
++			 72  73  74  75  76  77  78  79
++			 80  81  82  83  84  85  86  87
++			 88  89  90  91  92  93  94  95
++			 96  97  98  99 100 101 102 103
++			104 105 106 107 108 109 110 111
++			112 113 114 115 116 117 118 119
++			120 121 122 123 124 125 126 127
++			128 129 130 131 132 133 134 135
++			136 137 138 139 140 141 142 143
++			144 145 146 147 148 149 150 151
++			152 153 154 155 156 157 158 159
++			160 161 162 163 164 165 166 167
++			168 169 170 171 172 173 174 175
++			176 177 178 179 180 181 182 183
++			184 185 186 187 188 189 190 191
++			192 193 194 195 196 197 198 199
++			200 201 202 203 204 205 206 207
++			208 209 210 211 212 213 214 215
++			216 217 218 219 220 221 222 223
++			224 225 226 227 228 229 230 231
++			232 233 234 235 236 237 238 239
++			240 241 242 243 244 245 246 247
++			248 249 250 251 252 253 254 255>;
++		default-brightness-level = <200>;
++	};
++
++	panel: panel {
++		compatible = "simple-panel";
++		bus-format = <MEDIA_BUS_FMT_RGB888_1X24>;
++		backlight = <&backlight>;
++		enable-gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_LOW>;
++		enable-delay-ms = <200>;
++		reset-gpios = <&gpio0 RK_PA3 GPIO_ACTIVE_LOW>;
++		reset-delay-ms = <200>;
++		init-delay-ms = <200>;
++		// prepare-delay-ms = <20>;
++		// unprepare-delay-ms = <20>;
++		// disable-delay-ms = <20>;
++		width-mm = <160>;
++		height-mm = <60>;
++		status = "okay";
++		spi-sdc-gpios = <&gpio2 RK_PB2 GPIO_ACTIVE_HIGH>;
++		spi-shut-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_HIGH>;
++		spi-sdo-gpios = <&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>;
++		spi-sdi-gpios = <&gpio1 RK_PC7 GPIO_ACTIVE_HIGH>;
++		spi-scl-gpios = <&gpio1 RK_PD0 GPIO_ACTIVE_HIGH>;
++		spi-cs-gpios = <&gpio1 RK_PD1 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&spi_init_cmd>;
++		rockchip,cmd-type = "myspi";
++		rgb-mode = "p888";
++		power_enable = <1>;
++
++		panel-init-sequence = [
++			/* type delay num val1 val2 val3 */
++			00 00 03 f0 5a 59
++			00 00 03 f1 a5 a6
++			00 00 0f b0 54 32 23 45 44 44 44 44 9f 00 01 9f 00 01
++			00 00 0b b1 32 84 02 83 29 06 06 72 06 06
++			00 00 02 b2 73
++			00 00 15 b3 0b 09 13 11 0f 0d 00 00 00 03 00 03 03 03 03 03 03 03 05 07
++			00 00 15 b4 0a 08 12 10 0e 0c 00 00 00 03 00 03 03 03 03 03 03 03 04 06
++			00 00 03 b6 13 13
++			00 00 05 b8 b4 43 02 cc
++			00 00 05 b9 a5 20 ff c8
++			00 00 03 ba 88 23
++			00 00 0b bd 43 0e 0e 50 50 29 10 03 44 03
++			00 00 09 c1 00 0c 16 04 00 30 10 04
++			00 00 03 c2 21 81
++			00 00 03 c3 02 30
++			00 00 03 c7 25 6a
++			00 00 27 c8 7c 68 59 4e 4b 3c 41 2b 44 43 43 60 4e 55 47 44 38 27 06 7c 68 59 4e 4b 3c 41 2b 44 43 43 60 4e 55 47 44 38 27 06
++			00 00 07 d4 00 00 00 32 04 51
++			00 00 03 f1 5a 59
++			00 00 03 f0 a5 a6
++			01 00 02 36 14
++			01 00 02 35 00
++			01 78 01 11
++			01 14 01 29
++			
++		];
++		panel-exit-sequence = [
++			/* type delay num val1 val2 val3 */
++			00   0a  01  28
++			00   78  01  10
++		];
++
++		display-timings {
++			native-mode = <&stt0430_enl2c_timing>;
++
++			stt0430_enl2c_timing: timing0 {
++				clock-frequency = <42000000>;
++				hactive = <400>;
++				vactive = <1280>;
++				hback-porch = <80>;
++				hfront-porch = <80>;
++				vback-porch = <12>;
++				vfront-porch = <10>;
++				hsync-len = <4>;
++				vsync-len = <4>;
++				hsync-active = <0>;
++				vsync-active = <0>;
++				de-active = <0>;
++				pixelclk-active = <0>;
++			};
++		};
++
++		port {
++			panel_in_rgb: endpoint {
++				remote-endpoint = <&rgb_out_panel>;
++			};
++		};
++	};
++};
++
++&pinctrl {
++	spi_panel {
++		spi_init_cmd: spi-init-cmd {
++			rockchip,pins =
++				/* spi enable */
++                <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi reset */
++                <0 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi sdc */
++                <2 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi shut */
++                <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi sdo */
++                <1 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi sdi */
++				<1 RK_PC7 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi scl */
++				<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>,
++				/* spi cs */
++				<1 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++	i2c_tp {
++		i2c_tp_init: i2c_tp_init{
++			rockchip,pins = 
++				/*int pin*/
++				<0 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>,
++				/*rest pin*/
++				<0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&display_subsystem {
++	status = "okay";
++};
++
++&pwm10 {
++	status = "okay";
++};
++
++&rgb {
++	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&lcdc_ctl &lcdc_rgb888_m1>;
++
++	ports {
++		rgb_out: port@1 {
++			reg = <1>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			rgb_out_panel: endpoint@0 {
++				reg = <0>;
++				remote-endpoint = <&panel_in_rgb>;
++			};
++		};
++	};
++};
++
++&route_rgb {
++	status = "okay";
++};
++
++&vop {
++	status = "okay";
++};
++
++&i2c1 {
++    status = "okay";
++    clock-frequency = <100000>;
++   
++	hy4635@48 {
++        compatible = "rockchip,hy4635";
++        reg = <0x48>;
++		interrupt-parent = <&gpio0>;
++		interrupts = <RK_PC0 IRQ_TYPE_EDGE_BOTH>;
++		reset-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_LOW>;
++		intt-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
++        pinctrl-names = "default";
++        pinctrl-0 = <&i2c_tp_init>;
++        touchscreen-size-x = <1280>;
++		touchscreen-size-y = <400>;
++		touchscreen-fuzz-x = <0>;
++		touchscreen-fuzz-y = <0>;
++		//touchscreen-inverted-x;
++		//touchscreen-inverted-y;
++		//touchscreen-swapped-x-y;
++		status = "okay";
++    };
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&uart4 {
++	status = "okay";
++};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-v11.dtsi b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-v11.dtsi
+index 2de3c86da28a..cdd49f4192f6 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-v11.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-v11.dtsi
+@@ -31,7 +31,7 @@
+ 		pinctrl-1 = <&uart0_rts_gpio>;
+ 		BT,power_gpio    = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
+ 		BT,wake_host_irq = <&gpio2 RK_PB0 GPIO_ACTIVE_HIGH>;
+-		status = "okay";
++		status = "disabled";
+ 	};
+ 
+ 	wireless-wlan {
+@@ -39,8 +39,8 @@
+ 		rockchip,grf = <&grf>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&wifi_wake_host>;
+-		wifi_chip_type = "ap6256";
+-		WIFI,host_wake_irq = <&gpio2 RK_PB4 GPIO_ACTIVE_HIGH>;
++		wifi_chip_type = "rtl8189fs";
++		WIFI,host_wake_irq = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
+ 		status = "okay";
+ 	};
+ };
+@@ -49,10 +49,26 @@
+ 	status = "disabled";
+ };
+ 
+-&mac {
++&sdio {
++	bus-width = <4>;
++	cap-sd-highspeed;
++	supports-sdio;
++	ignore-pm-notify;
++	keep-power-in-suspend;
++	non-removable;
++	mmc-pwrseq = <&sdio_pwrseq>;
++	sd-uhs-sdr104;
+ 	status = "okay";
+ };
+ 
++&sdmmc{
++	status = "disabled";
++};
++
++// &mac {
++// 	status = "okay";
++// };
++
+ &vcc_ddr {
+ 	regulator-min-microvolt = <1350000>;
+ 	regulator-max-microvolt = <1350000>;
+diff --git a/drivers/gpu/drm/panel/panel-simple-0.c b/drivers/gpu/drm/panel/panel-simple-0.c
+new file mode 100644
+index 000000000000..700ffd65c7c1
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-simple-0.c
+@@ -0,0 +1,2460 @@
++/*
++ * Copyright (C) 2013, NVIDIA Corporation.  All rights reserved.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sub license,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice (including the
++ * next paragraph) shall be included in all copies or substantial portions
++ * of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
++ * DEALINGS IN THE SOFTWARE.
++ */
++
++#include <linux/backlight.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of_platform.h>
++#include <linux/platform_device.h>
++#include <linux/regulator/consumer.h>
++
++#include <drm/drmP.h>
++#include <drm/drm_crtc.h>
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_panel.h>
++
++#include <video/display_timing.h>
++#include <video/mipi_display.h>
++#include <linux/of_device.h>
++#include <video/of_display_timing.h>
++#include <linux/of_graph.h>
++#include <video/videomode.h>
++
++struct cmd_ctrl_hdr {
++	u8 dtype;	/* data type */
++	u8 wait;	/* ms */
++	u8 dlen;	/* payload len */
++} __packed;
++
++struct cmd_desc {
++	struct cmd_ctrl_hdr dchdr;
++	u8 *payload;
++};
++
++struct panel_cmds {
++	u8 *buf;
++	int blen;
++	struct cmd_desc *cmds;
++	int cmd_cnt;
++};
++
++struct panel_desc {
++	const struct drm_display_mode *modes;
++	unsigned int num_modes;
++	const struct display_timing *timings;
++	unsigned int num_timings;
++
++	unsigned int bpc;
++
++	struct {
++		unsigned int width;
++		unsigned int height;
++	} size;
++
++	/**
++	 * @reset: the time (in milliseconds) indicates the delay time
++	 *         after the panel to operate reset gpio
++	 * @init: the time (in milliseconds) that it takes for the panel to
++	 *           power on and dsi host can send command to panel
++	 * @prepare: the time (in milliseconds) that it takes for the panel to
++	 *           become ready and start receiving video data
++	 * @enable: the time (in milliseconds) that it takes for the panel to
++	 *          display the first valid frame after starting to receive
++	 *          video data
++	 * @disable: the time (in milliseconds) that it takes for the panel to
++	 *           turn the display off (no content is visible)
++	 * @unprepare: the time (in milliseconds) that it takes for the panel
++	 *             to power itself down completely
++	 */
++	struct {
++		unsigned int reset;
++		unsigned int init;
++		unsigned int prepare;
++		unsigned int enable;
++		unsigned int disable;
++		unsigned int unprepare;
++	} delay;
++
++	u32 bus_format;
++};
++
++struct panel_simple {
++	struct drm_panel base;
++	struct mipi_dsi_device *dsi;
++	bool prepared;
++	bool enabled;
++	bool power_invert;
++
++	struct device *dev;
++	const struct panel_desc *desc;
++
++	struct backlight_device *backlight;
++	struct regulator *supply;
++	struct i2c_adapter *ddc;
++
++	struct gpio_desc *enable_gpio;
++	struct gpio_desc *reset_gpio;
++	int cmd_type;
++
++	struct gpio_desc *spi_sdi_gpio;
++	struct gpio_desc *spi_scl_gpio;
++	struct gpio_desc *spi_cs_gpio;
++
++	struct panel_cmds *on_cmds;
++	struct panel_cmds *off_cmds;
++	struct device_node *np_crtc;
++};
++
++enum rockchip_cmd_type {
++	CMD_TYPE_DEFAULT,
++	CMD_TYPE_SPI,
++	CMD_TYPE_MCU
++};
++
++enum MCU_IOCTL {
++	MCU_WRCMD = 0,
++	MCU_WRDATA,
++	MCU_SETBYPASS,
++};
++
++static void panel_simple_sleep(unsigned int msec)
++{
++	if (msec > 20)
++		msleep(msec);
++	else
++		usleep_range(msec * 1000, (msec + 1) * 1000);
++}
++
++static inline int get_panel_cmd_type(const char *s)
++{
++	if (!s)
++		return -EINVAL;
++
++	if (strncmp(s, "spi", 3) == 0)
++		return CMD_TYPE_SPI;
++	else if (strncmp(s, "mcu", 3) == 0)
++		return CMD_TYPE_MCU;
++
++	return CMD_TYPE_DEFAULT;
++}
++
++static inline struct panel_simple *to_panel_simple(struct drm_panel *panel)
++{
++	return container_of(panel, struct panel_simple, base);
++}
++
++static void panel_simple_cmds_cleanup(struct panel_simple *p)
++{
++	if (p->on_cmds) {
++		kfree(p->on_cmds->buf);
++		kfree(p->on_cmds->cmds);
++	}
++
++	if (p->off_cmds) {
++		kfree(p->off_cmds->buf);
++		kfree(p->off_cmds->cmds);
++	}
++}
++
++static int panel_simple_parse_cmds(struct device *dev,
++				   const u8 *data, int blen,
++				   struct panel_cmds *pcmds)
++{
++	unsigned int len;
++	char *buf, *bp;
++	struct cmd_ctrl_hdr *dchdr;
++	int i, cnt;
++
++	if (!pcmds)
++		return -EINVAL;
++
++	buf = kmemdup(data, blen, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	/* scan init commands */
++	bp = buf;
++	len = blen;
++	cnt = 0;
++	while (len > sizeof(*dchdr)) {
++		dchdr = (struct cmd_ctrl_hdr *)bp;
++
++		if (dchdr->dlen > len) {
++			dev_err(dev, "%s: error, len=%d", __func__,
++				dchdr->dlen);
++			return -EINVAL;
++		}
++
++		bp += sizeof(*dchdr);
++		len -= sizeof(*dchdr);
++		bp += dchdr->dlen;
++		len -= dchdr->dlen;
++		cnt++;
++	}
++
++	if (len != 0) {
++		dev_err(dev, "%s: dcs_cmd=%x len=%d error!",
++			__func__, buf[0], blen);
++		kfree(buf);
++		return -EINVAL;
++	}
++
++	pcmds->cmds = kcalloc(cnt, sizeof(struct cmd_desc), GFP_KERNEL);
++	if (!pcmds->cmds) {
++		kfree(buf);
++		return -ENOMEM;
++	}
++
++	pcmds->cmd_cnt = cnt;
++	pcmds->buf = buf;
++	pcmds->blen = blen;
++
++	bp = buf;
++	len = blen;
++	for (i = 0; i < cnt; i++) {
++		dchdr = (struct cmd_ctrl_hdr *)bp;
++		len -= sizeof(*dchdr);
++		bp += sizeof(*dchdr);
++		pcmds->cmds[i].dchdr = *dchdr;
++		pcmds->cmds[i].payload = bp;
++		bp += dchdr->dlen;
++		len -= dchdr->dlen;
++	}
++
++	return 0;
++}
++
++static void panel_simple_spi_write_cmd(struct panel_simple *panel,
++				       u8 type, int value)
++{
++	int i;
++
++	gpiod_direction_output(panel->spi_cs_gpio, 0);
++
++	if (type == 0)
++		value &= (~(1 << 8));
++	else
++		value |= (1 << 8);
++
++	for (i = 0; i < 9; i++) {
++		if (value & 0x100)
++			gpiod_direction_output(panel->spi_sdi_gpio, 1);
++		else
++			gpiod_direction_output(panel->spi_sdi_gpio, 0);
++
++		gpiod_direction_output(panel->spi_scl_gpio, 0);
++		udelay(10);
++		gpiod_direction_output(panel->spi_scl_gpio, 1);
++		value <<= 1;
++		udelay(10);
++	}
++
++	gpiod_direction_output(panel->spi_cs_gpio, 1);
++}
++
++static int panel_simple_mcu_send_cmds(struct panel_simple *panel,
++				      struct panel_cmds *cmds)
++{
++	int i;
++
++	if (!cmds)
++		return -EINVAL;
++
++	rockchip_drm_crtc_send_mcu_cmd(panel->base.drm,
++				       panel->np_crtc, MCU_SETBYPASS, 1);
++	for (i = 0; i < cmds->cmd_cnt; i++) {
++		struct cmd_desc *cmd = &cmds->cmds[i];
++		u32 value = 0;
++
++		value = cmd->payload[0];
++		rockchip_drm_crtc_send_mcu_cmd(panel->base.drm, panel->np_crtc,
++					       cmd->dchdr.dtype, value);
++		if (cmd->dchdr.wait)
++			panel_simple_sleep(cmd->dchdr.wait);
++	}
++	rockchip_drm_crtc_send_mcu_cmd(panel->base.drm,
++				       panel->np_crtc, MCU_SETBYPASS, 0);
++
++	return 0;
++}
++
++static int panel_simple_spi_send_cmds(struct panel_simple *panel,
++				      struct panel_cmds *cmds)
++{
++	int i;
++
++	if (!cmds)
++		return -EINVAL;
++
++	for (i = 0; i < cmds->cmd_cnt; i++) {
++		struct cmd_desc *cmd = &cmds->cmds[i];
++		int value = 0;
++
++		if (cmd->dchdr.dlen == 2)
++			value = (cmd->payload[0] << 8) | cmd->payload[1];
++		else
++			value = cmd->payload[0];
++		panel_simple_spi_write_cmd(panel, cmd->dchdr.dtype, value);
++
++		if (cmd->dchdr.wait)
++			panel_simple_sleep(cmd->dchdr.wait);
++	}
++
++	return 0;
++}
++
++#if IS_ENABLED(CONFIG_DRM_MIPI_DSI)
++static int panel_simple_dsi_send_cmds(struct panel_simple *panel,
++				      struct panel_cmds *cmds)
++{
++	struct mipi_dsi_device *dsi = panel->dsi;
++	int i, err;
++
++	if (!cmds)
++		return -EINVAL;
++
++	for (i = 0; i < cmds->cmd_cnt; i++) {
++		struct cmd_desc *cmd = &cmds->cmds[i];
++
++		switch (cmd->dchdr.dtype) {
++		case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
++		case MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM:
++		case MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM:
++		case MIPI_DSI_GENERIC_LONG_WRITE:
++			err = mipi_dsi_generic_write(dsi, cmd->payload,
++						     cmd->dchdr.dlen);
++			break;
++		case MIPI_DSI_DCS_SHORT_WRITE:
++		case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
++		case MIPI_DSI_DCS_LONG_WRITE:
++			err = mipi_dsi_dcs_write_buffer(dsi, cmd->payload,
++							cmd->dchdr.dlen);
++			break;
++		default:
++			return -EINVAL;
++		}
++
++		if (err < 0)
++			dev_err(panel->dev, "failed to write dcs cmd: %d\n",
++				err);
++
++		if (cmd->dchdr.wait)
++			panel_simple_sleep(cmd->dchdr.wait);
++	}
++
++	return 0;
++}
++#else
++static inline int panel_simple_dsi_send_cmds(struct panel_simple *panel,
++					     struct panel_cmds *cmds)
++{
++	return -EINVAL;
++}
++#endif
++
++static int panel_simple_get_cmds(struct panel_simple *panel)
++{
++	const void *data;
++	int len;
++	int err;
++
++	data = of_get_property(panel->dev->of_node, "panel-init-sequence",
++			       &len);
++	if (data) {
++		panel->on_cmds = devm_kzalloc(panel->dev,
++					      sizeof(*panel->on_cmds),
++					      GFP_KERNEL);
++		if (!panel->on_cmds)
++			return -ENOMEM;
++
++		err = panel_simple_parse_cmds(panel->dev, data, len,
++					      panel->on_cmds);
++		if (err) {
++			dev_err(panel->dev, "failed to parse panel init sequence\n");
++			return err;
++		}
++	}
++
++	data = of_get_property(panel->dev->of_node, "panel-exit-sequence",
++			       &len);
++	if (data) {
++		panel->off_cmds = devm_kzalloc(panel->dev,
++					       sizeof(*panel->off_cmds),
++					       GFP_KERNEL);
++		if (!panel->off_cmds)
++			return -ENOMEM;
++
++		err = panel_simple_parse_cmds(panel->dev, data, len,
++					      panel->off_cmds);
++		if (err) {
++			dev_err(panel->dev, "failed to parse panel exit sequence\n");
++			return err;
++		}
++	}
++	return 0;
++}
++
++static int panel_simple_get_fixed_modes(struct panel_simple *panel)
++{
++	struct drm_connector *connector = panel->base.connector;
++	struct drm_device *drm = panel->base.drm;
++	struct drm_display_mode *mode;
++	unsigned int i, num = 0;
++
++	if (!panel->desc)
++		return 0;
++
++	for (i = 0; i < panel->desc->num_timings; i++) {
++		const struct display_timing *dt = &panel->desc->timings[i];
++		struct videomode vm;
++
++		videomode_from_timing(dt, &vm);
++		mode = drm_mode_create(drm);
++		if (!mode) {
++			dev_err(drm->dev, "failed to add mode %ux%u\n",
++				dt->hactive.typ, dt->vactive.typ);
++			continue;
++		}
++
++		drm_display_mode_from_videomode(&vm, mode);
++		drm_mode_set_name(mode);
++
++		drm_mode_probed_add(connector, mode);
++		num++;
++	}
++
++	for (i = 0; i < panel->desc->num_modes; i++) {
++		const struct drm_display_mode *m = &panel->desc->modes[i];
++
++		mode = drm_mode_duplicate(drm, m);
++		if (!mode) {
++			dev_err(drm->dev, "failed to add mode %ux%u@%u\n",
++				m->hdisplay, m->vdisplay, m->vrefresh);
++			continue;
++		}
++
++		drm_mode_set_name(mode);
++
++		drm_mode_probed_add(connector, mode);
++		num++;
++	}
++
++	connector->display_info.bpc = panel->desc->bpc;
++	connector->display_info.width_mm = panel->desc->size.width;
++	connector->display_info.height_mm = panel->desc->size.height;
++	if (panel->desc->bus_format)
++		drm_display_info_set_bus_formats(&connector->display_info,
++						 &panel->desc->bus_format, 1);
++
++	return num;
++}
++
++static int panel_simple_of_get_native_mode(struct panel_simple *panel)
++{
++	struct drm_connector *connector = panel->base.connector;
++	struct drm_device *drm = panel->base.drm;
++	struct drm_display_mode *mode;
++	struct device_node *timings_np;
++	int ret;
++
++	timings_np = of_get_child_by_name(panel->dev->of_node,
++					  "display-timings");
++	if (!timings_np) {
++		dev_dbg(panel->dev, "failed to find display-timings node\n");
++		return 0;
++	}
++
++	of_node_put(timings_np);
++	mode = drm_mode_create(drm);
++	if (!mode)
++		return 0;
++
++	ret = of_get_drm_display_mode(panel->dev->of_node, mode,
++				      OF_USE_NATIVE_MODE);
++	if (ret) {
++		dev_dbg(panel->dev, "failed to find dts display timings\n");
++		drm_mode_destroy(drm, mode);
++		return 0;
++	}
++
++	drm_mode_set_name(mode);
++	mode->type |= DRM_MODE_TYPE_PREFERRED;
++	drm_mode_probed_add(connector, mode);
++
++	return 1;
++}
++
++static int panel_simple_regulator_enable(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int err = 0;
++
++	if (p->power_invert) {
++		if (regulator_is_enabled(p->supply) > 0)
++			regulator_disable(p->supply);
++	} else {
++		err = regulator_enable(p->supply);
++		if (err < 0) {
++			dev_err(panel->dev, "failed to enable supply: %d\n",
++				err);
++			return err;
++		}
++	}
++
++	return err;
++}
++
++static int panel_simple_regulator_disable(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int err = 0;
++
++	if (p->power_invert) {
++		if (!regulator_is_enabled(p->supply)) {
++			err = regulator_enable(p->supply);
++			if (err < 0) {
++				dev_err(panel->dev, "failed to enable supply: %d\n",
++					err);
++				return err;
++			}
++		}
++	} else {
++		regulator_disable(p->supply);
++	}
++
++	return err;
++}
++
++static int panel_simple_loader_protect(struct drm_panel *panel, bool on)
++{
++	int err;
++
++	if (on) {
++		err = panel_simple_regulator_enable(panel);
++		if (err < 0) {
++			dev_err(panel->dev, "failed to enable supply: %d\n",
++				err);
++			return err;
++		}
++	} else {
++		panel_simple_regulator_disable(panel);
++	}
++
++	return 0;
++}
++
++static int panel_simple_disable(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int err = 0;
++
++	if (!p->enabled)
++		return 0;
++
++	if (p->backlight) {
++		p->backlight->props.power = FB_BLANK_POWERDOWN;
++		backlight_update_status(p->backlight);
++	}
++
++	if (p->desc && p->desc->delay.disable)
++		panel_simple_sleep(p->desc->delay.disable);
++
++	if (p->cmd_type == CMD_TYPE_MCU) {
++		err = panel_simple_mcu_send_cmds(p, p->off_cmds);
++		if (err)
++			dev_err(p->dev, "failed to send mcu off cmds\n");
++	}
++	p->enabled = false;
++
++	return 0;
++}
++
++static int panel_simple_unprepare(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int err = 0;
++
++	if (!p->prepared)
++		return 0;
++
++	if (p->off_cmds) {
++		if (p->dsi)
++			err = panel_simple_dsi_send_cmds(p, p->off_cmds);
++		else if (p->cmd_type == CMD_TYPE_SPI)
++			err = panel_simple_spi_send_cmds(p, p->off_cmds);
++		if (err)
++			dev_err(p->dev, "failed to send off cmds\n");
++	}
++
++	if (p->reset_gpio)
++		gpiod_direction_output(p->reset_gpio, 1);
++
++	if (p->enable_gpio)
++		gpiod_direction_output(p->enable_gpio, 0);
++
++	panel_simple_regulator_disable(panel);
++
++	if (p->desc && p->desc->delay.unprepare)
++		panel_simple_sleep(p->desc->delay.unprepare);
++
++	p->prepared = false;
++
++	return 0;
++}
++
++static int panel_simple_prepare(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int err;
++
++	if (p->prepared)
++		return 0;
++
++	err = panel_simple_regulator_enable(panel);
++	if (err < 0) {
++		dev_err(panel->dev, "failed to enable supply: %d\n", err);
++		return err;
++	}
++
++	if (p->enable_gpio)
++		gpiod_direction_output(p->enable_gpio, 1);
++
++	if (p->desc && p->desc->delay.prepare)
++		panel_simple_sleep(p->desc->delay.prepare);
++
++	if (p->reset_gpio)
++		gpiod_direction_output(p->reset_gpio, 1);
++
++	if (p->desc && p->desc->delay.reset)
++		panel_simple_sleep(p->desc->delay.reset);
++
++	if (p->reset_gpio)
++		gpiod_direction_output(p->reset_gpio, 0);
++
++	if (p->desc && p->desc->delay.init)
++		panel_simple_sleep(p->desc->delay.init);
++
++	if (p->on_cmds) {
++		if (p->dsi)
++			err = panel_simple_dsi_send_cmds(p, p->on_cmds);
++		else if (p->cmd_type == CMD_TYPE_SPI)
++			err = panel_simple_spi_send_cmds(p, p->on_cmds);
++		if (err)
++			dev_err(p->dev, "failed to send on cmds\n");
++	}
++
++	p->prepared = true;
++
++	return 0;
++}
++
++static int panel_simple_enable(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int err = 0;
++
++	if (p->enabled)
++		return 0;
++
++	if (p->cmd_type == CMD_TYPE_MCU) {
++		err = panel_simple_mcu_send_cmds(p, p->on_cmds);
++		if (err)
++			dev_err(p->dev, "failed to send mcu on cmds\n");
++	}
++	if (p->desc && p->desc->delay.enable)
++		panel_simple_sleep(p->desc->delay.enable);
++
++	if (p->backlight) {
++		p->backlight->props.power = FB_BLANK_UNBLANK;
++		backlight_update_status(p->backlight);
++	}
++
++	p->enabled = true;
++
++	return 0;
++}
++
++static int panel_simple_get_modes(struct drm_panel *panel)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	int num = 0;
++
++	/* add device node plane modes */
++	num += panel_simple_of_get_native_mode(p);
++
++	/* add hard-coded panel modes */
++	num += panel_simple_get_fixed_modes(p);
++
++	/* probe EDID if a DDC bus is available */
++	if (p->ddc) {
++		struct edid *edid = drm_get_edid(panel->connector, p->ddc);
++		drm_mode_connector_update_edid_property(panel->connector, edid);
++		if (edid) {
++			num += drm_add_edid_modes(panel->connector, edid);
++			kfree(edid);
++		}
++	}
++
++	return num;
++}
++
++static int panel_simple_get_timings(struct drm_panel *panel,
++				    unsigned int num_timings,
++				    struct display_timing *timings)
++{
++	struct panel_simple *p = to_panel_simple(panel);
++	unsigned int i;
++
++	if (!p->desc)
++		return 0;
++
++	if (p->desc->num_timings < num_timings)
++		num_timings = p->desc->num_timings;
++
++	if (timings)
++		for (i = 0; i < num_timings; i++)
++			timings[i] = p->desc->timings[i];
++
++	return p->desc->num_timings;
++}
++
++static const struct drm_panel_funcs panel_simple_funcs = {
++	.loader_protect = panel_simple_loader_protect,
++	.disable = panel_simple_disable,
++	.unprepare = panel_simple_unprepare,
++	.prepare = panel_simple_prepare,
++	.enable = panel_simple_enable,
++	.get_modes = panel_simple_get_modes,
++	.get_timings = panel_simple_get_timings,
++};
++
++static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
++{
++	struct device_node *backlight, *ddc;
++	struct panel_simple *panel;
++	struct panel_desc *of_desc;
++	const char *cmd_type;
++	u32 val;
++	int err;
++
++	panel = devm_kzalloc(dev, sizeof(*panel), GFP_KERNEL);
++	if (!panel)
++		return -ENOMEM;
++
++	if (!desc)
++		of_desc = devm_kzalloc(dev, sizeof(*of_desc), GFP_KERNEL);
++	else
++		of_desc = devm_kmemdup(dev, desc, sizeof(*of_desc), GFP_KERNEL);
++
++	if (!of_property_read_u32(dev->of_node, "bus-format", &val))
++		of_desc->bus_format = val;
++	if (!of_property_read_u32(dev->of_node, "bpc", &val))
++		of_desc->bpc = val;
++	if (!of_property_read_u32(dev->of_node, "prepare-delay-ms", &val))
++		of_desc->delay.prepare = val;
++	if (!of_property_read_u32(dev->of_node, "enable-delay-ms", &val))
++		of_desc->delay.enable = val;
++	if (!of_property_read_u32(dev->of_node, "disable-delay-ms", &val))
++		of_desc->delay.disable = val;
++	if (!of_property_read_u32(dev->of_node, "unprepare-delay-ms", &val))
++		of_desc->delay.unprepare = val;
++	if (!of_property_read_u32(dev->of_node, "reset-delay-ms", &val))
++		of_desc->delay.reset = val;
++	if (!of_property_read_u32(dev->of_node, "init-delay-ms", &val))
++		of_desc->delay.init = val;
++	if (!of_property_read_u32(dev->of_node, "width-mm", &val))
++		of_desc->size.width = val;
++	if (!of_property_read_u32(dev->of_node, "height-mm", &val))
++		of_desc->size.height = val;
++
++	panel->enabled = false;
++	panel->prepared = false;
++	panel->desc = of_desc;
++	panel->dev = dev;
++
++	err = panel_simple_get_cmds(panel);
++	if (err) {
++		dev_err(dev, "failed to get init cmd: %d\n", err);
++		return err;
++	}
++	panel->supply = devm_regulator_get(dev, "power");
++	if (IS_ERR(panel->supply))
++		return PTR_ERR(panel->supply);
++
++	panel->enable_gpio = devm_gpiod_get_optional(dev, "enable", 0);
++	if (IS_ERR(panel->enable_gpio)) {
++		err = PTR_ERR(panel->enable_gpio);
++		dev_err(dev, "failed to request enable GPIO: %d\n", err);
++		return err;
++	}
++
++	panel->reset_gpio = devm_gpiod_get_optional(dev, "reset", 0);
++	if (IS_ERR(panel->reset_gpio)) {
++		err = PTR_ERR(panel->reset_gpio);
++		dev_err(dev, "failed to request reset GPIO: %d\n", err);
++		return err;
++	}
++
++	if (of_property_read_string(dev->of_node, "rockchip,cmd-type",
++				    &cmd_type))
++		panel->cmd_type = CMD_TYPE_DEFAULT;
++	else
++		panel->cmd_type = get_panel_cmd_type(cmd_type);
++
++	if (panel->cmd_type == CMD_TYPE_SPI) {
++		panel->spi_sdi_gpio =
++				devm_gpiod_get_optional(dev, "spi-sdi", 0);
++		if (IS_ERR(panel->spi_sdi_gpio)) {
++			err = PTR_ERR(panel->spi_sdi_gpio);
++			dev_err(dev, "failed to request spi_sdi: %d\n", err);
++			return err;
++		}
++
++		panel->spi_scl_gpio =
++				devm_gpiod_get_optional(dev, "spi-scl", 0);
++		if (IS_ERR(panel->spi_scl_gpio)) {
++			err = PTR_ERR(panel->spi_scl_gpio);
++			dev_err(dev, "failed to request spi_scl: %d\n", err);
++			return err;
++		}
++
++		panel->spi_cs_gpio = devm_gpiod_get_optional(dev, "spi-cs", 0);
++		if (IS_ERR(panel->spi_cs_gpio)) {
++			err = PTR_ERR(panel->spi_cs_gpio);
++			dev_err(dev, "failed to request spi_cs: %d\n", err);
++			return err;
++		}
++		gpiod_direction_output(panel->spi_cs_gpio, 1);
++		gpiod_direction_output(panel->spi_sdi_gpio, 1);
++		gpiod_direction_output(panel->spi_scl_gpio, 1);
++	} else if (panel->cmd_type == CMD_TYPE_MCU) {
++		struct device_node *port, *endpoint;
++		struct device_node *np;
++
++		port = of_graph_get_port_by_id(dev->of_node, 0);
++		if (port) {
++			endpoint = of_get_next_child(port, NULL);
++			/* get connect device node */
++			np = of_graph_get_remote_port_parent(endpoint);
++
++			port = of_graph_get_port_by_id(np, 0);
++			if (port) {
++				endpoint = of_get_next_child(port, NULL);
++				/* get crtc device node */
++				np = of_graph_get_remote_port_parent(endpoint);
++				panel->np_crtc = np;
++			}
++		}
++	}
++	panel->power_invert =
++			of_property_read_bool(dev->of_node, "power-invert");
++
++	backlight = of_parse_phandle(dev->of_node, "backlight", 0);
++	if (backlight) {
++		panel->backlight = of_find_backlight_by_node(backlight);
++		of_node_put(backlight);
++
++		if (!panel->backlight)
++			return -EPROBE_DEFER;
++	}
++
++	ddc = of_parse_phandle(dev->of_node, "ddc-i2c-bus", 0);
++	if (ddc) {
++		panel->ddc = of_find_i2c_adapter_by_node(ddc);
++		of_node_put(ddc);
++
++		if (!panel->ddc) {
++			err = -EPROBE_DEFER;
++			goto free_backlight;
++		}
++	}
++
++	drm_panel_init(&panel->base);
++	panel->base.dev = dev;
++	panel->base.funcs = &panel_simple_funcs;
++
++	err = drm_panel_add(&panel->base);
++	if (err < 0)
++		goto free_ddc;
++
++	dev_set_drvdata(dev, panel);
++
++	return 0;
++
++free_ddc:
++	if (panel->ddc)
++		put_device(&panel->ddc->dev);
++free_backlight:
++	if (panel->backlight)
++		put_device(&panel->backlight->dev);
++
++	return err;
++}
++
++static int panel_simple_remove(struct device *dev)
++{
++	struct panel_simple *panel = dev_get_drvdata(dev);
++
++	drm_panel_detach(&panel->base);
++	drm_panel_remove(&panel->base);
++
++	panel_simple_disable(&panel->base);
++	panel_simple_unprepare(&panel->base);
++
++	if (panel->ddc)
++		put_device(&panel->ddc->dev);
++
++	if (panel->backlight)
++		put_device(&panel->backlight->dev);
++
++	panel_simple_cmds_cleanup(panel);
++
++	return 0;
++}
++
++static void panel_simple_shutdown(struct device *dev)
++{
++	struct panel_simple *panel = dev_get_drvdata(dev);
++
++	panel_simple_disable(&panel->base);
++
++	if (panel->reset_gpio)
++		gpiod_direction_output(panel->reset_gpio, 1);
++
++	if (panel->enable_gpio)
++		gpiod_direction_output(panel->enable_gpio, 0);
++
++	panel_simple_regulator_disable(&panel->base);
++}
++
++static const struct drm_display_mode ampire_am800480r3tmqwa1h_mode = {
++	.clock = 33333,
++	.hdisplay = 800,
++	.hsync_start = 800 + 0,
++	.hsync_end = 800 + 0 + 255,
++	.htotal = 800 + 0 + 255 + 0,
++	.vdisplay = 480,
++	.vsync_start = 480 + 2,
++	.vsync_end = 480 + 2 + 45,
++	.vtotal = 480 + 2 + 45 + 0,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC,
++};
++
++static const struct panel_desc ampire_am800480r3tmqwa1h = {
++	.modes = &ampire_am800480r3tmqwa1h_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 152,
++		.height = 91,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode auo_b101aw03_mode = {
++	.clock = 51450,
++	.hdisplay = 1024,
++	.hsync_start = 1024 + 156,
++	.hsync_end = 1024 + 156 + 8,
++	.htotal = 1024 + 156 + 8 + 156,
++	.vdisplay = 600,
++	.vsync_start = 600 + 16,
++	.vsync_end = 600 + 16 + 6,
++	.vtotal = 600 + 16 + 6 + 16,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc auo_b101aw03 = {
++	.modes = &auo_b101aw03_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 223,
++		.height = 125,
++	},
++};
++
++static const struct drm_display_mode auo_b101ean01_mode = {
++	.clock = 72500,
++	.hdisplay = 1280,
++	.hsync_start = 1280 + 119,
++	.hsync_end = 1280 + 119 + 32,
++	.htotal = 1280 + 119 + 32 + 21,
++	.vdisplay = 800,
++	.vsync_start = 800 + 4,
++	.vsync_end = 800 + 4 + 20,
++	.vtotal = 800 + 4 + 20 + 8,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc auo_b101ean01 = {
++	.modes = &auo_b101ean01_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 217,
++		.height = 136,
++	},
++};
++
++static const struct drm_display_mode auo_b101ew05_mode = {
++	.clock = 71000,
++	.hdisplay = 1280,
++	.hsync_start = 1280 + 18,
++	.hsync_end = 1280 + 18 + 10,
++	.htotal = 1280 + 18 + 10 + 100,
++	.vdisplay = 800,
++	.vsync_start = 800 + 6,
++	.vsync_end = 800 + 6 + 2,
++	.vtotal = 800 + 6 + 2 + 8,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc auo_b101ew05 = {
++	.modes = &auo_b101ew05_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 217,
++		.height = 136,
++	},
++};
++
++static const struct drm_display_mode auo_b101xtn01_mode = {
++	.clock = 72000,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 20,
++	.hsync_end = 1366 + 20 + 70,
++	.htotal = 1366 + 20 + 70,
++	.vdisplay = 768,
++	.vsync_start = 768 + 14,
++	.vsync_end = 768 + 14 + 42,
++	.vtotal = 768 + 14 + 42,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc auo_b101xtn01 = {
++	.modes = &auo_b101xtn01_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 223,
++		.height = 125,
++	},
++};
++
++static const struct drm_display_mode auo_b116xw03_mode = {
++	.clock = 70589,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 40,
++	.hsync_end = 1366 + 40 + 40,
++	.htotal = 1366 + 40 + 40 + 32,
++	.vdisplay = 768,
++	.vsync_start = 768 + 10,
++	.vsync_end = 768 + 10 + 12,
++	.vtotal = 768 + 10 + 12 + 6,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc auo_b116xw03 = {
++	.modes = &auo_b116xw03_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 256,
++		.height = 144,
++	},
++};
++
++static const struct drm_display_mode auo_b125han03_mode = {
++	.clock = 146900,
++	.hdisplay = 1920,
++	.hsync_start = 1920 + 48,
++	.hsync_end = 1920 + 48 + 32,
++	.htotal = 1920 + 48 + 32 + 140,
++	.vdisplay = 1080,
++	.vsync_start = 1080 + 2,
++	.vsync_end = 1080 + 2 + 5,
++	.vtotal = 1080 + 2 + 5 + 57,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc auo_b125han03 = {
++	.modes = &auo_b125han03_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 276,
++		.height = 156,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode auo_b133xtn01_mode = {
++	.clock = 69500,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 48,
++	.hsync_end = 1366 + 48 + 32,
++	.htotal = 1366 + 48 + 32 + 20,
++	.vdisplay = 768,
++	.vsync_start = 768 + 3,
++	.vsync_end = 768 + 3 + 6,
++	.vtotal = 768 + 3 + 6 + 13,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc auo_b133xtn01 = {
++	.modes = &auo_b133xtn01_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 293,
++		.height = 165,
++	},
++};
++
++static const struct drm_display_mode auo_b133htn01_mode = {
++	.clock = 150660,
++	.hdisplay = 1920,
++	.hsync_start = 1920 + 172,
++	.hsync_end = 1920 + 172 + 80,
++	.htotal = 1920 + 172 + 80 + 60,
++	.vdisplay = 1080,
++	.vsync_start = 1080 + 25,
++	.vsync_end = 1080 + 25 + 10,
++	.vtotal = 1080 + 25 + 10 + 10,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc auo_b133htn01 = {
++	.modes = &auo_b133htn01_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 293,
++		.height = 165,
++	},
++	.delay = {
++		.prepare = 105,
++		.enable = 20,
++		.unprepare = 50,
++	},
++};
++
++static const struct drm_display_mode avic_tm070ddh03_mode = {
++	.clock = 51200,
++	.hdisplay = 1024,
++	.hsync_start = 1024 + 160,
++	.hsync_end = 1024 + 160 + 4,
++	.htotal = 1024 + 160 + 4 + 156,
++	.vdisplay = 600,
++	.vsync_start = 600 + 17,
++	.vsync_end = 600 + 17 + 1,
++	.vtotal = 600 + 17 + 1 + 17,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc avic_tm070ddh03 = {
++	.modes = &avic_tm070ddh03_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 154,
++		.height = 90,
++	},
++	.delay = {
++		.prepare = 20,
++		.enable = 200,
++		.disable = 200,
++	},
++};
++
++static const struct drm_display_mode boe_mv238qum_n20_mode = {
++	.clock = 559440,
++	.hdisplay = 3840,
++	.hsync_start = 3840 + 150,
++	.hsync_end = 3840 + 150 + 60,
++	.htotal = 3840 + 150 + 60 + 150,
++	.vdisplay = 2160,
++	.vsync_start = 2160 + 24,
++	.vsync_end = 2160 + 24 + 12,
++	.vtotal = 2160 + 24 + 12 + 24,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc boe_mv238qum_n20 = {
++	.modes = &boe_mv238qum_n20_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 527,
++		.height = 296,
++	},
++	.delay = {
++		.prepare = 20,
++		.enable = 20,
++		.unprepare = 20,
++		.disable = 20,
++	},
++};
++
++static const struct drm_display_mode boe_mv270qum_n10_mode = {
++	.clock = 533000,
++	.hdisplay = 3840,
++	.hsync_start = 3840 + 78,
++	.hsync_end = 3840 + 78 + 28,
++	.htotal = 3840 + 78 + 28 + 54,
++	.vdisplay = 2160,
++	.vsync_start = 2160 + 47,
++	.vsync_end = 2160 + 47 + 8,
++	.vtotal = 2160 + 47 + 8 + 7,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc boe_mv270qum_n10 = {
++	.modes = &boe_mv270qum_n10_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 597,
++		.height = 336,
++	},
++};
++
++static const struct drm_display_mode boe_nv125fhm_n73_mode = {
++	.clock = 72300,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 80,
++	.hsync_end = 1366 + 80 + 20,
++	.htotal = 1366 + 80 + 20 + 60,
++	.vdisplay = 768,
++	.vsync_start = 768 + 12,
++	.vsync_end = 768 + 12 + 2,
++	.vtotal = 768 + 12 + 2 + 8,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc boe_nv125fhm_n73 = {
++	.modes = &boe_nv125fhm_n73_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 276,
++		.height = 156,
++	},
++	.delay = {
++		.unprepare = 160,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode chunghwa_claa070wp03xg_mode = {
++	.clock = 67000,
++	.hdisplay = 800,
++	.hsync_start = 800 + 24,
++	.hsync_end = 800 + 24 + 16,
++	.htotal = 800 + 24 + 16 + 24,
++	.vdisplay = 1280,
++	.vsync_start = 1280 + 2,
++	.vsync_end = 1280 + 2 + 2,
++	.vtotal = 1280 + 2 + 2 + 4,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc chunghwa_claa070wp03xg = {
++	.modes = &chunghwa_claa070wp03xg_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 94,
++		.height = 151,
++	},
++};
++
++static const struct drm_display_mode chunghwa_claa101wa01a_mode = {
++	.clock = 72070,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 58,
++	.hsync_end = 1366 + 58 + 58,
++	.htotal = 1366 + 58 + 58 + 58,
++	.vdisplay = 768,
++	.vsync_start = 768 + 4,
++	.vsync_end = 768 + 4 + 4,
++	.vtotal = 768 + 4 + 4 + 4,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc chunghwa_claa101wa01a = {
++	.modes = &chunghwa_claa101wa01a_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 220,
++		.height = 120,
++	},
++};
++
++static const struct drm_display_mode chunghwa_claa101wb01_mode = {
++	.clock = 69300,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 48,
++	.hsync_end = 1366 + 48 + 32,
++	.htotal = 1366 + 48 + 32 + 20,
++	.vdisplay = 768,
++	.vsync_start = 768 + 16,
++	.vsync_end = 768 + 16 + 8,
++	.vtotal = 768 + 16 + 8 + 16,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc chunghwa_claa101wb01 = {
++	.modes = &chunghwa_claa101wb01_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 223,
++		.height = 125,
++	},
++};
++
++static const struct drm_display_mode edt_et057090dhu_mode = {
++	.clock = 25175,
++	.hdisplay = 640,
++	.hsync_start = 640 + 16,
++	.hsync_end = 640 + 16 + 30,
++	.htotal = 640 + 16 + 30 + 114,
++	.vdisplay = 480,
++	.vsync_start = 480 + 10,
++	.vsync_end = 480 + 10 + 3,
++	.vtotal = 480 + 10 + 3 + 32,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc edt_et057090dhu = {
++	.modes = &edt_et057090dhu_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 115,
++		.height = 86,
++	},
++};
++
++static const struct drm_display_mode edt_etm0700g0dh6_mode = {
++	.clock = 33260,
++	.hdisplay = 800,
++	.hsync_start = 800 + 40,
++	.hsync_end = 800 + 40 + 128,
++	.htotal = 800 + 40 + 128 + 88,
++	.vdisplay = 480,
++	.vsync_start = 480 + 10,
++	.vsync_end = 480 + 10 + 2,
++	.vtotal = 480 + 10 + 2 + 33,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC,
++};
++
++static const struct panel_desc edt_etm0700g0dh6 = {
++	.modes = &edt_etm0700g0dh6_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 152,
++		.height = 91,
++	},
++};
++
++static const struct drm_display_mode foxlink_fl500wvr00_a0t_mode = {
++	.clock = 32260,
++	.hdisplay = 800,
++	.hsync_start = 800 + 168,
++	.hsync_end = 800 + 168 + 64,
++	.htotal = 800 + 168 + 64 + 88,
++	.vdisplay = 480,
++	.vsync_start = 480 + 37,
++	.vsync_end = 480 + 37 + 2,
++	.vtotal = 480 + 37 + 2 + 8,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc foxlink_fl500wvr00_a0t = {
++	.modes = &foxlink_fl500wvr00_a0t_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 108,
++		.height = 65,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
++
++static const struct drm_display_mode giantplus_gpg482739qs5_mode = {
++	.clock = 9000,
++	.hdisplay = 480,
++	.hsync_start = 480 + 5,
++	.hsync_end = 480 + 5 + 1,
++	.htotal = 480 + 5 + 1 + 40,
++	.vdisplay = 272,
++	.vsync_start = 272 + 8,
++	.vsync_end = 272 + 8 + 1,
++	.vtotal = 272 + 8 + 1 + 8,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc giantplus_gpg482739qs5 = {
++	.modes = &giantplus_gpg482739qs5_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 95,
++		.height = 54,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
++
++static const struct display_timing hannstar_hsd070pww1_timing = {
++	.pixelclock = { 64300000, 71100000, 82000000 },
++	.hactive = { 1280, 1280, 1280 },
++	.hfront_porch = { 1, 1, 10 },
++	.hback_porch = { 1, 1, 10 },
++	/*
++	 * According to the data sheet, the minimum horizontal blanking interval
++	 * is 54 clocks (1 + 52 + 1), but tests with a Nitrogen6X have shown the
++	 * minimum working horizontal blanking interval to be 60 clocks.
++	 */
++	.hsync_len = { 58, 158, 661 },
++	.vactive = { 800, 800, 800 },
++	.vfront_porch = { 1, 1, 10 },
++	.vback_porch = { 1, 1, 10 },
++	.vsync_len = { 1, 21, 203 },
++	.flags = DISPLAY_FLAGS_DE_HIGH,
++};
++
++static const struct panel_desc hannstar_hsd070pww1 = {
++	.timings = &hannstar_hsd070pww1_timing,
++	.num_timings = 1,
++	.bpc = 6,
++	.size = {
++		.width = 151,
++		.height = 94,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X7X3_SPWG,
++};
++
++static const struct display_timing hannstar_hsd100pxn1_timing = {
++	.pixelclock = { 55000000, 65000000, 75000000 },
++	.hactive = { 1024, 1024, 1024 },
++	.hfront_porch = { 40, 40, 40 },
++	.hback_porch = { 220, 220, 220 },
++	.hsync_len = { 20, 60, 100 },
++	.vactive = { 768, 768, 768 },
++	.vfront_porch = { 7, 7, 7 },
++	.vback_porch = { 21, 21, 21 },
++	.vsync_len = { 10, 10, 10 },
++	.flags = DISPLAY_FLAGS_DE_HIGH,
++};
++
++static const struct panel_desc hannstar_hsd100pxn1 = {
++	.timings = &hannstar_hsd100pxn1_timing,
++	.num_timings = 1,
++	.bpc = 6,
++	.size = {
++		.width = 203,
++		.height = 152,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X7X3_SPWG,
++};
++
++static const struct drm_display_mode hitachi_tx23d38vm0caa_mode = {
++	.clock = 33333,
++	.hdisplay = 800,
++	.hsync_start = 800 + 85,
++	.hsync_end = 800 + 85 + 86,
++	.htotal = 800 + 85 + 86 + 85,
++	.vdisplay = 480,
++	.vsync_start = 480 + 16,
++	.vsync_end = 480 + 16 + 13,
++	.vtotal = 480 + 16 + 13 + 16,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc hitachi_tx23d38vm0caa = {
++	.modes = &hitachi_tx23d38vm0caa_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 195,
++		.height = 117,
++	},
++};
++
++static const struct drm_display_mode innolux_at043tn24_mode = {
++	.clock = 9000,
++	.hdisplay = 480,
++	.hsync_start = 480 + 2,
++	.hsync_end = 480 + 2 + 41,
++	.htotal = 480 + 2 + 41 + 2,
++	.vdisplay = 272,
++	.vsync_start = 272 + 2,
++	.vsync_end = 272 + 2 + 11,
++	.vtotal = 272 + 2 + 11 + 2,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC,
++};
++
++static const struct panel_desc innolux_at043tn24 = {
++	.modes = &innolux_at043tn24_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 95,
++		.height = 54,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
++
++static const struct drm_display_mode innolux_g121i1_l01_mode = {
++	.clock = 71000,
++	.hdisplay = 1280,
++	.hsync_start = 1280 + 64,
++	.hsync_end = 1280 + 64 + 32,
++	.htotal = 1280 + 64 + 32 + 64,
++	.vdisplay = 800,
++	.vsync_start = 800 + 9,
++	.vsync_end = 800 + 9 + 6,
++	.vtotal = 800 + 9 + 6 + 9,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc innolux_g121i1_l01 = {
++	.modes = &innolux_g121i1_l01_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 261,
++		.height = 163,
++	},
++};
++
++static const struct drm_display_mode innolux_n116bge_mode = {
++	.clock = 76420,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 136,
++	.hsync_end = 1366 + 136 + 30,
++	.htotal = 1366 + 136 + 30 + 60,
++	.vdisplay = 768,
++	.vsync_start = 768 + 8,
++	.vsync_end = 768 + 8 + 12,
++	.vtotal = 768 + 8 + 12 + 12,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC,
++};
++
++static const struct panel_desc innolux_n116bge = {
++	.modes = &innolux_n116bge_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 256,
++		.height = 144,
++	},
++};
++
++static const struct drm_display_mode innolux_n125hce_mode = {
++	.clock = 138780,
++	.hdisplay = 1920,
++	.hsync_start = 1920 + 80,
++	.hsync_end = 1920 + 80 + 30,
++	.htotal = 1920 + 80 + 30 + 50,
++	.vdisplay = 1080,
++	.vsync_start = 1080 + 12,
++	.vsync_end = 1080 + 12 + 4,
++	.vtotal = 1080 + 12 + 4 + 16,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC,
++};
++
++static const struct panel_desc innolux_n125hce = {
++	.modes = &innolux_n125hce_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 283,
++		.height = 168,
++	},
++	.delay = {
++		.unprepare = 600,
++		.enable = 100,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode innolux_n156bge_l21_mode = {
++	.clock = 69300,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 16,
++	.hsync_end = 1366 + 16 + 34,
++	.htotal = 1366 + 16 + 34 + 50,
++	.vdisplay = 768,
++	.vsync_start = 768 + 2,
++	.vsync_end = 768 + 2 + 6,
++	.vtotal = 768 + 2 + 6 + 12,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc innolux_n156bge_l21 = {
++	.modes = &innolux_n156bge_l21_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 344,
++		.height = 193,
++	},
++};
++
++static const struct drm_display_mode innolux_zj070na_01p_mode = {
++	.clock = 51501,
++	.hdisplay = 1024,
++	.hsync_start = 1024 + 128,
++	.hsync_end = 1024 + 128 + 64,
++	.htotal = 1024 + 128 + 64 + 128,
++	.vdisplay = 600,
++	.vsync_start = 600 + 16,
++	.vsync_end = 600 + 16 + 4,
++	.vtotal = 600 + 16 + 4 + 16,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc innolux_zj070na_01p = {
++	.modes = &innolux_zj070na_01p_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 1024,
++		.height = 600,
++	},
++};
++
++static const struct drm_display_mode lg_lb070wv8_mode = {
++	.clock = 33246,
++	.hdisplay = 800,
++	.hsync_start = 800 + 88,
++	.hsync_end = 800 + 88 + 80,
++	.htotal = 800 + 88 + 80 + 88,
++	.vdisplay = 480,
++	.vsync_start = 480 + 10,
++	.vsync_end = 480 + 10 + 25,
++	.vtotal = 480 + 10 + 25 + 10,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc lg_lb070wv8 = {
++	.modes = &lg_lb070wv8_mode,
++	.num_modes = 1,
++	.bpc = 16,
++	.size = {
++		.width = 151,
++		.height = 91,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X7X4_SPWG,
++};
++
++static const struct drm_display_mode sharp_lcd_f402_mode = {
++	.clock = 205000,
++	.hdisplay = 1536,
++	.hsync_start = 1536 + 12,
++	.hsync_end = 1536 + 12 + 48,
++	.htotal = 1536 + 12 + 48 + 16,
++	.vdisplay = 2048,
++	.vsync_start = 2048 + 8,
++	.vsync_end = 2048 + 8 + 8,
++	.vtotal = 2048 + 8 + 8 + 4,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc sharp_lcd_f402 = {
++	.modes = &sharp_lcd_f402_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 95,
++		.height = 54,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode lg_lm238wr2_spa1_mode = {
++	.clock = 533250,
++	.hdisplay = 3840,
++	.hsync_start = 3840 + 48,
++	.hsync_end = 3840 + 48 + 32,
++	.htotal = 3840 + 48 + 32 + 80,
++	.vdisplay = 2160,
++	.vsync_start = 2160 + 3,
++	.vsync_end = 2160 + 3 + 5,
++	.vtotal = 2160 + 3 + 5 + 54,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc lg_lm238wr2_spa1 = {
++	.modes = &lg_lm238wr2_spa1_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 527,
++		.height = 297,
++	},
++	.delay = {
++		.prepare = 20,
++		.enable = 20,
++		.unprepare = 20,
++		.disable = 20,
++	},
++};
++
++static const struct drm_display_mode lg_lm270wr3_ssa1_mode = {
++	.clock = 533250,
++	.hdisplay = 3840,
++	.hsync_start = 3840 + 48,
++	.hsync_end = 3840 + 48 + 32,
++	.htotal = 3840 + 48 + 32 + 80,
++	.vdisplay = 2160,
++	.vsync_start = 2160 + 3,
++	.vsync_end = 2160 + 3 + 5,
++	.vtotal = 2160 + 3 + 5 + 54,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc lg_lm270wr3_ssa1 = {
++	.modes = &lg_lm270wr3_ssa1_mode,
++	.num_modes = 1,
++	.bpc = 10,
++	.size = {
++		.width = 598,
++		.height = 336,
++	},
++	.delay = {
++		.prepare = 20,
++		.enable = 20,
++		.unprepare = 20,
++		.disable = 20,
++	},
++};
++
++static const struct drm_display_mode lg_lp079qx1_sp0v_mode = {
++	.clock = 200000,
++	.hdisplay = 1536,
++	.hsync_start = 1536 + 12,
++	.hsync_end = 1536 + 12 + 16,
++	.htotal = 1536 + 12 + 16 + 48,
++	.vdisplay = 2048,
++	.vsync_start = 2048 + 8,
++	.vsync_end = 2048 + 8 + 4,
++	.vtotal = 2048 + 8 + 4 + 8,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc lg_lp079qx1_sp0v = {
++	.modes = &lg_lp079qx1_sp0v_mode,
++	.num_modes = 1,
++	.size = {
++		.width = 129,
++		.height = 171,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode lg_lp097qx1_spa1_mode = {
++	.clock = 205210,
++	.hdisplay = 2048,
++	.hsync_start = 2048 + 150,
++	.hsync_end = 2048 + 150 + 5,
++	.htotal = 2048 + 150 + 5 + 5,
++	.vdisplay = 1536,
++	.vsync_start = 1536 + 3,
++	.vsync_end = 1536 + 3 + 1,
++	.vtotal = 1536 + 3 + 1 + 9,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc lg_lp097qx1_spa1 = {
++	.modes = &lg_lp097qx1_spa1_mode,
++	.num_modes = 1,
++	.size = {
++		.width = 320,
++		.height = 187,
++	},
++};
++
++static const struct drm_display_mode lg_lp129qe_mode = {
++	.clock = 285250,
++	.hdisplay = 2560,
++	.hsync_start = 2560 + 48,
++	.hsync_end = 2560 + 48 + 32,
++	.htotal = 2560 + 48 + 32 + 80,
++	.vdisplay = 1700,
++	.vsync_start = 1700 + 3,
++	.vsync_end = 1700 + 3 + 10,
++	.vtotal = 1700 + 3 + 10 + 36,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc lg_lp129qe = {
++	.modes = &lg_lp129qe_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 272,
++		.height = 181,
++	},
++};
++
++static const struct drm_display_mode nec_nl4827hc19_05b_mode = {
++	.clock = 10870,
++	.hdisplay = 480,
++	.hsync_start = 480 + 2,
++	.hsync_end = 480 + 2 + 41,
++	.htotal = 480 + 2 + 41 + 2,
++	.vdisplay = 272,
++	.vsync_start = 272 + 2,
++	.vsync_end = 272 + 2 + 4,
++	.vtotal = 272 + 2 + 4 + 2,
++	.vrefresh = 74,
++};
++
++static const struct panel_desc nec_nl4827hc19_05b = {
++	.modes = &nec_nl4827hc19_05b_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 95,
++		.height = 54,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X24
++};
++
++static const struct display_timing okaya_rs800480t_7x0gp_timing = {
++	.pixelclock = { 30000000, 30000000, 40000000 },
++	.hactive = { 800, 800, 800 },
++	.hfront_porch = { 40, 40, 40 },
++	.hback_porch = { 40, 40, 40 },
++	.hsync_len = { 1, 48, 48 },
++	.vactive = { 480, 480, 480 },
++	.vfront_porch = { 13, 13, 13 },
++	.vback_porch = { 29, 29, 29 },
++	.vsync_len = { 3, 3, 3 },
++	.flags = DISPLAY_FLAGS_DE_HIGH,
++};
++
++static const struct panel_desc okaya_rs800480t_7x0gp = {
++	.timings = &okaya_rs800480t_7x0gp_timing,
++	.num_timings = 1,
++	.bpc = 6,
++	.size = {
++		.width = 154,
++		.height = 87,
++	},
++	.delay = {
++		.prepare = 41,
++		.enable = 50,
++		.unprepare = 41,
++		.disable = 50,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct drm_display_mode ortustech_com43h4m85ulc_mode  = {
++	.clock = 25000,
++	.hdisplay = 480,
++	.hsync_start = 480 + 10,
++	.hsync_end = 480 + 10 + 10,
++	.htotal = 480 + 10 + 10 + 15,
++	.vdisplay = 800,
++	.vsync_start = 800 + 3,
++	.vsync_end = 800 + 3 + 3,
++	.vtotal = 800 + 3 + 3 + 3,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc ortustech_com43h4m85ulc = {
++	.modes = &ortustech_com43h4m85ulc_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 56,
++		.height = 93,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
++
++static const struct drm_display_mode samsung_lsn122dl01_c01_mode = {
++	.clock = 271560,
++	.hdisplay = 2560,
++	.hsync_start = 2560 + 48,
++	.hsync_end = 2560 + 48 + 32,
++	.htotal = 2560 + 48 + 32 + 80,
++	.vdisplay = 1600,
++	.vsync_start = 1600 + 2,
++	.vsync_end = 1600 + 2 + 5,
++	.vtotal = 1600 + 2 + 5 + 57,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc samsung_lsn122dl01_c01 = {
++	.modes = &samsung_lsn122dl01_c01_mode,
++	.num_modes = 1,
++	.size = {
++		.width = 2560,
++		.height = 1600,
++	},
++};
++
++static const struct drm_display_mode samsung_ltn101nt05_mode = {
++	.clock = 54030,
++	.hdisplay = 1024,
++	.hsync_start = 1024 + 24,
++	.hsync_end = 1024 + 24 + 136,
++	.htotal = 1024 + 24 + 136 + 160,
++	.vdisplay = 600,
++	.vsync_start = 600 + 3,
++	.vsync_end = 600 + 3 + 6,
++	.vtotal = 600 + 3 + 6 + 61,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc samsung_ltn101nt05 = {
++	.modes = &samsung_ltn101nt05_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 1024,
++		.height = 600,
++	},
++};
++
++static const struct drm_display_mode samsung_ltn140at29_301_mode = {
++	.clock = 76300,
++	.hdisplay = 1366,
++	.hsync_start = 1366 + 64,
++	.hsync_end = 1366 + 64 + 48,
++	.htotal = 1366 + 64 + 48 + 128,
++	.vdisplay = 768,
++	.vsync_start = 768 + 2,
++	.vsync_end = 768 + 2 + 5,
++	.vtotal = 768 + 2 + 5 + 17,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc samsung_ltn140at29_301 = {
++	.modes = &samsung_ltn140at29_301_mode,
++	.num_modes = 1,
++	.bpc = 6,
++	.size = {
++		.width = 320,
++		.height = 187,
++	},
++};
++
++static const struct drm_display_mode shelly_sca07010_bfn_lnn_mode = {
++	.clock = 33300,
++	.hdisplay = 800,
++	.hsync_start = 800 + 1,
++	.hsync_end = 800 + 1 + 64,
++	.htotal = 800 + 1 + 64 + 64,
++	.vdisplay = 480,
++	.vsync_start = 480 + 1,
++	.vsync_end = 480 + 1 + 23,
++	.vtotal = 480 + 1 + 23 + 22,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc shelly_sca07010_bfn_lnn = {
++	.modes = &shelly_sca07010_bfn_lnn_mode,
++	.num_modes = 1,
++	.size = {
++		.width = 152,
++		.height = 91,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
++};
++
++static const struct of_device_id platform_of_match[] = {
++	{
++		.compatible = "simple-panel",
++		.data = NULL,
++	}, {
++		.compatible = "ampire,am800480r3tmqwa1h",
++		.data = &ampire_am800480r3tmqwa1h,
++	}, {
++		.compatible = "auo,b101aw03",
++		.data = &auo_b101aw03,
++	}, {
++		.compatible = "auo,b101ean01",
++		.data = &auo_b101ean01,
++	}, {
++		.compatible = "auo,b101ew05",
++		.data = &auo_b101ew05,
++	}, {
++		.compatible = "auo,b101xtn01",
++		.data = &auo_b101xtn01,
++	}, {
++		.compatible = "auo,b116xw03",
++		.data = &auo_b116xw03,
++	}, {
++		.compatible = "auo,b125han03",
++		.data = &auo_b125han03,
++	}, {
++		.compatible = "auo,b133htn01",
++		.data = &auo_b133htn01,
++	}, {
++		.compatible = "auo,b133xtn01",
++		.data = &auo_b133xtn01,
++	}, {
++		.compatible = "avic,tm070ddh03",
++		.data = &avic_tm070ddh03,
++	}, {
++		.compatible = "boe,mv238qum-n20",
++		.data = &boe_mv238qum_n20,
++	}, {
++		.compatible = "boe,mv270qum-n10",
++		.data = &boe_mv270qum_n10,
++	}, {
++		.compatible = "boe,nv125fhm-n73",
++		.data = &boe_nv125fhm_n73,
++	}, {
++		.compatible = "chunghwa,claa070wp03xg",
++		.data = &chunghwa_claa070wp03xg,
++	}, {
++		.compatible = "chunghwa,claa101wa01a",
++		.data = &chunghwa_claa101wa01a
++	}, {
++		.compatible = "chunghwa,claa101wb01",
++		.data = &chunghwa_claa101wb01
++	}, {
++		.compatible = "edt,et057090dhu",
++		.data = &edt_et057090dhu,
++	}, {
++		.compatible = "edt,et070080dh6",
++		.data = &edt_etm0700g0dh6,
++	}, {
++		.compatible = "edt,etm0700g0dh6",
++		.data = &edt_etm0700g0dh6,
++	}, {
++		.compatible = "foxlink,fl500wvr00-a0t",
++		.data = &foxlink_fl500wvr00_a0t,
++	}, {
++		.compatible = "giantplus,gpg482739qs5",
++		.data = &giantplus_gpg482739qs5
++	}, {
++		.compatible = "hannstar,hsd070pww1",
++		.data = &hannstar_hsd070pww1,
++	}, {
++		.compatible = "hannstar,hsd100pxn1",
++		.data = &hannstar_hsd100pxn1,
++	}, {
++		.compatible = "hit,tx23d38vm0caa",
++		.data = &hitachi_tx23d38vm0caa
++	}, {
++		.compatible = "innolux,at043tn24",
++		.data = &innolux_at043tn24,
++	}, {
++		.compatible ="innolux,g121i1-l01",
++		.data = &innolux_g121i1_l01
++	}, {
++		.compatible = "innolux,n116bge",
++		.data = &innolux_n116bge,
++	}, {
++		.compatible = "innolux,n125hce",
++		.data = &innolux_n125hce,
++	}, {
++		.compatible = "innolux,n156bge-l21",
++		.data = &innolux_n156bge_l21,
++	}, {
++		.compatible = "innolux,zj070na-01p",
++		.data = &innolux_zj070na_01p,
++	}, {
++		.compatible = "lg,lb070wv8",
++		.data = &lg_lb070wv8,
++	}, {
++		.compatible = "lg,lm238wr2-spa1",
++		.data = &lg_lm238wr2_spa1,
++	}, {
++		.compatible = "lg,lm270wr3-ssa1",
++		.data = &lg_lm270wr3_ssa1,
++	}, {
++		.compatible = "lg,lp079qx1-sp0v",
++		.data = &lg_lp079qx1_sp0v,
++	}, {
++		.compatible = "lg,lp097qx1-spa1",
++		.data = &lg_lp097qx1_spa1,
++	}, {
++		.compatible = "lg,lp129qe",
++		.data = &lg_lp129qe,
++	}, {
++		.compatible = "nec,nl4827hc19-05b",
++		.data = &nec_nl4827hc19_05b,
++	}, {
++		.compatible = "okaya,rs800480t-7x0gp",
++		.data = &okaya_rs800480t_7x0gp,
++	}, {
++		.compatible = "ortustech,com43h4m85ulc",
++		.data = &ortustech_com43h4m85ulc,
++	}, {
++		.compatible = "samsung,lsn122dl01-c01",
++		.data = &samsung_lsn122dl01_c01,
++	}, {
++		.compatible = "samsung,ltn101nt05",
++		.data = &samsung_ltn101nt05,
++	}, {
++		.compatible = "samsung,ltn140at29-301",
++		.data = &samsung_ltn140at29_301,
++	}, {
++		.compatible = "sharp,lcd-f402",
++		.data = &sharp_lcd_f402,
++	}, {
++		.compatible = "shelly,sca07010-bfn-lnn",
++		.data = &shelly_sca07010_bfn_lnn,
++	}, {
++		/* sentinel */
++	}
++};
++MODULE_DEVICE_TABLE(of, platform_of_match);
++
++static int panel_simple_platform_probe(struct platform_device *pdev)
++{
++	const struct of_device_id *id;
++
++	id = of_match_node(platform_of_match, pdev->dev.of_node);
++	if (!id)
++		return -ENODEV;
++
++	return panel_simple_probe(&pdev->dev, id->data);
++}
++
++static int panel_simple_platform_remove(struct platform_device *pdev)
++{
++	return panel_simple_remove(&pdev->dev);
++}
++
++static void panel_simple_platform_shutdown(struct platform_device *pdev)
++{
++	panel_simple_shutdown(&pdev->dev);
++}
++
++static struct platform_driver panel_simple_platform_driver = {
++	.driver = {
++		.name = "panel-simple",
++		.of_match_table = platform_of_match,
++	},
++	.probe = panel_simple_platform_probe,
++	.remove = panel_simple_platform_remove,
++	.shutdown = panel_simple_platform_shutdown,
++};
++
++struct panel_desc_dsi {
++	struct panel_desc desc;
++
++	unsigned long flags;
++	enum mipi_dsi_pixel_format format;
++	unsigned int lanes;
++};
++
++static const struct drm_display_mode auo_b080uan01_mode = {
++	.clock = 154500,
++	.hdisplay = 1200,
++	.hsync_start = 1200 + 62,
++	.hsync_end = 1200 + 62 + 4,
++	.htotal = 1200 + 62 + 4 + 62,
++	.vdisplay = 1920,
++	.vsync_start = 1920 + 9,
++	.vsync_end = 1920 + 9 + 2,
++	.vtotal = 1920 + 9 + 2 + 8,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc_dsi auo_b080uan01 = {
++	.desc = {
++		.modes = &auo_b080uan01_mode,
++		.num_modes = 1,
++		.bpc = 8,
++		.size = {
++			.width = 108,
++			.height = 272,
++		},
++	},
++	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_CLOCK_NON_CONTINUOUS,
++	.format = MIPI_DSI_FMT_RGB888,
++	.lanes = 4,
++};
++
++static const struct drm_display_mode boe_tv080wum_nl0_mode = {
++	.clock = 160000,
++	.hdisplay = 1200,
++	.hsync_start = 1200 + 120,
++	.hsync_end = 1200 + 120 + 20,
++	.htotal = 1200 + 120 + 20 + 21,
++	.vdisplay = 1920,
++	.vsync_start = 1920 + 21,
++	.vsync_end = 1920 + 21 + 3,
++	.vtotal = 1920 + 21 + 3 + 18,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++static const struct panel_desc_dsi boe_tv080wum_nl0 = {
++	.desc = {
++		.modes = &boe_tv080wum_nl0_mode,
++		.num_modes = 1,
++		.size = {
++			.width = 107,
++			.height = 172,
++		},
++	},
++	.flags = MIPI_DSI_MODE_VIDEO |
++		 MIPI_DSI_MODE_VIDEO_BURST |
++		 MIPI_DSI_MODE_VIDEO_SYNC_PULSE,
++	.format = MIPI_DSI_FMT_RGB888,
++	.lanes = 4,
++};
++
++static const struct drm_display_mode lg_ld070wx3_sl01_mode = {
++	.clock = 71000,
++	.hdisplay = 800,
++	.hsync_start = 800 + 32,
++	.hsync_end = 800 + 32 + 1,
++	.htotal = 800 + 32 + 1 + 57,
++	.vdisplay = 1280,
++	.vsync_start = 1280 + 28,
++	.vsync_end = 1280 + 28 + 1,
++	.vtotal = 1280 + 28 + 1 + 14,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc_dsi lg_ld070wx3_sl01 = {
++	.desc = {
++		.modes = &lg_ld070wx3_sl01_mode,
++		.num_modes = 1,
++		.bpc = 8,
++		.size = {
++			.width = 94,
++			.height = 151,
++		},
++	},
++	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_CLOCK_NON_CONTINUOUS,
++	.format = MIPI_DSI_FMT_RGB888,
++	.lanes = 4,
++};
++
++static const struct drm_display_mode lg_lh500wx1_sd03_mode = {
++	.clock = 67000,
++	.hdisplay = 720,
++	.hsync_start = 720 + 12,
++	.hsync_end = 720 + 12 + 4,
++	.htotal = 720 + 12 + 4 + 112,
++	.vdisplay = 1280,
++	.vsync_start = 1280 + 8,
++	.vsync_end = 1280 + 8 + 4,
++	.vtotal = 1280 + 8 + 4 + 12,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc_dsi lg_lh500wx1_sd03 = {
++	.desc = {
++		.modes = &lg_lh500wx1_sd03_mode,
++		.num_modes = 1,
++		.bpc = 8,
++		.size = {
++			.width = 62,
++			.height = 110,
++		},
++	},
++	.flags = MIPI_DSI_MODE_VIDEO,
++	.format = MIPI_DSI_FMT_RGB888,
++	.lanes = 4,
++};
++
++static const struct drm_display_mode panasonic_vvx10f004b00_mode = {
++	.clock = 157200,
++	.hdisplay = 1920,
++	.hsync_start = 1920 + 154,
++	.hsync_end = 1920 + 154 + 16,
++	.htotal = 1920 + 154 + 16 + 32,
++	.vdisplay = 1200,
++	.vsync_start = 1200 + 17,
++	.vsync_end = 1200 + 17 + 2,
++	.vtotal = 1200 + 17 + 2 + 16,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc_dsi panasonic_vvx10f004b00 = {
++	.desc = {
++		.modes = &panasonic_vvx10f004b00_mode,
++		.num_modes = 1,
++		.bpc = 8,
++		.size = {
++			.width = 217,
++			.height = 136,
++		},
++	},
++	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
++		 MIPI_DSI_CLOCK_NON_CONTINUOUS,
++	.format = MIPI_DSI_FMT_RGB888,
++	.lanes = 4,
++};
++
++
++static const struct of_device_id dsi_of_match[] = {
++	{
++		.compatible = "simple-panel-dsi",
++		.data = NULL
++	}, {
++		.compatible = "auo,b080uan01",
++		.data = &auo_b080uan01
++	}, {
++		.compatible = "boe,tv080wum-nl0",
++		.data = &boe_tv080wum_nl0
++	}, {
++		.compatible = "lg,ld070wx3-sl01",
++		.data = &lg_ld070wx3_sl01
++	}, {
++		.compatible = "lg,lh500wx1-sd03",
++		.data = &lg_lh500wx1_sd03
++	}, {
++		.compatible = "panasonic,vvx10f004b00",
++		.data = &panasonic_vvx10f004b00
++	}, {
++		/* sentinel */
++	}
++};
++MODULE_DEVICE_TABLE(of, dsi_of_match);
++
++static int panel_simple_dsi_probe(struct mipi_dsi_device *dsi)
++{
++	struct panel_simple *panel;
++	const struct panel_desc_dsi *desc;
++	const struct of_device_id *id;
++	const struct panel_desc *pdesc;
++	int err;
++	u32 val;
++
++	id = of_match_node(dsi_of_match, dsi->dev.of_node);
++	if (!id)
++		return -ENODEV;
++
++	desc = id->data;
++
++	if (desc) {
++		dsi->mode_flags = desc->flags;
++		dsi->format = desc->format;
++		dsi->lanes = desc->lanes;
++		pdesc = &desc->desc;
++	} else {
++		pdesc = NULL;
++	}
++
++	err = panel_simple_probe(&dsi->dev, pdesc);
++	if (err < 0)
++		return err;
++
++	panel = dev_get_drvdata(&dsi->dev);
++	panel->dsi = dsi;
++
++	if (!of_property_read_u32(dsi->dev.of_node, "dsi,flags", &val))
++		dsi->mode_flags = val;
++
++	if (!of_property_read_u32(dsi->dev.of_node, "dsi,format", &val))
++		dsi->format = val;
++
++	if (!of_property_read_u32(dsi->dev.of_node, "dsi,lanes", &val))
++		dsi->lanes = val;
++
++	return mipi_dsi_attach(dsi);
++}
++
++static int panel_simple_dsi_remove(struct mipi_dsi_device *dsi)
++{
++	int err;
++
++	err = mipi_dsi_detach(dsi);
++	if (err < 0)
++		dev_err(&dsi->dev, "failed to detach from DSI host: %d\n", err);
++
++	return panel_simple_remove(&dsi->dev);
++}
++
++static void panel_simple_dsi_shutdown(struct mipi_dsi_device *dsi)
++{
++	panel_simple_shutdown(&dsi->dev);
++}
++
++static struct mipi_dsi_driver panel_simple_dsi_driver = {
++	.driver = {
++		.name = "panel-simple-dsi",
++		.of_match_table = dsi_of_match,
++	},
++	.probe = panel_simple_dsi_probe,
++	.remove = panel_simple_dsi_remove,
++	.shutdown = panel_simple_dsi_shutdown,
++};
++
++static int __init panel_simple_init(void)
++{
++	int err;
++
++	err = platform_driver_register(&panel_simple_platform_driver);
++	if (err < 0)
++		return err;
++
++	if (IS_ENABLED(CONFIG_DRM_MIPI_DSI)) {
++		err = mipi_dsi_driver_register(&panel_simple_dsi_driver);
++		if (err < 0)
++			return err;
++	}
++
++	return 0;
++}
++module_init(panel_simple_init);
++
++static void __exit panel_simple_exit(void)
++{
++	if (IS_ENABLED(CONFIG_DRM_MIPI_DSI))
++		mipi_dsi_driver_unregister(&panel_simple_dsi_driver);
++
++	platform_driver_unregister(&panel_simple_platform_driver);
++}
++module_exit(panel_simple_exit);
++
++MODULE_AUTHOR("Thierry Reding <treding@nvidia.com>");
++MODULE_DESCRIPTION("DRM Driver for Simple Panels");
++MODULE_LICENSE("GPL and additional rights");
+diff --git a/drivers/gpu/drm/panel/panel-simple.c b/drivers/gpu/drm/panel/panel-simple.c
+old mode 100644
+new mode 100755
+index 700ffd65c7c1..7d9da7e7078c
+--- a/drivers/gpu/drm/panel/panel-simple.c
++++ b/drivers/gpu/drm/panel/panel-simple.c
+@@ -40,6 +40,12 @@
+ #include <linux/of_graph.h>
+ #include <video/videomode.h>
+ 
++#include <linux/string.h>
++#include <linux/vmalloc.h>
++#include <asm/uaccess.h>
++#include <linux/proc_fs.h>
++#include <asm/io.h>
++
+ struct cmd_ctrl_hdr {
+ 	u8 dtype;	/* data type */
+ 	u8 wait;	/* ms */
+@@ -120,6 +126,10 @@ struct panel_simple {
+ 	struct gpio_desc *spi_scl_gpio;
+ 	struct gpio_desc *spi_cs_gpio;
+ 
++	struct gpio_desc *spi_sdo_gpio;	//zwh
++	struct gpio_desc *spi_sdc_gpio;
++	struct gpio_desc *spi_shut_gpio;
++
+ 	struct panel_cmds *on_cmds;
+ 	struct panel_cmds *off_cmds;
+ 	struct device_node *np_crtc;
+@@ -128,7 +138,8 @@ struct panel_simple {
+ enum rockchip_cmd_type {
+ 	CMD_TYPE_DEFAULT,
+ 	CMD_TYPE_SPI,
+-	CMD_TYPE_MCU
++	CMD_TYPE_MCU,
++	CMD_TYPE_MYSPI
+ };
+ 
+ enum MCU_IOCTL {
+@@ -137,6 +148,9 @@ enum MCU_IOCTL {
+ 	MCU_SETBYPASS,
+ };
+ 
++struct panel_simple *mypanel;
++
++
+ static void panel_simple_sleep(unsigned int msec)
+ {
+ 	if (msec > 20)
+@@ -144,7 +158,7 @@ static void panel_simple_sleep(unsigned int msec)
+ 	else
+ 		usleep_range(msec * 1000, (msec + 1) * 1000);
+ }
+-
++#include "panel_ssd2828.c"
+ static inline int get_panel_cmd_type(const char *s)
+ {
+ 	if (!s)
+@@ -152,9 +166,12 @@ static inline int get_panel_cmd_type(const char *s)
+ 
+ 	if (strncmp(s, "spi", 3) == 0)
+ 		return CMD_TYPE_SPI;
++	if (strncmp(s, "myspi", 5) == 0)			//zwh
++		return CMD_TYPE_MYSPI;
+ 	else if (strncmp(s, "mcu", 3) == 0)
+ 		return CMD_TYPE_MCU;
+-
++	else if (strncmp(s, "myspi", 5) == 0)
++		return CMD_TYPE_MYSPI;
+ 	return CMD_TYPE_DEFAULT;
+ }
+ 
+@@ -420,7 +437,7 @@ static int panel_simple_get_fixed_modes(struct panel_simple *panel)
+ 	struct drm_device *drm = panel->base.drm;
+ 	struct drm_display_mode *mode;
+ 	unsigned int i, num = 0;
+-
++	printk("============zwh %s %s %d num_timings=%d\n", __FILE__,__func__, __LINE__, panel->desc->num_timings);
+ 	if (!panel->desc)
+ 		return 0;
+ 
+@@ -476,7 +493,7 @@ static int panel_simple_of_get_native_mode(struct panel_simple *panel)
+ 	struct drm_display_mode *mode;
+ 	struct device_node *timings_np;
+ 	int ret;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	timings_np = of_get_child_by_name(panel->dev->of_node,
+ 					  "display-timings");
+ 	if (!timings_np) {
+@@ -508,7 +525,7 @@ static int panel_simple_regulator_enable(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int err = 0;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (p->power_invert) {
+ 		if (regulator_is_enabled(p->supply) > 0)
+ 			regulator_disable(p->supply);
+@@ -528,7 +545,7 @@ static int panel_simple_regulator_disable(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int err = 0;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (p->power_invert) {
+ 		if (!regulator_is_enabled(p->supply)) {
+ 			err = regulator_enable(p->supply);
+@@ -548,7 +565,7 @@ static int panel_simple_regulator_disable(struct drm_panel *panel)
+ static int panel_simple_loader_protect(struct drm_panel *panel, bool on)
+ {
+ 	int err;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (on) {
+ 		err = panel_simple_regulator_enable(panel);
+ 		if (err < 0) {
+@@ -567,7 +584,7 @@ static int panel_simple_disable(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int err = 0;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (!p->enabled)
+ 		return 0;
+ 
+@@ -593,7 +610,7 @@ static int panel_simple_unprepare(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int err = 0;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (!p->prepared)
+ 		return 0;
+ 
+@@ -602,6 +619,8 @@ static int panel_simple_unprepare(struct drm_panel *panel)
+ 			err = panel_simple_dsi_send_cmds(p, p->off_cmds);
+ 		else if (p->cmd_type == CMD_TYPE_SPI)
+ 			err = panel_simple_spi_send_cmds(p, p->off_cmds);
++		else if (p->cmd_type == CMD_TYPE_MYSPI)
++			err = panel_simple_myspi_send_cmds(p, p->off_cmds);		//zwh
+ 		if (err)
+ 			dev_err(p->dev, "failed to send off cmds\n");
+ 	}
+@@ -618,15 +637,49 @@ static int panel_simple_unprepare(struct drm_panel *panel)
+ 		panel_simple_sleep(p->desc->delay.unprepare);
+ 
+ 	p->prepared = false;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	return 0;
+ }
+ 
++int debug_panel_simple_prepare(struct panel_simple *p)
++{
++	//struct panel_simple *p = to_panel_simple(panel);
++	int err;
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
++	if (p->prepared)
++		return 0;
++
++	if (p->enable_gpio)
++		gpiod_direction_output(p->enable_gpio, 1);
++
++	if (p->desc && p->desc->delay.prepare)
++		panel_simple_sleep(p->desc->delay.prepare);
++
++	if (p->reset_gpio)
++		gpiod_direction_output(p->reset_gpio, 1);
++
++	if (p->desc && p->desc->delay.reset)
++		panel_simple_sleep(p->desc->delay.reset);
++
++	if (p->reset_gpio)
++		gpiod_direction_output(p->reset_gpio, 0);
++
++	if (p->desc && p->desc->delay.init)
++		panel_simple_sleep(p->desc->delay.init);
++
++
++	err = panel_simple_myspi_send_cmds(p, p->on_cmds);	//zwh		
++	if (err)
++		dev_err(p->dev, "failed to send on cmds\n");
++
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
++	return 0;
++}
+ static int panel_simple_prepare(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int err;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (p->prepared)
+ 		return 0;
+ 
+@@ -659,10 +712,12 @@ static int panel_simple_prepare(struct drm_panel *panel)
+ 			err = panel_simple_dsi_send_cmds(p, p->on_cmds);
+ 		else if (p->cmd_type == CMD_TYPE_SPI)
+ 			err = panel_simple_spi_send_cmds(p, p->on_cmds);
++		else if (p->cmd_type == CMD_TYPE_MYSPI)
++			err = panel_simple_myspi_send_cmds(p, p->on_cmds);	//zwh		
+ 		if (err)
+ 			dev_err(p->dev, "failed to send on cmds\n");
+ 	}
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	p->prepared = true;
+ 
+ 	return 0;
+@@ -672,7 +727,7 @@ static int panel_simple_enable(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int err = 0;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	if (p->enabled)
+ 		return 0;
+ 
+@@ -690,7 +745,7 @@ static int panel_simple_enable(struct drm_panel *panel)
+ 	}
+ 
+ 	p->enabled = true;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	return 0;
+ }
+ 
+@@ -698,7 +753,7 @@ static int panel_simple_get_modes(struct drm_panel *panel)
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	int num = 0;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	/* add device node plane modes */
+ 	num += panel_simple_of_get_native_mode(p);
+ 
+@@ -724,7 +779,7 @@ static int panel_simple_get_timings(struct drm_panel *panel,
+ {
+ 	struct panel_simple *p = to_panel_simple(panel);
+ 	unsigned int i;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);	//test
+ 	if (!p->desc)
+ 		return 0;
+ 
+@@ -756,7 +811,7 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
+ 	const char *cmd_type;
+ 	u32 val;
+ 	int err;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	panel = devm_kzalloc(dev, sizeof(*panel), GFP_KERNEL);
+ 	if (!panel)
+ 		return -ENOMEM;
+@@ -791,7 +846,7 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
+ 	panel->prepared = false;
+ 	panel->desc = of_desc;
+ 	panel->dev = dev;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	err = panel_simple_get_cmds(panel);
+ 	if (err) {
+ 		dev_err(dev, "failed to get init cmd: %d\n", err);
+@@ -799,7 +854,10 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
+ 	}
+ 	panel->supply = devm_regulator_get(dev, "power");
+ 	if (IS_ERR(panel->supply))
++	{
++		printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 		return PTR_ERR(panel->supply);
++	}
+ 
+ 	panel->enable_gpio = devm_gpiod_get_optional(dev, "enable", 0);
+ 	if (IS_ERR(panel->enable_gpio)) {
+@@ -821,7 +879,8 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
+ 	else
+ 		panel->cmd_type = get_panel_cmd_type(cmd_type);
+ 
+-	if (panel->cmd_type == CMD_TYPE_SPI) {
++	if (panel->cmd_type == CMD_TYPE_SPI || panel->cmd_type == CMD_TYPE_MYSPI) {//zwh
++
+ 		panel->spi_sdi_gpio =
+ 				devm_gpiod_get_optional(dev, "spi-sdi", 0);
+ 		if (IS_ERR(panel->spi_sdi_gpio)) {
+@@ -844,9 +903,36 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
+ 			dev_err(dev, "failed to request spi_cs: %d\n", err);
+ 			return err;
+ 		}
++
++		panel->spi_sdo_gpio = devm_gpiod_get_optional(dev, "spi-sdo", 0);
++		if (IS_ERR(panel->spi_sdo_gpio)) {
++			err = PTR_ERR(panel->spi_sdo_gpio);
++			dev_err(dev, "failed to request spi_sdo_gpio: %d\n", err);
++			return err;
++		}
++		panel->spi_sdc_gpio = devm_gpiod_get_optional(dev, "spi-sdc", 0);
++		if (IS_ERR(panel->spi_sdc_gpio)) {
++			err = PTR_ERR(panel->spi_sdc_gpio);
++			dev_err(dev, "failed to request spi_sdc_gpio: %d\n", err);
++			return err;
++		}
++		panel->spi_shut_gpio = devm_gpiod_get_optional(dev, "spi-shut", 0);
++		if (IS_ERR(panel->spi_shut_gpio)) {
++			err = PTR_ERR(panel->spi_shut_gpio);
++			dev_err(dev, "failed to request spi_shut_gpio: %d\n", err);
++			return err;
++		}
++
++		gpiod_direction_output(panel->spi_sdc_gpio, 1);
++		gpiod_direction_output(panel->spi_shut_gpio, 1);
++		printk("====================zwh %s %d\n", __FUNCTION__, __LINE__);
++		gpiod_direction_input(panel->spi_sdo_gpio);				//zwh
++		printk("====================zwh %s %d\n", __FUNCTION__, __LINE__);
+ 		gpiod_direction_output(panel->spi_cs_gpio, 1);
+ 		gpiod_direction_output(panel->spi_sdi_gpio, 1);
+ 		gpiod_direction_output(panel->spi_scl_gpio, 1);
++
++		printk("====================zwh %s %d\n", __FUNCTION__, __LINE__);
+ 	} else if (panel->cmd_type == CMD_TYPE_MCU) {
+ 		struct device_node *port, *endpoint;
+ 		struct device_node *np;
+@@ -898,7 +984,9 @@ static int panel_simple_probe(struct device *dev, const struct panel_desc *desc)
+ 		goto free_ddc;
+ 
+ 	dev_set_drvdata(dev, panel);
+-
++	printk("============zwh %s %s %d  ok\n", __FILE__,__func__, __LINE__);
++	mypanel = panel;
++	ssd2828_debug_init();
+ 	return 0;
+ 
+ free_ddc:
+@@ -2154,11 +2242,13 @@ MODULE_DEVICE_TABLE(of, platform_of_match);
+ static int panel_simple_platform_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *id;
+-
++	printk("==========================zwh %s %s %d pdev->dev.of_node->name=%s\n", __FILE__,__FUNCTION__,__LINE__, pdev->dev.of_node->name);
+ 	id = of_match_node(platform_of_match, pdev->dev.of_node);
+ 	if (!id)
++	{
++		printk("==========================zwh %s %s %d match %s error\n", __FILE__,__FUNCTION__,__LINE__, pdev->dev.of_node->name);
+ 		return -ENODEV;
+-
++	}
+ 	return panel_simple_probe(&pdev->dev, id->data);
+ }
+ 
+@@ -2431,17 +2521,22 @@ static struct mipi_dsi_driver panel_simple_dsi_driver = {
+ static int __init panel_simple_init(void)
+ {
+ 	int err;
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	err = platform_driver_register(&panel_simple_platform_driver);
+ 	if (err < 0)
++	{
++		printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 		return err;
+-
++	}
+ 	if (IS_ENABLED(CONFIG_DRM_MIPI_DSI)) {
+ 		err = mipi_dsi_driver_register(&panel_simple_dsi_driver);
+ 		if (err < 0)
++		{
++			printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 			return err;
++		}
+ 	}
+-
++	printk("============zwh %s %s %d\n", __FILE__,__func__, __LINE__);
+ 	return 0;
+ }
+ module_init(panel_simple_init);
+diff --git a/drivers/gpu/drm/panel/panel_ssd2828.c b/drivers/gpu/drm/panel/panel_ssd2828.c
+new file mode 100755
+index 000000000000..5b73ef333de9
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel_ssd2828.c
+@@ -0,0 +1,632 @@
++/*
++SPI2_MISO_LCD  GPIO1_C6 W9
++SPI2_MOSI_LCD  GPIO1_C7 T9
++SPI2_CLK_LCD   GPIO1_D0 V10
++SPI2_CS_LCD    GPIO1_D1 T10
++
++LCD_SHUT       GPIO2_B1 V14
++LCD_SDC	       GPIO2_B2 V15
++
++LCD_BL	       GPIO2_B4 B4	
++
++*/
++
++#define LCD_CS_CLR 		gpiod_direction_output(mypanel->spi_cs_gpio, 0)		// SC
++#define LCD_CS_SET 		gpiod_direction_output(mypanel->spi_cs_gpio, 1)		
++#define LCD_SCK_CLR 	gpiod_direction_output(mypanel->spi_scl_gpio, 0)		// SCK
++#define LCD_SCK_SET 	gpiod_direction_output(mypanel->spi_scl_gpio, 1)
++#define LCD_MOSI_CLR 	gpiod_direction_output(mypanel->spi_sdi_gpio, 0)		// MOSI
++#define LCD_MOSI_SET 	gpiod_direction_output(mypanel->spi_sdi_gpio, 1)
++//#define LCD_RESET_CLR 	gpiod_direction_output(0, 3, 0)		// RESET  
++//#define LCD_RESET_SET 	gpiod_direction_output(0, 3, 1)
++																// MISO
++
++#define GPIO_PWRDET_EINT_PIN3	35      // PB03
++#define GPIO_PWRDET_LED2		139		// PE11
++
++#define GPIO_LCD_POWER          34      // PB02 BL_EN
++
++
++
++static void SPI_3W_SET_Data(unsigned int Sdata)
++{
++	unsigned int i;
++	LCD_CS_CLR;
++	
++	udelay(5);
++	LCD_MOSI_SET;	//高，
++    udelay(1);
++	LCD_SCK_CLR; //上升沿发送数据
++    udelay(2);
++	LCD_SCK_SET;
++	udelay(2);
++	
++	for(i=8; i>0; i--)
++	{
++		if(Sdata&0x80)//判断高位是否为1
++		{
++			LCD_MOSI_SET;
++		}
++		else
++		{
++			LCD_MOSI_CLR;
++		}
++
++		LCD_SCK_CLR; //上升沿发送数据
++		udelay(2);
++		LCD_SCK_SET;
++		udelay(1);
++		Sdata <<= 1;
++	} 
++	LCD_SCK_CLR;
++	udelay(1); 
++	
++	LCD_CS_SET;
++	udelay(5);
++}
++
++static unsigned int SSD2828SPIRead(void)
++{
++	unsigned int nData;
++	int x = 0;
++
++	unsigned int Value = 0;
++	
++	gpiod_direction_input(mypanel->spi_sdi_gpio);
++	LCD_CS_CLR;
++	
++	LCD_SCK_CLR;
++ 	udelay(5);
++	for( x = 0 ; x < 8 ; x++)
++	{
++		LCD_SCK_CLR; 
++	    udelay(1);
++	    LCD_SCK_SET;
++	    udelay(1);
++		Value <<=1;
++		
++		nData =gpiod_get_value(mypanel->spi_sdo_gpio);
++		if(nData==1)		// no user
++		{
++		   Value |=0x01;
++		}
++	}
++
++	LCD_CS_SET;
++ 	udelay(5);
++	return  Value;
++}
++
++static void SPI_3W_SET_Cmd(unsigned int Sdata)//设备ID发送函数
++{
++	unsigned int i;
++	LCD_CS_CLR;
++	
++	udelay(5);
++	LCD_MOSI_CLR;				// 低
++	udelay(1);
++	LCD_SCK_CLR; 
++	udelay(2);
++	LCD_SCK_SET;
++	udelay(2);
++	
++	for(i=8; i>0; i--)
++	{
++		if(Sdata&0x80)
++		{
++			LCD_MOSI_SET;
++		}
++		else 
++		{
++		  	LCD_MOSI_CLR;
++		}
++
++		LCD_SCK_CLR;
++		udelay(2);
++	    LCD_SCK_SET;
++		udelay(1);
++		Sdata <<= 1;
++	 } 
++	 LCD_SCK_CLR;
++	 udelay(1); 
++	 
++	 LCD_CS_SET;
++	 udelay(5);
++}
++
++static int ssd2828_esd_check(void)
++{
++    unsigned int DeviceID, DeviceID2;
++	SPI_3W_SET_Cmd(0xB0);SPI_3W_SET_Cmd(0xFA);
++	DeviceID = SSD2828SPIRead();
++	DeviceID2 = SSD2828SPIRead();
++	printk("ssd2828 read val1=%x val2=%x\n", DeviceID, DeviceID2);
++    if((DeviceID==0x28)&& (DeviceID==0x28))
++	{
++
++		return 0;
++	}
++	else
++	{
++		return -1;
++	}
++}
++
++static void SPI_WriteData(unsigned char value)
++{
++	LCD_CS_CLR;
++	SPI_3W_SET_Data(value);
++	LCD_CS_SET;	
++}
++
++static void SPI_2825_WrCmd(unsigned char value)
++{
++	LCD_CS_CLR;
++	SPI_3W_SET_Cmd(value);
++	LCD_CS_SET;	
++}
++
++static void GP_COMMAD_PA(int a)		// 写命令
++{
++ 	SPI_2825_WrCmd(0xBC);
++	SPI_WriteData(a);
++	SPI_WriteData(a>>8);
++	SPI_2825_WrCmd(0xBF);
++}
++
++/*
++static void ssd2828_set_cmd(u8 cmd)
++{
++	GP_COMMAD_PA(1);
++	SPI_WriteData(cmd);
++}
++*/
++
++static void ssd2828_set_cmdq(u8 cmd, u8 count, u8 *para)
++{
++	u8 i;
++	GP_COMMAD_PA(count+1);
++	SPI_WriteData(cmd);
++	//printk("%x  ", cmd);
++	for(i=0; i<count; i++)
++	{
++		SPI_WriteData(para[i]); 
++		//printk("%02x  ", para[i]);
++	}
++	//printk("\n");
++}
++
++struct LCM_setting_table {
++	u8 type;
++	u8 delay;
++	u32 count;
++	u8 cmd;
++	u8 para_list[64];
++};
++
++static void push_table(struct LCM_setting_table *table, unsigned int count)
++{
++    unsigned int i, dly;
++
++    for(i = 0; i < count; i++)
++    {
++		unsigned char cmd;
++		cmd = table[i].cmd;
++		dly = table[i].delay;
++		switch (cmd)
++		{
++			//case REGFLAG_DELAY :
++			//mdelay(table[i].count);
++			//break;
++
++			default:
++			ssd2828_set_cmdq(cmd, table[i].count, table[i].para_list);
++			if(dly)
++				panel_simple_sleep(dly);
++			break;
++		}
++    }
++}
++
++#define HFP     80		//160
++#define HBP     80		//160
++#define HSA     14         	// h pulse width
++
++#define VFP     30
++#define VBP     16 		// 12  burst mode, need include sync pulse width
++#define VSA     4 
++
++#define LCD_XSIZE	400
++#define LCD_YSIZE	1280
++
++unsigned char hsa=HSA;
++unsigned char hfp=HFP;
++unsigned char hbp=HBP;
++unsigned char vsa=VSA;
++unsigned char vfp=VFP;
++unsigned char vbp=VBP;
++
++//
++struct LCM_setting_table panel_initialization_setting[] = {
++{0x15, 0x00, 0x02, 0xCD, {0xAA}},
++{0x15, 0x00, 0x02, 0x32, {0x00}},
++{0x15, 0x00, 0x02, 0x35, {0x27}},
++{0x15, 0x00, 0x02, 0x47, {0x15}},
++{0x15, 0x00, 0x02, 0x48, {0x06}},
++{0x15, 0x00, 0x02, 0x33, {0x38}},  //38
++{0x15, 0x00, 0x02, 0x3A, {0x02}},
++{0x15, 0x00, 0x02, 0x29, {0x15}},
++{0x15, 0x00, 0x02, 0x36, {0x41}},
++{0x15, 0x00, 0x02, 0x67, {0x82}},
++{0x39, 0x00, 0x09, 0x57, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
++{0x15, 0x00, 0x02, 0x69, {0x27}},
++{0x39, 0x00, 0x09, 0x55, {0x08, 0x00, 0x08, 0x00, 0x08, 0x00, 0x08, 0x00}},
++{0x39, 0x00, 0x11, 0x56, {0x1F, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x1F, 0x00}},
++{0x15, 0x00, 0x02, 0x2B, {0x00}},
++{0x15, 0x00, 0x02, 0x68, {0x26}},
++{0x15, 0x00, 0x02, 0x6C, {0x88}},
++{0x15, 0x00, 0x02, 0x4F, {0x00}},
++{0x39, 0x00, 0x14, 0x53, {0x1D, 0x14, 0x13, 0x10, 0x11, 0x0F, 0x11, 0x13, 0x13, 0x0F, 0x09, 0x07, 0x08, 0x0B, 0x0C, 0x0D, 0x0A, 0x07, 0x05}},
++{0x15, 0x00, 0x02, 0x4E, {0x00}},
++{0x39, 0x00, 0x14, 0x54, {0x19, 0x14, 0x13, 0x10, 0x11, 0x0F, 0x11, 0x13, 0x16, 0x0F, 0x09, 0x08, 0x08, 0x0B, 0x0B, 0x0E, 0x0A, 0x07, 0x05}},
++{0x15, 0x00, 0x02, 0x6D, {0x15}},
++{0x39, 0x00, 0x03, 0x73, {0x20, 0x00}},
++{0x39, 0x00, 0x03, 0x74, {0x0B, 0x10}},
++{0x15, 0x00, 0x02, 0x77, {0x00}},
++{0x15, 0x00, 0x02, 0x28, {0x21}},
++{0x15, 0x00, 0x02, 0x63, {0x04}},
++{0x15, 0x00, 0x02, 0x50, {0x80}},
++{0x15, 0x00, 0x02, 0x78, {0x6E}},
++{0x15, 0x00, 0x02, 0x2D, {0x31}},
++{0x15, 0x00, 0x02, 0x76, {0x42}},
++{0x15, 0x00, 0x02, 0x7E, {0x38}},
++{0x15, 0x00, 0x02, 0x5F, {0xA9}},
++{0x15, 0x00, 0x02, 0x41, {0x04}}, 
++{0x15, 0x00, 0x02, 0x68, {0x26}},
++{0x15, 0x00, 0x02, 0x6D, {0x15}},
++{0x15, 0x00, 0x02, 0x36, {0x41}},
++{0x15, 0x00, 0x02, 0x03, {0x08}},
++{0x15, 0x00, 0x02, 0x4D, {0x00}},
++{0x05, 0x78, 0x01, 0x11,{}}
++
++};
++
++
++static void lcm_init(void)
++{
++	push_table(panel_initialization_setting, sizeof(panel_initialization_setting) / sizeof(struct LCM_setting_table));
++}
++
++static void ssd2828_config_register(void)
++{
++#if 1//me
++ 	//SSD2825_Initial
++	SPI_2825_WrCmd(0xb7);  	// set to low speed mode inorder to send cmd for chip init 
++	SPI_WriteData(0x50);	// 50=TX_CLK  70=PCLK     clk is use tx_clk, dcs package
++	SPI_WriteData(0x02);   	// 
++
++	SPI_2825_WrCmd(0xb8);
++	SPI_WriteData(0x00);
++	SPI_WriteData(0x00);   	// VC(Virtual ChannelID) Control Register
++
++	//==================================
++	SPI_2825_WrCmd(0xb9);
++	SPI_WriteData(0x00);	// 0= PLL disable
++	SPI_WriteData(0x00);
++					
++       //TX_CLK/MS should be between 5Mhz to100Mhz
++	SPI_2825_WrCmd(0xBA);	//PLL=(TX_CLK/MS)*NS 8228=480M 4428=240M  061E=120M 4214=240M 821E=360M 8219=300M
++	SPI_WriteData(0x10);	//D7-0=NS(0x01 : NS=1)  MS=1    fpre= fin/MS= 24/1=24       fout=fpre*16=24*16=384
++	SPI_WriteData(0x80);	//D15-14=PLL范围  00=62.5-125 01=126-250 10=251-500 11=501-1000  DB12-8=MS(01:MS=1)
++
++	SPI_2825_WrCmd(0xBB);	//LP Clock Divider LP clock = 288MHz / LPD / 8 = 288 / 8 / 4 = 9MHz
++	SPI_WriteData(0x04);	//D5-0=LPD=0x1 拧C Divide by 2
++	SPI_WriteData(0x00);
++
++	SPI_2825_WrCmd(0xb9);
++	SPI_WriteData(0x01);	// 1=PLL ENABLE
++	SPI_WriteData(0x00);
++    	mdelay(10);
++	
++
++	//==================================
++	SPI_2825_WrCmd(0xDE);	//通道数
++	SPI_WriteData(0x03);	//11=4LANE 10=3LANE 01=2LANE 00=1LANE
++	SPI_WriteData(0x00);
++
++	SPI_2825_WrCmd(0xD6);	//05=BGR  04=RGB       CAN BE DEL
++	SPI_WriteData(0x04);	//D0=0=RGB 1:BGR D1=1=Most significant byte sent first
++	SPI_WriteData(0x00);
++	udelay(100);
++
++            	printk( "ssd2828 set para and write it\n");
++		printk("hfp=%d\n",hfp);
++		printk("hbp=%d\n",hbp);
++		printk("hsa=%d\n",hsa);
++		printk("vfp=%d\n",vfp);
++		printk("vbp=%d\n",vbp);
++		printk("vsa=%d\n",vsa);
++
++	//=================================
++	SPI_2825_WrCmd(0xb1);	// hsw vsw
++	SPI_WriteData(hsa);   	// hsa
++	SPI_WriteData(vsa);  	// vsa
++
++	SPI_2825_WrCmd(0xb2);	
++	SPI_WriteData(hbp);	// hbp  160 + 24 
++	SPI_WriteData(vbp); 	// vbp  10 + 2
++
++	SPI_2825_WrCmd(0xb3);	
++	SPI_WriteData(hfp);	// hfp 
++	SPI_WriteData(vfp); 	// vfp
++
++	SPI_2825_WrCmd(0xb4);	// x 480
++	SPI_WriteData(LCD_XSIZE & 0xFF);
++	SPI_WriteData(LCD_XSIZE>>8); 
++
++	SPI_2825_WrCmd(0xb5);	// y 1280
++	SPI_WriteData(LCD_YSIZE & 0xFF);
++	SPI_WriteData(LCD_YSIZE>>8); 
++
++	SPI_2825_WrCmd(0xb6);	// Video mode and video pixel format Set Color Depth = 24bpp[]
++	SPI_WriteData(0x0B);    // BURST MODE
++	SPI_WriteData(0x00); 
++
++	//================================
++	// config panel
++	SPI_2825_WrCmd(0xb7);        // Generic low power mode
++   	SPI_WriteData(0x10);
++    	SPI_WriteData(0x02); 
++		
++	lcm_init();
++	
++	//================================
++	SPI_2825_WrCmd(0xB7);  // change to high speed mode for send video data
++#if 0	
++	SPI_WriteData(0x4b);  // dcs package, clk src is tx_clk, hs_clk en, video mode enable, clk lane hs mode, hs mode
++	SPI_WriteData(0x02);    
++#else
++	SPI_WriteData(0x4b);  // for esd improve
++	SPI_WriteData(0x00);
++#endif	  
++	udelay(100);
++
++#else//fae
++ 	//SSD2825_Initial
++	SPI_2825_WrCmd(0xb7);  	// set to low speed mode inorder to send cmd for chip init 
++	SPI_WriteData(0x50);	// 50=TX_CLK  70=PCLK     clk is use tx_clk, dcs package
++	SPI_WriteData(0x02);   	// 
++
++	SPI_2825_WrCmd(0xb8);
++	SPI_WriteData(0x00);
++	SPI_WriteData(0x00);   	// VC(Virtual ChannelID) Control Register
++
++	//==================================
++	SPI_2825_WrCmd(0xb9);
++	SPI_WriteData(0x00);	// 0= PLL disable
++	SPI_WriteData(0x00);
++					
++       //TX_CLK/MS should be between 5Mhz to100Mhz
++	SPI_2825_WrCmd(0xBA);	//PLL=(TX_CLK/MS)*NS 8228=480M 4428=240M  061E=120M 4214=240M 821E=360M 8219=300M
++	SPI_WriteData(0x0d);	//D7-0=NS(0x01 : NS=1)  MS=1    fpre= fin/MS= 24/1=24       fout=fpre*16=24*16=384
++	SPI_WriteData(0x81);	//D15-14=PLL范围  00=62.5-125 01=126-250 10=251-500 11=501-1000  DB12-8=MS(01:MS=1)
++
++	SPI_2825_WrCmd(0xBB);	//LP Clock Divider LP clock = 288MHz / LPD / 8 = 288 / 8 / 4 = 9MHz
++	SPI_WriteData(0x0a);	//D5-0=LPD=0x1 拧C Divide by 2
++	SPI_WriteData(0x00);
++
++	SPI_2825_WrCmd(0xb9);
++	SPI_WriteData(0x01);	// 1=PLL ENABLE
++	SPI_WriteData(0x00);
++    	mdelay(10);
++	
++
++	//==================================
++	SPI_2825_WrCmd(0xDE);	//通道数
++	SPI_WriteData(0x03);	//11=4LANE 10=3LANE 01=2LANE 00=1LANE
++	SPI_WriteData(0x00);
++
++	SPI_2825_WrCmd(0xD6);	//05=BGR  04=RGB       CAN BE DEL
++	SPI_WriteData(0x05);	//D0=0=RGB 1:BGR D1=1=Most significant byte sent first
++	SPI_WriteData(0x00);
++	udelay(100);
++
++            	printk( "ssd2828 set para and write it\n");
++		printk("hfp=%d\n",hfp);
++		printk("hbp=%d\n",hbp);
++		printk("hsa=%d\n",hsa);
++		printk("vfp=%d\n",vfp);
++		printk("vbp=%d\n",vbp);
++		printk("vsa=%d\n",vsa);
++
++	//=================================
++	SPI_2825_WrCmd(0xb1);	// hsw vsw
++	SPI_WriteData(hsa);   	// hsa
++	SPI_WriteData(vsa);  	// vsa
++
++	SPI_2825_WrCmd(0xb2);	
++	SPI_WriteData(hbp);	// hbp  160 + 24 
++	SPI_WriteData(vbp); 	// vbp  10 + 2
++
++	SPI_2825_WrCmd(0xb3);	
++	SPI_WriteData(hfp);	// hfp 
++	SPI_WriteData(vfp); 	// vfp
++
++	SPI_2825_WrCmd(0xb4);	// x 480
++	SPI_WriteData(LCD_XSIZE & 0xFF);
++	SPI_WriteData(LCD_XSIZE>>8); 
++
++	SPI_2825_WrCmd(0xb5);	// y 1280
++	SPI_WriteData(LCD_YSIZE & 0xFF);
++	SPI_WriteData(LCD_YSIZE>>8); 
++
++	SPI_2825_WrCmd(0xb6);	// Video mode and video pixel format Set Color Depth = 24bpp[]
++	SPI_WriteData(0x0B);    // BURST MODE
++	SPI_WriteData(0x00); 
++
++	//================================
++	// config panel
++	SPI_2825_WrCmd(0xb7);        // Generic low power mode
++   	SPI_WriteData(0x10);
++    	SPI_WriteData(0x02); 
++		
++	lcm_init();
++	
++	//================================
++	SPI_2825_WrCmd(0xB7);  // change to high speed mode for send video data
++	SPI_WriteData(0x4b);  // for esd improve
++	SPI_WriteData(0x00); 
++	udelay(100);
++
++#endif
++
++}
++/*
++static void lcd_panel_reset(void)
++{
++	LCD_RESET_SET;
++	mdelay(1);
++	LCD_RESET_CLR;
++	mdelay(20);			// para 5 or 10 always is 40ms ?
++	LCD_RESET_SET;
++	mdelay(2);
++}
++*/
++static void LCD_panel_init(void)
++{
++    //lcd_panel_reset();
++	ssd2828_config_register();
++}
++
++static int panel_simple_myspi_send_cmds(struct panel_simple *panel,
++				      struct panel_cmds *cmds)
++{
++	printk("====================zwh %s %d\n", __FUNCTION__, __LINE__);
++	panel_simple_sleep(50);
++	ssd2828_esd_check();
++	LCD_panel_init();
++	return 0;
++}
++
++//调试========================================================================
++//echo hfp hbp hsa vfp vbp vsa > /proc/ssd2828
++//echo 160 160 24 12 10 2 w> /proc/ssd2828
++
++//echo "addr data w">/proc/ssd2828
++//echo "0 0 r">/proc/ssd2828
++
++
++int debug_panel_simple_prepare(struct panel_simple *p);
++static ssize_t ssd2828_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *off)
++{
++    	char *value;
++    	char *temp;
++    	char *ptr;
++    	unsigned int data[10];
++    	char msg[255]={0};
++    	int i = 0;
++	
++	ptr=NULL;
++    	printk("device_proc_write: %s\n", buf);
++
++    	if (copy_from_user((void*)msg, buf, count)){
++        	printk(KERN_ERR "device_proc_write copy_from_user err\n");
++        	return -EFAULT;
++   	}
++    	printk("msg: %s\n", msg);
++    	value = msg;								//simple_strtoul(msg,NULL,0);
++    	ptr = strrchr(value,'w');//查找一个字符串在另一个字符串中 末次 出现的位置，并返回从字符串中的这个位置起，一直到字符串结束的所有字符
++								//得到w后面的字符串
++	printk("msg: %s\n", msg);
++	printk("value: %s\n", value);
++
++    	while((temp = strsep(&value," "))!= NULL){//返回分隔符前面的字符串，s将指向分隔符之后的字符串
++        	if(i == 0){
++            		sscanf(temp,"%d",&data[0]);	//hfp
++			hfp=data[0];
++        	}else if(i == 1){
++            		sscanf(temp,"%d",&data[1]);	//hbp
++			hbp=data[1];
++        	}else if(i == 2){
++            		sscanf(temp,"%d",&data[2]);	//hsa
++			hsa=data[2];
++        	}else if(i == 3){
++            		sscanf(temp,"%d",&data[3]);	//vfp
++			vfp=data[3];
++        	}else if(i == 4){
++            		sscanf(temp,"%d",&data[4]);	//vbp
++			vbp=data[4];
++        	}else if(i == 5){
++            		sscanf(temp,"%d",&data[5]);	//vsa
++			vsa=data[5];
++        	}else if(i == 6){
++            		sscanf(temp,"%d",&data[6]);
++        	}
++        	i++;//统计参数个数
++    	}
++		
++	if(i){
++		//for(j=0; j<i-1; j++)
++		// 	printk("debug data[0x%d]\n",buff[j]);
++	}
++
++        if(ptr != NULL){
++            	printk( "ssd2828 set para \n");
++		printk("hfp=%d\n",hfp);
++		printk("hbp=%d\n",hbp);
++		printk("hsa=%d\n",hsa);
++		printk("vfp=%d\n",vfp);
++		printk("vbp=%d\n",vbp);
++		printk("vsa=%d\n",vsa);
++		//debug_panel_simple_prepare(mypanel);
++        }else{
++            	printk( "ssd2828 set para only\n");
++        }
++    	
++    	return count;
++}
++static ssize_t ssd2828_proc_read(struct file *file, char __user *page, size_t size, loff_t *ppos)
++{
++	return -1;
++}
++
++static const struct file_operations ssd2828_ops = {
++    .owner = THIS_MODULE,
++    .read = ssd2828_proc_read,
++    .write = ssd2828_proc_write,
++};
++
++static struct proc_dir_entry *procfile = NULL;
++
++static int ssd2828_debug_init(void)
++{
++    int res = 0;
++    printk("ssd2828_debug_init!\n");
++
++	procfile = proc_create("ssd2828", 0666, NULL, &ssd2828_ops);
++    if(procfile == NULL) {
++        res = -ENOMEM;
++        printk(KERN_ERR "create procfile error!\n");
++    } else {
++
++    }
++
++    printk("radio_debug_init ok!\n");
++    return res;
++}
++
++static const struct display_timing test_timing = {
++	.pixelclock = { 48000000, 48000000, 48000000 },
++	.hactive = { 400, 400, 400 },
++	.hfront_porch = { 1, 1, 10 },
++	.hback_porch = { 1, 1, 10 },
++	
++	.hsync_len = { 58, 158, 661 },
++	.vactive = { 1280, 1280, 1280 },
++	.vfront_porch = { 1, 1, 10 },
++	.vback_porch = { 1, 1, 10 },
++	.vsync_len = { 1, 21, 203 },
++	.flags = DISPLAY_FLAGS_DE_HIGH,
++};
++
++
+diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
+index 3c0a61d23709..cfe59658c08b 100644
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -1165,4 +1165,15 @@ config TOUCHSCREEN_VTL_CT36X
+ config TOUCHSCREEN_GT1X
+ 	tristate "GT1X touchscreens support"
+ 
++config TOUCHSCREEN_HY4635
++	tristate "hy4635 touchscreens support"
++	default y
++	help
++	  Say Y here if you have a touchscreen using hy4635_ts.
++
++	  If unsure, say N.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called hy4635_ts.
++
+ endif
+diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
+index b66414e38283..f3fe344ddaeb 100644
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -102,3 +102,4 @@ obj-$(CONFIG_TOUCHSCREEN_COLIBRI_VF50)	+= colibri-vf50-ts.o
+ obj-$(CONFIG_TOUCHSCREEN_ROHM_BU21023)	+= rohm_bu21023.o
+ obj-$(CONFIG_TOUCHSCREEN_VTL_CT36X)	+= vtl_ts/
+ obj-$(CONFIG_TOUCHSCREEN_GT1X)		+= gt1x/
++obj-$(CONFIG_TOUCHSCREEN_HY4635)	+= hy4635_ts.o
+\ No newline at end of file
+diff --git a/drivers/input/touchscreen/hy4635_ts.c b/drivers/input/touchscreen/hy4635_ts.c
+new file mode 100755
+index 000000000000..e34ef6ea0e9f
+--- /dev/null
++++ b/drivers/input/touchscreen/hy4635_ts.c
+@@ -0,0 +1,389 @@
++/*
++ * FocalTech hy4635 TouchScreen driver.
++ *
++ * Copyright (c) 2022  SHENZHEN topband Ltd.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
++#include <linux/input.h>
++#include <linux/input/mt.h>
++#include <linux/interrupt.h>
++#include <linux/module.h>
++#include <linux/property.h>
++#include <linux/workqueue.h>
++#include <linux/timer.h>
++
++#define hy4635_MAX_TOUCH_POINTS		1
++
++#define hy4635_EVENT_NONE		0
++#define hy4635_EVENT_DOWN		1
++#define hy4635_EVENT_MOVE		2
++#define hy4635_EVENT_CONTACT	3
++#define hy4635_EVENT_UP			4
++
++struct hy4635_data {
++	struct i2c_adapter *adapter;
++	struct i2c_client *client;
++	struct input_dev *input;
++	struct gpio_desc *reset_gpio;
++	struct gpio_desc *int_gpio;
++	u32 max_x;
++	u32 max_y;
++	bool invert_x;
++	bool invert_y;
++	bool swap_xy;
++
++	struct delayed_work test_delaywork;
++};
++
++/*
++ * This struct is a touchpoint as stored in hardware.  Note that the id,
++ * as well as the event, are stored in the upper nybble of the hi byte.
++ */
++struct hy4635_touchpoint {
++	u8	id;
++	u8  x_l;
++	u8  x_h;
++	u8  y_l;
++	u8  y_h;
++	u8  pressure;
++	u8  event_id;
++} __packed;
++
++/* This packet represents the register map as read from offset 0 */
++struct hy4635_packet {
++	u8 touches;
++	struct hy4635_touchpoint points[hy4635_MAX_TOUCH_POINTS];
++} __packed;
++
++struct hy4635_data hy4635_d;
++struct hy4635_data *hy4635;
++static void hy4635_reset(struct hy4635_data *hy4635);
++static int hy4635_read(struct i2c_client *client, u16 reg, u8 len, void *data);
++
++static int hy4635_read(struct i2c_client *client, u16 reg, u8 len, void *data)
++{
++	//int error;
++	uint8_t u8_addr[2];
++	struct i2c_msg msg[2];
++	int ret;
++
++	u8_addr[0] = ((reg >> 8) & 0xff);
++	u8_addr[1] = reg & 0xff;
++
++	msg[0].addr = 0x48;
++	msg[0].flags = 0;
++	msg[0].buf = u8_addr;
++	msg[0].len = 2;
++
++	msg[1].addr = 0x48;
++	msg[1].flags = I2C_M_RD;
++	msg[1].buf = data;
++	msg[1].len = len;
++
++	ret = i2c_transfer(client->adapter,msg,1);
++	if(ret != 1)
++	{
++		printk("==-lijc:%s[0x%02x] send reg[0x%04x] error!!\n",__func__,msg[0].addr,reg);
++		return (ret<0)?ret:(-EIO);
++	}
++	udelay(10);
++	ret = i2c_transfer(client->adapter,&msg[1],1);
++	if(ret != 1)
++	{
++		printk("==-lijc:%s send addr error!!\n",__func__);
++		return (ret<0)?ret:(-EIO);
++	}
++
++	return 0;
++#if 0
++	error = i2c_smbus_read_i2c_block_data(client, reg, len, data);
++	if (error < 0)
++		return error;
++
++	if (error != len)
++		return -EIO;
++
++	return 0;
++#endif
++}
++
++static irqreturn_t hy4635_interrupt(int irq, void *dev_id)
++{
++	struct hy4635_data *hy4635 = dev_id;
++	struct device *dev = &hy4635->client->dev;
++	struct input_dev *input = hy4635->input;
++	struct hy4635_packet buf;
++	u8 touches;
++	int i, error;
++	u16 x;
++	u16 y;
++	bool active;
++    
++	error = hy4635_read(hy4635->client, 0x1001, sizeof(buf), &buf);
++	if (error) {
++		dev_err(dev, "read touchdata failed %d\n", error);
++		return IRQ_HANDLED;
++	}
++
++	touches = buf.touches;
++	if (touches > hy4635_MAX_TOUCH_POINTS) {
++		dev_dbg(dev,
++			"%d touch points reported, only %d are supported\n",
++			touches, hy4635_MAX_TOUCH_POINTS);
++		touches = hy4635_MAX_TOUCH_POINTS;
++	}
++
++	for (i = 0; i < touches; i++) {
++		struct hy4635_touchpoint *point = &buf.points[i];
++		x = point->x_h;
++		x = ((x << 8)&0xff00)|((point->x_l)&0xff);
++		y = point->y_h;
++		y = ((y << 8)&0xff00)|((point->y_l)&0xff);
++
++		switch(point->event_id)
++		{
++		case hy4635_EVENT_NONE:
++			active = false;
++			break;
++		case hy4635_EVENT_DOWN:
++		case hy4635_EVENT_MOVE:
++		case hy4635_EVENT_CONTACT:
++			active = true;
++			break;
++		case hy4635_EVENT_UP:
++			active = false;
++			break;
++		default:
++			printk("ERROR: hy4635_ts.c dont support ev[%d]:%d\n",i,point->event_id);
++		};
++
++		input_mt_slot(input, point->id);
++		input_mt_report_slot_state(input, MT_TOOL_FINGER, active);
++		if (!active)
++			continue;
++
++		if (hy4635->invert_x)
++			x = hy4635->max_x - x;
++
++		if (hy4635->invert_y)
++			y = hy4635->max_y - y;
++
++		if (hy4635->swap_xy) {
++			input_report_abs(input, ABS_MT_POSITION_X, y);
++			input_report_abs(input, ABS_MT_POSITION_Y, x);
++		} else {
++			input_report_abs(input, ABS_MT_POSITION_X, x);
++			input_report_abs(input, ABS_MT_POSITION_Y, y);
++		}
++		
++#if 0
++		if(hy4635->swap_xy)
++		{
++			printk("===lijc:tp_raw: x=%d,y=%d,a=%d\n",y,x,active);
++		}
++		else
++		{
++			printk("===lijc:tp_raw: x=%d,y=%d,a=%d\n",x,y,active);
++		}
++		//input_report_abs(input, ABS_MT_PRESSURE,point->pressure);
++#endif
++	}
++
++	input_mt_sync_frame(input);
++	input_sync(input);
++
++	return IRQ_HANDLED;
++}
++
++static void hy4635_debug_info(struct hy4635_data *hy4635)
++{
++	//struct device *dev = &hy4635->client->dev;
++
++	printk("hy4635 probe sucessful:max[x=%d,y=%d],invert[x=%d,y=%d,xy=%d]\n",
++		   hy4635->max_x, hy4635->max_y,hy4635->invert_x,hy4635->invert_y,hy4635->swap_xy);
++
++}
++
++static void hy4635_reset(struct hy4635_data *hy4635)
++{
++	if (!hy4635->reset_gpio)
++		return;
++
++	gpiod_direction_output(hy4635->reset_gpio, 0);
++	msleep(10);
++	gpiod_direction_output(hy4635->reset_gpio, 1);
++	msleep(10);
++	gpiod_direction_output(hy4635->reset_gpio, 0);
++	msleep(120);
++	printk("===lijc:%s\n",__func__);
++}
++
++static int hy4635_probe(struct i2c_client *client,
++			const struct i2c_device_id *id)
++{
++	struct device *dev = &client->dev;
++	struct hy4635_data *hy4635;
++	struct input_dev *input;
++	u32 fuzz_x = 0, fuzz_y = 0;
++	u8 val;
++	int error;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C))
++		return -ENXIO;
++
++	if (!client->irq) {
++		dev_err(dev, "irq is missing\n");
++		return -EINVAL;
++	}
++
++	//hy4635 = devm_kzalloc(dev, sizeof(*hy4635), GFP_KERNEL);
++	hy4635 = &hy4635_d;
++	if (!hy4635)
++		return -ENOMEM;
++
++	hy4635->client = client;
++	hy4635->adapter = client->adapter;
++
++	hy4635->reset_gpio = devm_gpiod_get_optional(dev, "reset",
++						     0);
++	if (IS_ERR(hy4635->reset_gpio)) {
++		error = PTR_ERR(hy4635->reset_gpio);
++		if (error != -EPROBE_DEFER)
++			dev_err(dev, "error getting reset gpio: %d\n", error);
++		return error;
++	}
++
++	hy4635->int_gpio = devm_gpiod_get_optional(dev, "intt",
++						     GPIOD_IN);
++	if (IS_ERR(hy4635->int_gpio)) {
++		error = PTR_ERR(hy4635->int_gpio);
++		if (error != -EPROBE_DEFER)
++			dev_err(dev, "error getting reset gpio: %d\n", error);
++		return error;
++	}
++
++	hy4635_reset(hy4635);
++
++	/* verify that the controller is present */
++	error = hy4635_read(client, 0x00, 1, &val);
++	if (error) {
++		dev_err(dev, "failed to read from controller: %d\n", error);
++		return error;
++	}
++	else
++	{
++		printk("===lijc: i2c read ok!\n");
++	}
++
++	input = devm_input_allocate_device(dev);
++	if (!input)
++		return -ENOMEM;
++
++	hy4635->input = input;
++	input->name = client->name;
++	input->id.bustype = BUS_I2C;
++
++	if (device_property_read_u32(dev, "touchscreen-size-x",
++				     &hy4635->max_x) ||
++	    device_property_read_u32(dev, "touchscreen-size-y",
++				     &hy4635->max_y)) {
++		dev_err(dev, "touchscreen-size-x and/or -y missing\n");
++		return -EINVAL;
++	}
++
++	device_property_read_u32(dev, "touchscreen-fuzz-x", &fuzz_x);
++	device_property_read_u32(dev, "touchscreen-fuzz-y", &fuzz_y);
++	hy4635->invert_x = device_property_read_bool(dev,
++						     "touchscreen-inverted-x");
++	hy4635->invert_y = device_property_read_bool(dev,
++						     "touchscreen-inverted-y");
++	hy4635->swap_xy = device_property_read_bool(dev,
++						    "touchscreen-swapped-x-y");
++
++	if (hy4635->swap_xy) {
++		input_set_abs_params(input, ABS_MT_POSITION_X, 0,
++				     hy4635->max_y, fuzz_y, 0);
++		input_set_abs_params(input, ABS_MT_POSITION_Y, 0,
++				     hy4635->max_x, fuzz_x, 0);
++	} else {
++		input_set_abs_params(input, ABS_MT_POSITION_X, 0,
++				     hy4635->max_x, fuzz_x, 0);
++		input_set_abs_params(input, ABS_MT_POSITION_Y, 0,
++				     hy4635->max_y, fuzz_y, 0);
++	}
++
++	error = input_mt_init_slots(input, hy4635_MAX_TOUCH_POINTS,
++				    INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
++	if (error)
++		return error;
++
++	error = devm_request_threaded_irq(dev, client->irq, NULL,
++					  hy4635_interrupt, IRQF_ONESHOT,
++					  client->name, hy4635);
++	if (error) {
++		dev_err(dev, "request irq %d failed: %d\n", client->irq, error);
++		return error;
++	}
++
++	error = input_register_device(input);
++	if (error) {
++		dev_err(dev, "failed to register input device: %d\n", error);
++		return error;
++	}
++
++	hy4635_debug_info(hy4635);
++	return 0;
++}
++
++#ifdef CONFIG_OF
++static const struct of_device_id hy4635_of_match[] = {
++	{ .compatible = "rockchip,hy4635", },
++	{ }
++};
++#endif
++
++static const struct i2c_device_id hy4635_id[] = {
++	{ "hy4635", },
++	{ }
++};
++
++static struct i2c_driver hy4635_driver = {
++	.driver = {
++		.name = "hy4635",
++		.of_match_table = of_match_ptr(hy4635_of_match),
++	},
++	.probe = hy4635_probe,
++	.id_table = hy4635_id,
++};
++
++static int hy4635_init(void)
++{
++	int ret;
++	ret = i2c_add_driver(&hy4635_driver);
++	return ret;
++}
++
++static void __exit hy4635_exit(void)
++{
++	printk("===lijc: hy4635 exit\n");
++	i2c_del_driver(&hy4635_driver);
++}
++
++late_initcall(hy4635_init);
++module_exit(hy4635_exit);
++
++MODULE_AUTHOR("Jiuchun Li<lijc@topband.com.cn>");
++MODULE_DESCRIPTION("hy4346 TouchScreen driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/logo.bmp b/logo.bmp
+old mode 100644
+new mode 100755
+index 13a761f90b804a412f3e5349713f4c0b0879cc48..288bc415f936cf4070660cb1945291bedab186fd
+GIT binary patch
+literal 256118
+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
+PKmY_l00cl_fx!O(zOx-4
+
+literal 170326
+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
+
+diff --git a/logo_kernel.bmp b/logo_kernel.bmp
+old mode 100644
+new mode 100755
+index 271721846e8dfa18b23384f3837e68ab25785459..288bc415f936cf4070660cb1945291bedab186fd
+GIT binary patch
+literal 256118
+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
+PKmY_l00cl_fx!O(zOx-4
+
+literal 19160
+zcmcJXdAy@lndi^*CO5@Wps5sg2*p|jRIz0#k{hThwgN<1m6ByZ6j0pIb_8w58EIr~
+zT+mj~wyO&ev>BBiM?qYmliV!Yf`AJ;=uOftBq>EugznLq{(Ne_zvq1uF82I6!^c$e
+zo^zhxv!3TX=bZO?!s$=EGWdVBbO>wtb#oL#WFc7CiBAZ3o*cr8UE_~8sFDAc?Yv7^
+zzI=JueZ|VKa^=df$DVtKz4zWbtk`qEP}p~M*!`f5VUGh33486gI;>i~F05L2SXgoJ
+zQDN0#<*@Jk#;|71ny~-6!^2^R9Trv}dSqB#-53ry`q*&D#$&?z_3K0VsEuLMrcL31
+zjhn;a^CyJ0$7~LjO(%r)$GkG^f85K%5t~mA#na9W^QW8^j(Wuzp>*1XVZ-TXg-vH(
+z7}me)oKQaZqOj@g^TWp1UKWl$_no15@jJq?Z+~~#ym@mt_0&_tmMvStg%@5JPI}|J
+z!>ix+m*KL@E(@1metEd!iYvnV-uJ#xy8Py_;qq(3#&=&AHof<Tu=c92gkAsQ7h(7J
+z{W9d<|I3iS>X)H>)uUnadu|FRy!XT5?6+PW&bs0w;rOe*5w^Vl?y&xYTf?ze-x4<5
+zcy~DVrmuy}2S;J&kBma<6O)ko+h2vft{;W`UyZ`bZNCZy+V;9-dswygS0R1ZQz8BN
+zr^51ko(}2zp9$d`&xGCXeJ1SM{9Rai=dZ)c&;KSAKKoSI>x;h$*{?nmR(|uhVc+}5
+zVefmN4txIN@4|kcdN{26yKjeexBWP*|G?v+vhCrp>DGtCnh%Y_p*N4iYIq&+sqNu_
+zZNCod{(2JD-MXFezY66~{w&PXe$4H^4r}jwI2`f7_roF0pN9F*e=pSTe<W<W_n$)f
+z-k*j|5B@0Bzy3s6jSL5V@#(OR?{)Y5CanJQGhy9*e7^D9aB$;yVI80OJANH%$Xox?
+z)8QEUQtfAhJ@#B!-u_)!&iCB+o(sGG;Q6qk_iR}C=yPG8&a+{!N1h8Szt8W-pAT!h
+zgK!XSYiL{7eKxFn__=W451$X~_>?=p2&K+b;pD4t4yRrB;c)!*pA0A7bZa=}>Mw*7
+zKk;BV>C+E{&384!rMKK4uKeid!f~JJgi}BBlW_8V-wNm7{gZI~KRg{y{@QQDE5Gtg
+zI1kxg``~ZGImmoL^Vx9a7aj|5Lgq_b&xW@n^Lvo*{onb0xc>U<!-qcfp>XT1w}!1-
+zw}!j!x+~ms&pqMZd+!YoJn%sH@IBuSH$M2Qa9!{B;aX(<$Yalko4@yb*!tbyhg*<&
+z>yQ2=-2TMBggd*7;m${%4tM_eU&CEL{nzlt{{IYL8vY@C`Jev~zBza<eD&vl2oFB_
+z$ME&-e+=DjH$3#vL*enq9}k1UAaurm4Bw*tyHEYE@PlXmclhz||1I>N|F`hulTU`H
+zo_Z=g|NQe|$BrHGB>n&N?~bq|d>rf-zV8lE)#~ZC)%ebSdiqqgnpLf^!N<NfSed6<
+zI&LlJgJo06GgLJz??H<-tY_ohw%gG9*0yRPSRtxuT&lW{5d3#MepRrd(A2y4ly>+c
+z+8GDSW~WjNcG_+Oxc8TDw{9*VQ*V#$Hi2K$vM&o(-+8;^^%ysSM}y}wauluivh9p&
+z_^2AK)fuLb{j*>#Fb69%c5$!mXi{E@{ETcNUyJX;Ug*GgL)u%<$J7{;rL8?fYx9)F
+z8fDPNk{q6seL%KqF3{Hn&H1m=QyaeZq`!tf6XfpAu&Ru34mRFZT9!fU9w0pm{Bm2!
+zcEUl|p=^T<+Kd>?Mhs_YJ`Q<hy9V^VHH_1@Y=wWEH#mKs$7s+^`q3!HxF{KeoU#>i
+zTI)c@>Khpf$Re4BV7L_+*Ek5;*b6UpAA;d>V`o`tL~l8(h#6QvYFjrN*n}v^z7*er
+zSp^d;5dBG1HhHNm`{MD1WPE+br7NlNQ*1f;LD4nAuk~HjUbl`7#Q{pU44gb#@UnXy
+zUV|wGBScdrs+}h5zMJuKI&gYuBp)^To-kHg6s%?A3{gb8TNpmlrSAUk(%SgHj3%C9
+zf6jO~%}e6ZEo75kLo4E^nhny#6%=m$eOxvy=60qv9$A=;?9=8xj<H|o<9Bz<g4qMR
+zuJ1iHy9QAlBlv&_@dyLCv-5V@n^6PHG8^J?M4EgxMYS=pu(+G-Hgs9DAoq5O<D-rT
+zXOV$LTpo};j?mJ_Sr%VZlaZR))t7h-y)GFKb`Ru<6*Y6{pI8>GtaaV;Wm%c$IDRze
+zY9Nn&ToG;BR+N8uZq0BRyFB(Ev(?H-+pf5Mz;OwX$fE^&6=uEN8NH7ozKBvJYcboT
+z5pq=$>w)7O(N*^8gCm-FgnMj;CHb2kcd}m}{~?`q*C*P$pSy{lhv2BUN3YN480Gbn
+zy$goyH1xbQpry(vjh3~XCn!9F(WkXeulr$lxAyCkG1Qcb3$hS729zW5jj+IYQMSb^
+z;*kZ#Z9YTsQOlHHWt%#g&*K%GBIEyEmK6>bn$VwET&ot+xa1k^2}+yj)2td)T~lOn
+zo^ftX5a^3%-b@mgdyWhT!eCEPYK&U~1m}iDJldCFxU@42AC-=6LY`-~I6XLI9-`|-
+z*>nkt+gX}ioQz2+M@)z%EXztYMUe-JiGOApmDrs2d(PR-Jp_`sf+U+XiP7n(sfXZ-
+zM!xPW!O(MkhJoBsY!gM5W~8j*dLl=YvE^xQ1fxs;xF*}RX9zBnN67#Rc-G=5U*t)W
+zG{BWzy3ohHiH#F`_?W~Nip^G;h)!%bd~sd_p-yj~Ue6t|43`9|fil*w(KnzEE=%$j
+z8bVj4Zy5JYscf7>x_!~MvYj5+1O6|{O3Q=y`3zs~cE5xXD}3(mhn}DoKrf?bGuA%N
+zUp&`nAJSju+h_lbz71dIC7k>8;|oTsLU6yuQ4CFwzDC?Pqm&%Vl4I9bmckEl%tG%o
+z3Tu0g0ilufdtA&gkTs$@0g2dys>~?aTUh}6OBOIhGnC}?%BDV#V~k6EjCsC8mIfH(
+z(#-OneVrN<JOS;rw*_{Atts>1(j;1mJ+h`y7_I2)D@QBJpp!j%pyNTes_11+jUzG=
+zbhp|J)#YSP6m1A<kJy!ORHZ--raUo;pR7)=W<vwa=_oABs4T7R875j#`O+F=T9z3r
+z8@IuMe)o{b@A87F@2OuBzmjD=H_R}7R+34wHh_BMxugXqYXX)40SaZ*0Z&;*h^J(i
+zr<zO0S(z5udo;s#>B*Jxdg^t%b633>BX>cp@}zaKy_ftcA7^KyTsm6NJVt#(B0rg2
+zs6-AqSbjp@*ow&8qDS&dZrTfuOM5)7m{>;g`dr(^BLQTO7FL?JBR5zhVoCZ?;13W~
+zbyRuMh_-4JIE-nJ$1TRlJWFmWJw+I}NY5(RRCWYYUaVt9zC}qZ8Jy<^zobodm+e#v
+zim?W*e7{8Uw`XWBGk6-`V>P78bp6Z7v&gTZ>J0k2P?z~;hQk$`P;ZQ8Bb8kyjPx8h
+z!%pN*=0eZcZ0Q(d$e#mf2Goqm#=m`#HD8BdD{|3fx+XHtGgyrMM%Q6iM)@p@s{zd?
+zereahuQn8IYF_Cv1iQBfy2+DqWtWVU_8pDno4QyQeq*AAW{-`a82XNI$cT{@sDkhg
+zzg2%Vyr!-qW1n9=`sB$zwV`5V<hw5H$?rO&rFnJ6BgyojX+{%yP_uS2W}@Ad+hLN}
+zVK9e<<m=s$-}hnE9Z<F56iYL)Iy8#mESx+q&p0KKk??84C$?H#S&D|;4}94Vz^6|P
+zfl5S3-U%%e*EOzu#pO?_slgdZWtLb^*<999oz{R`jqizetIE4J;EDZe94S_2H=*4{
+zk$KX@-&MXPecLAVu+MZa$bZ?H+`b!m5te4!V8-9I$8zE?pRgx&3D_-Jmi(dpl6E)R
+zAG;UG`I^f^>vD3yo{fD%V`u5qk*>?s)3PEt0y_NMC&Fld0W<DN5Q)NAlFQsGXsXJL
+z*pDrT2gm6Fvx>-szsDW?hgr8^T<gSZ5d0@|1NMiiF5$O?vI=F3{=!af^ULB~BYiZB
+znFG#iv_E#_muEdNiA2z_lUAO1h1#2E=10LaR%Z}Cc82P!4y{5Zn)#Kr{=QfMtGbnA
+z6m*$@>JoX&coo`_FF09X^pMe>yJxsQQrwdINU@KXpz@iFW?j~$vW-E`5)q2Tny*xY
+z0={8=S~5DW3uf3p%fO4HbYhBk<bbY+9X(Rw^$B|_+FUZ~=ax<W48E$H$aOvs@N<&G
+z71>zX$C5{o42v}QRq(SIW*<2Ks}fzxIc==r)rv=3Z>3_qdB6*!b?SoWW0~KStU;c8
+zhl&+`6_^2IVq%P3s>j`8putZgz@M%z1$Kx!Md(@Kz@>ET*rD_6zRaTpK2Ebq^0%1h
+z${+*yl#8P4+K@<RZc%|$d5TxNzW5(9r5HO!*UGGh%Fm4%GTNM=(>9&6`Po|yYw4L!
+zagFf#t@APMrIL1y&F&w-Y0q$6-W`GL;Va3k-B%KC_Zb_vzu9TM)#p*h^?Y+e>+K#5
+zvv#NTcCRUC?NILsFBMvM)}}00^|2l^vv!YrZ+CwyGT!2p-qwPuFz0f-C5bj~cR6P5
+zKCiqziM|*m_OiEo^vuRPwYR$mXYEey?Pw6UzBP#^Z*^;Op@NLGJFU07?`G{UXy2Z-
+z`3}j)x*ulklBDkKZp*m+ZGYm2lyiLBzw^Va{RKa`HD~QFNW%P=)L{IHA7<?@@<ZHu
+zdDxkgUze`Bb31PP(-Y$VchAg<(ykL5FXNNqlb%@Vl`i#;KwpMzR-Zl}%4)<JYiG&x
+z0?*?m&vnM<Uy;x=KF@Py`g|Dqgz@uBo<-kT@>~<%lIODUPD${fmpt>+=fhd~7~fj*
+z+~m2t<hd%mCC^3Sy*$B#-fY5%`Dx1$<UgJlmOM+M?vm#M&!Z*Jk|=+2f=CV;(O+Nk
+z>>BDh3Q^jkD9!))p7Y;&wkVbSR=cIm$V;@(MP_L}sc2U-ZV_3NY*%{Bc7zAWT<{sh
+zxSSi~Ig3==?xJ6_&$2Nq-uNXWR-{qHhkP0B2%ig<BZsxEm+F!kxl^DH$$>X9JIN)r
+zHmArr@WzM7D^<jLl4sw>y#y2;GV3B(gQ(AUkEb?uPu(hv$T1Qg?~rYqWZFJ7X)=9;
+zopK3!8T1-?y#)G@Z-YwNe9^|NUSqzSVC5~nfxcS;Hp!5ObD6xOXJn%r)f%54H!RHx
+zs7R>0{bWO|#3z+}+^$j5UWqj{8*`ez2=^gU6j`m(Rze2V5EC@2T8{Y0Bw9Dnuq%yi
+zn36RI$k<_Y9h#hFSd+2nDy<AvGwjB%ePyd6Yd{)|GL>Tw`%ji{k0yLCf=4e@X<vzB
+zTJ3mBR@+NB1uBa^D<XCDGFHG<+gFHg;MNx3*wz`dwdg}t(Z!~cqlh*gF!OMjtW_=2
+zu*^Yvo=4(QayQekJQYQOx~7N)dfZRsiGd7!dp4nNkOk&V=feYTN?OR(pvs!4*5iC+
+z(K6H;g?j9(7P4g5#8NboqO1x9DdPIAe}u+YIgd$W6>I>`&}&kosuX&SI--dLg<TZg
+zbsO+|fNk^Gu1WtQ+#}8fkdb;gj|O9IsuVSojjHIpBHl0NUxa@hUzXwDMB0+|D;m?Z
+zH2YBQoNT;W&mH&70_Yv2t-`TRjAmuCgT<Xl!X8EJqgmC3w{9i+L}wk&gX5$_OD7j0
+z@T^EuJv}%~mNQ10b!z(EG6TP2{dF&(*5S%1`3SykV%KcJDO;9dhL7nlB^Ku#+%j0a
+zjQ?6GJRwhSj<JX{=dK$c?JMN@3cNX8IZ8U#Y0FucR@Gk_teZ!l60O8OQ9guo#fHUL
+zPR-FSoVCBsq3=l6=PXSXYX#12@=xug#FqJ(a}~}N@cKxv-R}G*`MQW-Ygm23a$pX@
+zRQ1|N*UU07*GrxTyye>kyfT1WfnEOyZfUGphFgb9KmBqaY4)<1TOMu=W`%sK*l6H|
+zCg1I<cxA!vfvEbw1264#<b#1#s5ndX=)9=~FV5{O1FwmtiQ>9+gIoU;`LwzRyl5Tb
+z(IH6kXb&Fs6I7dO@7E#fi4MjTZ4BDj6vuTqHpLOkw;Z<<_hHQnzq;_u$2^gy56>p+
+zC}UT~{4{TJ;3y+T*rI%*<SXH`_R+F=1%4UpgH*!KCAjtA*4!ZeW%}Cm=r&Zl4<tg)
+z5>b<ZS2hjOsj@?EMa-)LFYR6BwI;lB*f}SEY(h@UgVq5>md(Lu1fTLT(#r5nlOCPS
+z$&NbhtH344i1}9`neHT^&Vk>Ol!|Fk`X`IKF)EM8>WpZStGjSE8^Ixml+5L0W&eVB
+z(A$DX6&@{kRN<kW^;kS~m&N!2{u#kz2#+dARdmQRW^lZC<%L2P!xGqi5gy8+trJ-3
+z>8aDx1wRY^VuG(dRPoj5q+1&B>*!Dfw+Mb89meR;V@w6VG=*W4JsAOY3-lJ~S$evx
+z<=BFrF>81ae9dRc-(n{8!6(igUp|oS6<><|I`WsnAD-lUHc;xIEI?fYzfVt-o{{D0
+zsnH`}*TA1=L>YYTrPAO}ETa>2G|0fAqo{)ew_!FygON0V6Ke`MjXbs@!U}L;E}#Qm
+zpjUnK^flm7fCp!-tVV84xOCvcSv~J8VOhKoN1ObRL61E2n%kXMKqnq#OmZD98JoaI
+zKANXbd8|g?B6b=QQ$u*<*<tF$CVe)vI?aYd4J}IQ17EqYo!Du@+~Ev~oYVwG(J=&l
+zUh>hi$l{L$dB0!;ejOdOwq(K2Yes=z)yXON$|+6o`-e)C2oA&5l31&AHL9>;)yXZ|
+zuPeV4Pt&Lp*b89G>$>~r%t(>U9An>~@YQOQhi?mhX`5iZD!;G+yrW%W-Uja;t<tRm
+z=ZyQIW*P7b@EyTJIl6fUvj*HQE8hUmHW)XAu6Vj6l{8IyDrl<NKR}xi{5pI~)2_II
+zqIV1M1lWt{I$-Wpv<6s~7%^&u3D(hC)IJlb!R%|l&s;5G53L<_+N-oL(B6Sp8(!ei
+z(}UX>Zn-VkdFPm$;#=`tKsUV!(B4nco90)}`ixhMbdT7cny@1EKplZvBqs83D@*dT
+z@C)t2)~R(7TbAL~Vw~nw56w8Oam|!(I^apK4tZ?|FWo=uCTO1a0acLRerZzO6j?`A
+zKT=QfyNs1v^iUOOE<^^pbWhtD8#kHVy+bssTf{-p3Mo~<qG=EloHRhARdE0xEP=<<
+zNZCQk3OL-QSc%h_3300WxCK=`s-#LFRH&^Q&KZ;nYwS+3Cd@y)G+Y+Pgser~gN1Zb
+zMTBvZQlpPw?#o5=(fbT(@TlyFmNDyC4vUSDN?A{L{k?<H44E@Tn5zD+*MN(Rm>_ov
+z+x9j8kUE3Zb#&GaTT*wRDq0##CUiwV>(Ly;;%OqWi^ZE*Jd4FyIW3Qb%Ctm0+(+n`
+zp(-+}Fiv+smwd`raSUTK$p_Y=l^9pVB18F`{xq`rjR+P^Bby@HbM>717qDR($sLyn
+zn_q_gkW2fDDlwZ!F4d|z<jRBGqK=ka%s*OmitFA&Kk=Jj<tCC-^Ade|vY5VEbMa`2
+zw=ZJ3iy8sX2#GY87ttq;k25Ap`66?Go|-lxX28tEGQ~daB9*MA(^6I4W2(Y5QpulK
+zixy@gH8S-o{3ckucO<>|OtnnUjPoq2Q<svg$hU5y26#>xq=_sgJXf^L!NO}JK~?<e
+zQzbKE#VWvE6^&}zE){p3Q^`1*^e$9qjdD&G+!3*^m~3m-k|A1Xm9+(A<sO69IMcLz
+z_D9&f1n>EINj_$tk)NEa_K&)i>%ldjaBacW;95s#Vi-Gikv4A~Fxi=wiF0D9g@>94
+zD(1S39Wzq~eD}~+RjDdUEQ;5<b!oZ?&!WzZ&{VbmJaH}W>%?4kuCu$*eM3`u0GUUJ
+zh-2?K**Fci24gyFWx1ix)giJ(@ES8#ULM5paTI=F9<>rqu}?LJy6)>t!fhUId2qUL
+z>w-`?jMd-9R8K|xUct^ovvtxyd<*dDF-jSuEe{?|R2}58qZ27&tB*#+6#Dont@NRu
+z)Z18E7dq5Qi$}-`!;NUJc?yRTJh_3vR!#7$;4{yre%gRWa40AE+BrnlLWdEvB$wbf
+z(LmLJs<dK}NZEjlo`GbQJ{*Uj#~F|OM4MLa*eg9aFw4MgB|HlJ?%G%p36Cs1w42Pr
+zLlt@h9vOJ#RprtzdsN}jL6ai#t2QWNAFTs;4D@;Ms5x{lM#PWKL?Y%A+@a_&V@Fu0
+z0&*#?|4R7sC?o`X0jxaO@`G-)RpmCo*6b;7gcr!A1XrtIj(FAnbO34>RK+d&Qhg1}
+z_@)jOoafPCga*uFtb$~Wu7JD<auMVP$jVDpJT7tL41N<Q+IylAwy1%vh*<=A403ax
+z5%A7}yomhTL6ty-1GrQVo(%__fNS6BXN*`P2W|%3sv-;245;`BncG+*4Njqkt?23V
+z+~rxjy#?&B2&!z{LE0SB&MRX`TC(%tbZCfSoh)QPR!)?KOW@9flSAI|k*+t$s;nik
+zWKad9EKvcu4sspjEOsdHO1zM@!nZv;kB~#P<|4S-LuEjz$im>}X)o|R0#*DqPG^k%
+z#vrI2P~+Li%y-=St0i%bBc)hF-BY(fR`o6mFM`}6zs2uY45b6uePkFhG6%M*?nUBl
+zjD=O<QV}?EW(#A;@0lzfMHZdbR6&kwXIaCo?AUr&M%Ji+-J04BfA+zaHA=|c0h{_E
+zgx%r)8sRkk>_CyMH+7555oPEcI194#dfHcEMV{rqI=CL2;Ns~d-dZ5H6&DF|{ai_{
+zo7+WjJK#<;l;S|Tcd&B{T-`2ZiDa$jy7%(=0xG8kSfdZFzkizGme1EpT)~qS*@DQ+
+zAusD55?4VQg4|?h&P}Xzp`}gBfUzT<wU1O?@AcdU+L3siAg3=tPRnR^D>8)43cxLm
+zW`J;zu|zDhivdZsd4ZM%q+VbwCuLRvSv6SW=xKCJgpCd2D!9XXJ!Gy<SaT*mT4xb{
+zhX^O_l9c=E<O*Vo*(ezlg+ut%Srhd}f}*enAMGmo@KJ0}xzy2ys9=3Cn`0#_c-7dn
+z7MXBBHg9=GRxb2+8(4D+XqN?1xvxuR=~_nFN7~Y&eRz=>D4z4!MbU}Jk3y;?Tuc1c
+z+cH_|!It&38hd6|E**lVwOcz$&C2=1@xf7=w<U0O_A70*hf*cxyL^yj!!lg7PE2(p
+z11h>+Dn6Xm`Fh0-uCKPb-Pawk&UsV|*AHW+Y~Y)AovYWxRTVz9qNLF7UiQ;kj-{tu
+zz*eN8p{gb8!lML-Hulmxv)L8QVxF6D=vw*^r-ci@kzMEc;#&nl=T2Hd^uCWO$T55>
+zl339I7wuAXewDWYzm(H5L{XZSE~E228@3x;0Uq6r`jvyf*3{0SP(jm=Pi>Gydu^>G
+z`FVK4W0>&p(-7p+iGof_nwkOBw`j)b0eUExv@E@rjCu?<f`e8;-Xw<W2qdxsk*hUV
+zr%0k|)fh`XLIvV_#An%B2U+>CuUDU%w;&_E`)Z;+BHVPBJ;rl(5VPo5<c?Q%(AzFU
+z3taMrMZ~sw&Jb7aj3!m)F;V3?iyY{81n|sa={}kjm>G@TC4)}!{XBsdKYOLROjC0W
+zy%x-4Q=N=PNKoZmbj)m*e>sbkB|zxHEw>)|==JQYjEntrKV62KR^kP)J<n5nWLZ(;
+z46l<h?cPhP(G-r%Zq|XC>)f)Os$BL9I)83O4J^x>65!0kvkcD~*^b>Ia@AF@$hvUW
+zNlKRtpqNx->&$8dWrJDGu8_*N29oMM_Hm}UuhZ+Y8MpBB=sNOKf);W#;iYr+%>J_N
+zcncnZGm%fUX$OY)sP$WnC^&W5_q61Z5QrD8_S6^HAkVKwB*}1+qO*?<QKB>L2C_t~
+zVr92*#?Q5hP-yiR2s+bm`pHp-`z6}ouU+8)&9%dyq=m2DZe9HGY#v0N682OLfTBE5
+z!V=2XiskYtLe=fdqWiJOc>eMPI^Ak$y{=QgR-AVUdhHu!xp~GEEUmc0-bLRJV?q2v
+z1R+`ZZ1f{)wK{0m&)e-TnRf7^ob%YsqHPt8`bDS`3AG34AmIWMYQ>*NLd`L=!4Z;G
+z_a_TTSw{xl<X5=GpXW(C`ktS4YnALHL(cCZ8j>2__<NRg*YC@Ek?y|q&e(uaStP9?
+zX%0!X6Kk=4=$@vJHVas?338KPx;s*xluqPSOpTCJ=e{}<Ya*v|TI45~I=!kP$C!Pa
+zJlFG@qeVPtuqW|CjiV|=rzScrs+>udP`yozsfyLw(coKm8bX#O%=*w5LDnsRPDtn7
+zFFLJn9*Y+AbY8`LLu2i2E6`@Z%_g{#RP#^Yiq(cJ%b0FLo0hlP<#H+xZXMLhF|5d-
+zRzOw0Q{AKUFx8ZdbZI?@g4!d3bvCDST<wP%(CY0O)n$E78rbQ9N`{xMsYN{ZS&kY~
+z`yQQKOngmkpN4eWgOb%WUnWFxj*P~6AJH;75v#N2@N3id_>2&#eXj%hnDYxf2zENQ
+zG8J{7IM)0q$&z66=9Ob>XQn&D0oXbx;*FvcBm<|f_(*F-1<kbsm3OP;<QmxQGLQDW
+zVqI(?D@IYy@=<{v&V^DH=OwR|P6c158t9>wLs>d){k7;##%LbT{KFCz8-wR3R&c68
+zm-Fn@!P>l)L>-~Ns%+w?DCPZPpHWAVIXItle6L*m7Q>hc6QW&rKY1JC1Lcm$8dM5>
+zyrJEY_BD}bG)^qgi4zYhB<+PWtRc$ls&Kk~SFIC9P6TZcuTJ8#LF_q3ADtCvyiW0x
+zWB9?FHJn=tM&zsoCe{R1J7uj!svGpi7=2WgtZ?+{3?YZF3TVrlM#K>BYg-wv`YVmb
+z$;idql4uF0&Y8NYMyl?4zr~!?jqacX0$Q+w$XcFVbIjQ>Jap!&xst=byoW`ED2IF1
+zvmWcws}ueXGf5|0H4t_3*rX1QWzd;?m57_DW^);8Zy+AP$Xn}3>8dx7B63&<yanv5
+zo4+a=WIfucobkHfNh2kzuCFFKOV@pJ9r<+vsWniifU<R*iwho!>{E0~kLDS;CRVjE
+zxpHjH{bM~k{ya?PnQjT<bwc%-xp(@9BPX1*NS1TSbd%lke8yci9CfnFZ8BPw$a^|p
+z)0rzd>R4%r6uMDirt~kx>&!+Y-|8f609C{}k8Iaq?cz-?TJ!KyEzWF4nt6QQBs=Ku
+zyjt-XW`LqXp4ZGz<9}a2BKftBElOA?f=2iM8G7S0+X_9(^36z|?~ucL#D?GJv+wY?
+zzZIv<TR&aYO&Kz`F2P!?rx|Fm)f(BZZI#2tw}5@7XShA6&>auROPck%r7QYe<gOZo
+zczoU00>xbq-n^L+vGS)TDZQJ)zStJgYH(I8d-BeMpE>7|O=q2wd4LQP_L!<+n)+)q
+zm$Ztci<}Y4nk`|2q!Cq%>M<U>kjS%4#G03`rRLN8?I^#?oO$SMoAn>ND@&z$e+=8q
+z@yYUuSnc4P##efSLMP`~HBHV+7ot4*D;rTWMZ8`ChTpq@lYNW0rWqUCU-u}oR%eOb
+z(LZ_DK<_my(p$Csp0Pe;sEb+E_vgJAxXJs{92>KT8Kap-^VY$o@e0wV9=4Oo4REf!
+zFV<I_RhuQ8Go7d%E#Un)N>sV=?!~@vBPM(Bs;rIa^3YTyZPbdUE4b<v&Q{IdOiaLo
+zD(wAnMc%qUMreVMz6+n@`vQHsj~yp{<<}DzpB1|A?CEWQQTS?1N$cyFTc3-wYl~jh
+z$2Ij5#qEp8I)9&Vy(*6TZqiqKE%W4VA_Jaz=(Nv^?u+RP^cCofdDau2)ufl&^8zx>
+z=g}ORHoZl@7t~8l()thdeIe#KfTwP`2T5P`JXLVTFOuQlnoGFm?u{w)=YnQ-k0M37
+zimzsKUH$CUM_aTq<i8a2U7%N$YUfnRxr^;(huenebGDK1{cJb03uCG#^}~=@&we?U
+zsSh1`$-=J)wuimauClGsC+)S-E%veKQ+B(3#$I82o1Gui$M<CVOXJ*q<VobtBytyt
+znFH)U+hukspRLh0yUn)E-4@+ypR&KTb?3$O8Q$1omc}36kMrMTsM+@m{gE=)i$2lh
+zPuo&2qGP=7hZ@8jH&b6@_90&t`BeWcoGAVNA-W{GDcYLew(K^$9ohbi?SBrEc~;5r
+z{#b_h$NZz&$@^uQG@oVDwz&+yc(ZISm5%0iqK7xnsQ(+W54v#DyAi|9!A`Ub?R>j2
+z4X@Y|vPN{<+#UAU_BZzTuYu=|Z~*m)#zPnTIDMSF@p(JXu8*L#ZFW;?TSio$wvXF;
+zEjoKjr-(^Ir<kiA8+beGO?F=DM!QKoGuS<Ihke5SlkNKIDTQ_r6)429cZ@i`&CW~T
+zkP@G*sck!n%SZ84>Qzp$I?e{t$#+0d{8u|`?uN9FpWBw!_}lFc<a+;%VyaD=y9>P`
+zr}w*fYc4&`;7NIw(*oufr(f&sEW0k_+~@EG(tgxFd)AaQ7h;|Xv&xVuWy$1O?deR!
+z^NnE{WeYiyxBt}Y=h+!M+b*&j?7H*~bI6$@1|uY0Ci{KDR-EbhJHp=5<;?VTbMT+L
+zY1y{aZRl}3`h48}ayo`;V!54TAFykp>x3AOO=DTmZU=4uGZHjLo@Qr6*Uq7jfoEIi
+zV*7vGzBC;}e9hT^v~yC|rW4tSimi$W&5^X^yTekaCy0zb*v_ykqigLtyEf(@Ym`Bo
+z=nlIrC0UPHGX8EmJ-RYRw;Rpvns#*e(<kgp)3Ia@vv=E;)Rk$MC4FNmiL;%A>T;Zx
+z$idj1?9c6;DMyyK=7_B{@<zAYZc9e3jQ-rN5Ms)0mGUT=bL*#sdONs#EE&JMy#rh*
+z(C`BW)!Yqsy`)Zo&&(9X-`MIU6gx-nikySIHkCQ;IR+cv!RL1J%-W?CDJY^V?ONF}
+zrkeAJFlLl{@Sr85S4MBQcco&9u8Fls$9%ThO`a`2WiMMYetGov=v{V&z0<bvaa+nh
+z*b=WA`6Ydu{T*}uB}-@wtzX6GUG{3U|DauIud#EcHWN3^#5h|d)N@m6BI4zCoYVh>
+zea9Z=bDz_rTSSB=HW9V>6II0Yt#<X)>(C!&$H4tP(GOFPKz(m?j$NA}7SlJ{Unyfi
+zbF<yGWc+eF9**C!pGJ?S9=1p9LHn|3rn4b^W8`roZ6l8~?7!QTo;h)X9cw?ZC+vsz
+zm^~UjVh{6qz&^wb{eb3xqEtC9_Mv^uuAa^nX!k|dAKFjtasK^*Q$K{xkJv-@RpR9$
+zyM}q;vs^YK&OT;`PN|vOZ?%82pW74B<Mx9H-cBd#e?;roFQp_uTxxetXFQav>>Kt=
+zD1V%AjwOEx+DDQ7!}dD6hDi1K6>E>ZFR(+V2>S#(1<GI8PogJmh7mmyO=Z8vUN`j=
+zcDum75NEs{0ZOxPBlXWBXptPfBT4=+IzNWwUx_YO1|Yw0Wo3DTrKgmfi><WpBK6Pg
+zpY11j>xrrCPXCZw{W`li#SFvOH$|7&o^ih35%vqV4>V8O&m(9hvuu|5>mh!9M^;V|
+z*YLdrzH8#uWJh4nv&y~?C45DTpG7NgJtklCeZO?YRu|eEZJ&7E@)d8HeG955v653x
+zwT0^=Nd7gu2uW{*=6rjz?Y1S!L~DYbWd8#iWSwdX&mYCQ!ucb1v3vG<eDp@!tTkQ#
+zA28I}%j_N~MEQ%@zLFJN{oKCkk#sQ>7u%_}>$wTd!OHwc+V_04xcwac9>x1-5xdve
+sTkL3Cp=wC@hXh+eu0GkmXkWMgZvV|Lw@r4G9jJ=yf@I9cmwX5NKa~o*_y7O^
+
+-- 
+2.17.1
+
