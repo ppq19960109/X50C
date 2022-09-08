@@ -143,6 +143,8 @@
         "ota_task.h": "c",
         "ota_power_task.h": "c",
         "aiot_ota_api.h": "c",
-        "aiot_ntp_api.h": "c"
+        "aiot_ntp_api.h": "c",
+        "link_logpost.h": "c",
+        "link_reset_posix.h": "c"
     }
 }

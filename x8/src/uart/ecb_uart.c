@@ -232,7 +232,7 @@ static int ecb_timeout_cb(void *arg)
     {
         if (ecb_uart_heart_timeout(true) == MSG_HEART_TIME)
         {
-            send_error_to_cloud(POWER_BOARD_ERROR_CODE);
+            // send_error_to_cloud(POWER_BOARD_ERROR_CODE);
         }
     }
     return 0;
