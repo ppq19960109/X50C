@@ -2,6 +2,7 @@
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=90
 export TZ='Asia/Shanghai'
 export QT_LINUXFB_DRM_LOGO=/oem/logo.bmp
+export QT_QPA_FB_DRM=1
 
 function check(){
   count=`ps -ef |grep $1 |grep -v "grep" |wc -l`
