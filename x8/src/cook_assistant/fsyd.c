@@ -270,15 +270,22 @@ void set_ignition_switch(unsigned char ignition_switch, enum INPUT_DIR input_dir
     }
 }
 
-void recv_ecb_gear(unsigned char gear)
+void recv_ecb_gear(unsigned char gear, unsigned char gear_change_state)
 {
     mlogPrintf("%s,recv ecb gear:%d hood_gear:%d\n", __func__, gear, state_hood.gear);
     if (state_hood.smart_smoke_switch)
     {
         if (gear != state_hood.gear)
         {
-            if (hood_gear_cb != NULL)
-                hood_gear_cb(-1);
+            if (gear_change_state)
+            {
+                state_hood.gear = gear;
+            }
+            else
+            {
+                if (hood_gear_cb != NULL)
+                    hood_gear_cb(-1);
+            }
         }
     }
     else

@@ -201,7 +201,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         dzlog_info("read from ecb-------------------- command:%d", command);
         // if (data_len > 0)
         //     hdzlog_info((unsigned char *)payload, data_len);
-        hdzlog_info(in, msg_index);
+        hdzlog_info(&in[index], msg_index);
     }
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {

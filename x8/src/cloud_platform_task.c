@@ -84,6 +84,23 @@ cloud_attr_t *get_attr_ptr(const char *name)
     return NULL;
 }
 
+cloud_attr_t *get_attr_ptr_from_uartCmd(signed short cmd)
+{
+    if (cmd <= 0)
+        return NULL;
+    cloud_dev_t *cloud_dev = g_cloud_dev;
+    cloud_attr_t *attr = cloud_dev->attr;
+
+    for (int i = 0; i < cloud_dev->attr_len; ++i)
+    {
+        if (cmd == attr[i].uart_cmd)
+        {
+            return &attr[i];
+        }
+    }
+    return NULL;
+}
+
 unsigned char get_ErrorCodeShow(void)
 {
     cloud_attr_t *attr = get_attr_ptr("ErrorCodeShow");
@@ -540,14 +557,14 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
         for (j = 0; j < cloud_dev->attr_len; ++j)
         {
             attr = &cloud_attr[j];
-            if (value[i] == (*attr).uart_cmd)
+            if (value[i] == attr->uart_cmd)
             {
                 get_attr_report_event(attr, (char *)&value[i + 1], 0);
-                memcpy((*attr).value, &value[i + 1], (*attr).uart_byte_len);
-                // dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
-                // hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
+                memcpy(attr->value, &value[i + 1], attr->uart_byte_len);
+                // dzlog_debug("i:%d cloud_key:%s", i, attr->cloud_key);
+                // hdzlog_info((unsigned char *)attr->value, attr->uart_byte_len);
                 get_attr_report_value(root, attr);
-                switch ((*attr).uart_cmd)
+                switch (attr->uart_cmd)
                 {
                 case 0x4f:
                 {
@@ -559,23 +576,34 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                 }
                 break;
                 case 0x31:
-                    recv_ecb_gear(*((*attr).value));
-                    break;
+                {
+                    cloud_attr_t *ptr = get_attr_ptr_from_uartCmd(0x39);
+                    if (ptr != NULL)
+                    {
+                        unsigned char value = *(ptr->value);
+                        if (value == 2 || value == 3 || value == 6)
+                        {
+                            recv_ecb_gear(*(attr->value), 1);
+                            break;
+                        }
+                    }
+                    recv_ecb_gear(*(attr->value), 0);
+                }
+                break;
                 case 0x35:
-                    cook_assist_set_smartSmoke(*((*attr).value));
+                    cook_assist_set_smartSmoke(*(attr->value));
                     break;
                 case 0x20:
-                    recv_ecb_fire(*((*attr).value), INPUT_RIGHT);
+                    recv_ecb_fire(*(attr->value), INPUT_RIGHT);
                     break;
                 case 0x11:
-                    set_stove_status(*((*attr).value), INPUT_LEFT);
+                    set_stove_status(*(attr->value), INPUT_LEFT);
                     break;
                 case 0x12:
-                    set_stove_status(*((*attr).value), INPUT_RIGHT);
+                    set_stove_status(*(attr->value), INPUT_RIGHT);
                     break;
                 }
-
-                i += (*attr).uart_byte_len;
+                i += attr->uart_byte_len;
                 break;
             }
         }
@@ -624,9 +652,9 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
         attr = &cloud_attr[i];
-        if (strcmp("DataReportReason", (*attr).cloud_key) == 0 || strcmp("HoodOffRemind", (*attr).cloud_key) == 0 || strcmp("LoadPowerState", (*attr).cloud_key) == 0 || strcmp("PCBInput", (*attr).cloud_key) == 0)
+        if (strcmp("DataReportReason", attr->cloud_key) == 0 || strcmp("HoodOffRemind", attr->cloud_key) == 0 || strcmp("LoadPowerState", attr->cloud_key) == 0 || strcmp("PCBInput", attr->cloud_key) == 0)
             continue;
-        get_attr_report_event(attr, (*attr).value, 1);
+        get_attr_report_event(attr, attr->value, 1);
         get_attr_report_value(root, attr);
     }
     cook_assist_report_all(root);
@@ -645,9 +673,9 @@ int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
         attr = &cloud_attr[i];
-        if (cJSON_HasObjectItem(root, (*attr).cloud_key))
+        if (cJSON_HasObjectItem(root, attr->cloud_key))
         {
-            if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
+            if (strcmp("HoodOffRemind", attr->cloud_key) == 0)
                 continue;
             get_attr_report_value(resp, attr);
         }
@@ -664,9 +692,9 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
         attr = &cloud_attr[i];
-        if (strcmp("HoodOffRemind", (*attr).cloud_key) == 0)
+        if (strcmp("HoodOffRemind", attr->cloud_key) == 0)
             continue;
-        else if (strcmp("PwrSWVersion", (*attr).cloud_key) == 0)
+        else if (strcmp("PwrSWVersion", attr->cloud_key) == 0)
             continue;
         get_attr_report_value(resp, attr);
     }
@@ -693,10 +721,10 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     for (int i = 0; i < cloud_dev->attr_len; ++i)
     {
         attr = &cloud_attr[i];
-        if (((*attr).cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || (*attr).cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, (*attr).cloud_key))
+        if ((attr->cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, attr->cloud_key))
         {
-            cJSON *item = cJSON_GetObjectItem(root, (*attr).cloud_key);
-            if (cook_assist_recv_property_set((*attr).cloud_key, item) != 0)
+            cJSON *item = cJSON_GetObjectItem(root, attr->cloud_key);
+            if (cook_assist_recv_property_set(attr->cloud_key, item) != 0)
                 uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
         }
     }

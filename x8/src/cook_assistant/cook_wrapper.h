@@ -24,8 +24,8 @@ extern "C"
 
     void set_ignition_switch(unsigned char ignition_switch, enum INPUT_DIR input_dir); //点火开关控制
 
-    void recv_ecb_gear(unsigned char gear);                           //风机状态
-    void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir); //大小火状态
+    void recv_ecb_gear(unsigned char gear, unsigned char gear_change_state); //风机状态
+    void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir);        //大小火状态
 
     void register_close_fire_cb(int (*cb)(enum INPUT_DIR input_dir));                //关火回调
     void register_hood_gear_cb(int (*cb)(const int gear));                           //风机回调

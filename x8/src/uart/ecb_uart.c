@@ -191,8 +191,8 @@ static int ecb_recv_cb(void *arg)
     if (uart_read_len > 0)
     {
         uart_read_buf_index += uart_read_len;
-        //dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
-        //hdzlog_info(uart_read_buf, uart_read_buf_index);
+        dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+        hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
         //dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
