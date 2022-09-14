@@ -10,7 +10,6 @@
 #include "link_fota_power_posix.h"
 #include "link_ntp_posix.h"
 #include "cloud_platform_task.h"
-#include "database_task.h"
 #include "device_task.h"
 #include "POSIXTimer.h"
 #include "quad_burn.h"
@@ -325,22 +324,6 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
             }
             else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
             {
-            }
-            else if (strcmp("CookbookID", ptr->cloud_key) == 0)
-            {
-                if (cloud_val > 0)
-                {
-                    cloud_attr_t *attr = get_attr_ptr("CookbookName");
-                    if (attr != NULL && attr->value != NULL && strlen(attr->value) == 0)
-                    {
-                        if (select_for_cookbookID(cloud_val, attr->value, attr->uart_byte_len) == 0)
-                        {
-                            cJSON *resp = cJSON_CreateObject();
-                            cJSON_AddStringToObject(resp, "CookbookName", attr->value);
-                            report_msg_all_platform(resp);
-                        }
-                    }
-                }
             }
             item = cJSON_CreateNumber(cloud_val);
         }

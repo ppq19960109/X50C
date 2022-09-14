@@ -7,7 +7,6 @@
 #include "device_task.h"
 #include "link_reset_posix.h"
 #include "link_bind_posix.h"
-#include "database_task.h"
 #include "wifi_task.h"
 
 static void *ProductCategory_cb(void *ptr, void *arg)
@@ -86,7 +85,6 @@ static void *Reset_cb(void *ptr, void *arg)
     link_reset_report();
     sleep(1);
     wifi_reset();
-    database_task_reinit();
     sleep(1);
     uds_event_all();
     cJSON *item = cJSON_CreateNumber(1);
