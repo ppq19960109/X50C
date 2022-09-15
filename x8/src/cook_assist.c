@@ -136,7 +136,7 @@ static int curl_http_post(const char *path, const char *body)
 
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_post_cb);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1L);
         curl_easy_setopt(curl, CURLOPT_POST, 1);
 
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
@@ -188,12 +188,12 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
         right_oil_temp = temp;
     }
 
-    if (++report_temp_count >= 30 || report_temp_count == 15)
+    if (++report_temp_count >= 20 || report_temp_count == 10)
     {
         cJSON *root = cJSON_CreateObject();
         cJSON_AddNumberToObject(root, "LOilTemp", left_oil_temp / 10);
         cJSON_AddNumberToObject(root, "ROilTemp", right_oil_temp / 10);
-        if (report_temp_count != 15)
+        if (report_temp_count != 10)
         {
             report_temp_count = 0;
             report_msg_all_platform(root);
