@@ -124,6 +124,34 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "LStoveTimingState",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 25,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStoveTimingSet",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 27,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStoveTimingOpera",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 26,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStoveTimingLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 28,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "HoodSpeed",
             "valueType": 0,
             "funType": 0,
@@ -142,6 +170,13 @@
             "valueType": 0,
             "funType": 1,
             "uartCmd": 52,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "HoodSteplessSpeed",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 54,
             "uartByteLen": 1
         },
         {
