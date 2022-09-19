@@ -93,6 +93,8 @@ unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
 signed char get_HoodSpeed(void);
 signed char get_StoveStatus(void);
+signed char get_OtaCmdPushType(void);
+signed char set_OtaCmdPushType(char type);
 void get_quad(void);
 void uds_report_reset(void);
 #endif

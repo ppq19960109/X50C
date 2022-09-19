@@ -21,4 +21,5 @@ function check_upgrade() {
 check_upgrade userdata
 check_upgrade oem
 
+export QT_LINUXFB_DRM_LOGO=/oem/logo.bmp
 sh /oem/marssenger/S100Marssenger start

@@ -500,6 +500,13 @@
             "funType": 0,
             "uartCmd": -1,
             "uartByteLen": 1
+        },
+        {
+            "cloudKey": "OtaCmdPushType",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": -1,
+            "uartByteLen": 1
         }
     ],
     "event": [],

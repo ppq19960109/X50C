@@ -160,8 +160,7 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
     if (percent - last_percent >= 5 || percent == 100)
     {
         printf("power download %03d%% done, +%d bytes\r\n", percent, data_buffer_len);
-        if (percent != 100)
-            aiot_download_report_progress(handle, percent);
+        aiot_download_report_progress(handle, percent);
 
         last_percent = percent;
         if (ota_progress_cb)
@@ -244,7 +243,6 @@ static void *demo_ota_download_thread(void *dl_handle)
     else
     {
         last_percent = 0;
-        set_ota_state(OTA_IDLE, NULL);
     }
 
     return NULL;
@@ -297,10 +295,12 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
                 break;
             }
         }
+        if (g_ota_state == OTA_INSTALL_SUCCESS && query_firmware_flag == 0)
+            break;
         set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;
-        uint32_t max_buffer_len = (8 * 1024);
+        uint32_t max_buffer_len = (16 * 1024);
         aiot_sysdep_network_cred_t cred;
         void *dl_handle = NULL;
 
@@ -378,6 +378,7 @@ int link_fota_report_version(char *cur_version)
 
     /* 演示MQTT连接建立起来之后, 就可以上报当前设备的版本号了 */
     // cur_version = "1.0.0";
+    set_ota_state(OTA_IDLE, NULL);
     printf("aiot_ota_report_version %s\r\n", cur_version);
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "default");
     res = aiot_ota_report_version(ota_handle, cur_version);

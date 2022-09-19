@@ -147,6 +147,25 @@ signed char get_StoveStatus(void)
     }
     return *(lattr->value) || *(rattr->value);
 }
+signed char get_OtaCmdPushType(void)
+{
+    cloud_attr_t *attr = get_attr_ptr("OtaCmdPushType");
+    if (attr == NULL)
+    {
+        return -1;
+    }
+    return *(attr->value);
+}
+signed char set_OtaCmdPushType(char type)
+{
+    cloud_attr_t *attr = get_attr_ptr("OtaCmdPushType");
+    if (attr == NULL)
+    {
+        return -1;
+    }
+    *(attr->value) = type;
+    return 0;
+}
 // #define SOFT_TEST
 #ifdef SOFT_TEST
 static char *cloud_set_json = NULL;
@@ -949,11 +968,6 @@ static int recv_sync_service_invoke(char *service_id, char **data)
 {
     return 0;
 }
-static void ota_complete_cb(void)
-{
-    sync();
-    reboot(RB_AUTOBOOT);
-}
 
 static void quad_burn_success()
 {
@@ -979,7 +993,6 @@ int cloud_init(void) //初始化
     register_save_quad_cb(save_device_quad);
     register_report_message_cb(report_msg_quad_uds);
     register_quad_burn_success_cb(quad_burn_success);
-    register_ota_complete_cb(ota_complete_cb);
     register_link_timestamp_cb(link_timestamp_cb);
     register_recv_sync_service_invoke_cb(recv_sync_service_invoke);
     register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调

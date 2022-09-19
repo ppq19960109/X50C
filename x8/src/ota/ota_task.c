@@ -25,6 +25,7 @@ static void *OTARquest_cb(void *ptr, void *arg)
     }
     else
     {
+        set_OtaCmdPushType(1);
         link_fota_download_firmware();
     }
     return NULL;
@@ -158,14 +159,31 @@ fail:
     system(cmd);
     return ret;
 }
+static void ota_complete_cb(void)
+{
+    sync();
+    if (get_OtaCmdPushType() == 1)
+    {
+        reboot(RB_AUTOBOOT);
+    }
+    else
+    {
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddNumberToObject(root, "OTASlientUpgrade", 1);
+        send_event_uds(root, NULL);
+    }
+}
+
 int ota_task_init(void)
 {
     register_ota_state_cb(ota_state_event);
     register_ota_progress_cb(ota_progress_cb);
     register_ota_install_cb(ota_install_cb);
+    register_ota_complete_cb(ota_complete_cb);
     register_ota_query_timer_start_cb(ota_query_timer_start_cb);
     register_ota_query_timer_stop_cb(ota_query_timer_stop_cb);
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+
     return 0;
 }
 void ota_task_deinit(void)
