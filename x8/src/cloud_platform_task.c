@@ -586,6 +586,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                         if (value == 2 || value == 3 || value == 6)
                         {
                             recv_ecb_gear(*(attr->value), 1);
+                            *(ptr->value) = 0;
                             break;
                         }
                     }
