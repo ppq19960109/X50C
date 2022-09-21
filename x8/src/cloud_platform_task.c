@@ -427,7 +427,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             ptr->uart_byte_len = arraySize * 12 + 1;
             out[1] = arraySize;
             index = 2;
-            cJSON *arraySub, *RemindText, *Mode, *Temp, *Timer, *SteamTime, *FanTime, *WaterTime;
+            cJSON *arraySub, *RemindText, *Mode, *Temp, *Timer, *SteamTime, *FanTime, *WaterTime, *SteamGear;
             for (int i = 0; i < arraySize; i++)
             {
                 arraySub = cJSON_GetArrayItem(item, i);
@@ -493,6 +493,18 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                 else
                 {
                     out[index++] = 0;
+                }
+                if (cJSON_HasObjectItem(arraySub, "SteamGear"))
+                {
+                    SteamGear = cJSON_GetObjectItem(arraySub, "SteamGear");
+                    if (SteamGear->valueint <= 0 && SteamGear->valueint > 3)
+                        out[index++] = 2;
+                    else
+                        out[index++] = SteamGear->valueint;
+                }
+                else
+                {
+                    out[index++] = 2;
                 }
             }
             dzlog_warn("get_attr_set_value %s:%d %d", ptr->cloud_key, ptr->uart_byte_len, index);
