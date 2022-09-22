@@ -101,7 +101,7 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
 
-    if (ECB_UART_COMMAND_HEART != command)
+    if (ECB_UART_COMMAND_ACK != command)
     {
         // dzlog_warn("uart send to ecb--------------------------%ld", get_systime_ms());
         dzlog_warn("uart send to ecb--------------------------");
