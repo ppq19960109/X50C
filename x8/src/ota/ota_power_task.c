@@ -7,7 +7,6 @@
 #include "ota_power_task.h"
 #include "link_solo.h"
 #include "ecb_uart_parse_msg.h"
-#include "ecb_uart.h"
 #include "link_fota_posix.h"
 #include "link_fota_power_posix.h"
 

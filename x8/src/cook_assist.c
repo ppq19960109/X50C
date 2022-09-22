@@ -134,7 +134,7 @@ static int curl_http_post(const char *path, const char *body)
 
         curl_easy_setopt(curl, CURLOPT_URL, path);
 
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_post_cb);
+        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_post_cb);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1L);
         curl_easy_setopt(curl, CURLOPT_POST, 1);

@@ -145,6 +145,9 @@
         "aiot_ota_api.h": "c",
         "aiot_ntp_api.h": "c",
         "link_logpost.h": "c",
-        "link_reset_posix.h": "c"
+        "link_reset_posix.h": "c",
+        "aiot_state_api.h": "c",
+        "curl_http_request.h": "c",
+        "math.h": "c"
     }
 }

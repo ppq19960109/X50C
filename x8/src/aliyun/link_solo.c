@@ -20,7 +20,6 @@
 #include "link_bind_posix.h"
 #include "link_dynregmq_posix.h"
 #include "link_remote_access.h"
-#include "link_logpost.h"
 
 static pthread_mutex_t mutex;
 static void *g_dm_handle = NULL;
@@ -616,7 +615,6 @@ int link_model_start()
     } while (1);
     printf("aiot_mqtt_connect success\r\n");
     link_ntp_start(mqtt_handle);
-    link_logopost_init(mqtt_handle);
     /* 向服务器订阅property/batch/post_reply这个topic */
     // link_bind_token_init(mqtt_handle, product_key, device_name);
     // aiot_mqtt_sub(mqtt_handle, "/sys/${YourProductKey}/${YourDeviceName}/thing/event/property/batch/post_reply", NULL, 1, NULL);
@@ -723,7 +721,6 @@ int link_model_start()
     link_remote_access_close();
 #endif
     link_ntp_stop();
-    link_logopost_deinit();
     /* 断开MQTT连接, 一般不会运行到这里 */
     res = aiot_mqtt_disconnect(mqtt_handle);
     if (res < STATE_SUCCESS)

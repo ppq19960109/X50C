@@ -7,9 +7,17 @@
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
 #include "ota_power_task.h"
+#include "curl_http_request.h"
 
 static int msg_get_timeout_count = 0;
 static int ecb_heart_count = 0;
+static char ota_power_state = 0;
+static unsigned short ecb_seq_id = 0;
+
+void set_ecb_ota_power_state(char state)
+{
+    ota_power_state = state;
+}
 
 void send_error_to_cloud(int error_code)
 {
@@ -59,6 +67,58 @@ int ecb_uart_heart_timeout(bool increase)
         return ecb_heart_count;
 }
 
+int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id)
+{
+    if (ota_power_state != 0 && ECB_UART_COMMAND_OTA != command)
+    {
+        return -1;
+    }
+    int index = 0;
+    unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
+    if (send_msg == NULL)
+    {
+        dzlog_error("malloc error\n");
+        return -1;
+    }
+    send_msg[index++] = 0xe6;
+    send_msg[index++] = 0xe6;
+    if (seq_id < 0)
+        seq_id = ecb_seq_id++;
+
+    send_msg[index++] = seq_id >> 8;
+    send_msg[index++] = seq_id & 0xff;
+    send_msg[index++] = command;
+    send_msg[index++] = msg_len >> 8;
+    send_msg[index++] = msg_len & 0xff;
+    if (msg_len > 0 && msg != NULL)
+    {
+        memcpy(&send_msg[index], msg, msg_len);
+        index += msg_len;
+    }
+    unsigned short crc16 = CRC16_MAXIM((const unsigned char *)(send_msg + 2), index - 2);
+    send_msg[index++] = crc16 >> 8;
+    send_msg[index++] = crc16 & 0xff;
+    send_msg[index++] = 0x6e;
+    send_msg[index++] = 0x6e;
+
+    if (ECB_UART_COMMAND_HEART != command)
+    {
+        // dzlog_warn("uart send to ecb--------------------------%ld", get_systime_ms());
+        dzlog_warn("uart send to ecb--------------------------");
+        hdzlog_info(send_msg, ECB_MSG_MIN_LEN + msg_len);
+    }
+    if (ECB_UART_COMMAND_SET == command)
+    {
+        http_report_hex("SET:", send_msg, ECB_MSG_MIN_LEN + msg_len);
+    }
+    int res = ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
+
+    if (resend == 0 || res < 0)
+    {
+        free(send_msg);
+    }
+    return res;
+}
 int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
@@ -184,7 +244,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     unsigned short crc16 = CRC16_MAXIM(&in[index + 2], msg_index - 2);
     unsigned short check_sum = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    //dzlog_info("crc16:%x,check_sum:%x", crc16, check_sum);
+    // dzlog_info("crc16:%x,check_sum:%x", crc16, check_sum);
     msg_index += 2;
     msg_index += 2;
 
@@ -224,6 +284,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         else
         {
         }
+        http_report_hex("EVENT:", &in[index], msg_index);
     }
     else if (command == ECB_UART_COMMAND_HEART)
     {
@@ -250,6 +311,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         msg_get_timeout_count = 0;
         // ecb_resend_list_del_by_id(seq_id);
         send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK);
+        http_report_hex("GETACK:", &in[index], msg_index);
     }
     else if (command == ECB_UART_COMMAND_ACK)
     {
@@ -279,7 +341,7 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
     ecb_uart_read_status_t status;
     for (;;)
     {
-        //dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
+        // dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
         status = func(&in[index], msg_len, &end);
         msg_len -= end;
         index += end;

@@ -5,10 +5,8 @@
 #include "uart_resend.h"
 #include "uart_task.h"
 
-static unsigned short ecb_seq_id = 0;
 static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
-static char ota_power_state = 0;
 static int fd = -1;
 static pthread_mutex_t lock;
 // LIST_HEAD(ECB_LIST_RESEND);
@@ -58,10 +56,6 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
     return (wCRCin ^ 0xFFFF);
 }
 
-void set_ecb_ota_power_state(char state)
-{
-    ota_power_state = state;
-}
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag, unsigned char iscopy)
 {
@@ -74,11 +68,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
     {
         return -1;
     }
-    if (in_len > 5 && in[4] != 0x0e)
-    {
-        dzlog_warn("uart send to ecb--------------------------%ld", get_systime_ms());
-        hdzlog_info(in, in_len);
-    }
+
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
@@ -138,47 +128,6 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
 int ecb_uart_resend_cb(const unsigned char *in, int in_len)
 {
     return ecb_uart_send(in, in_len, 0, 0);
-}
-
-int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id)
-{
-    if (ota_power_state != 0 && ECB_UART_COMMAND_OTA != command)
-    {
-        return -1;
-    }
-    int index = 0;
-    unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
-    if (send_msg == NULL)
-    {
-        dzlog_error("malloc error\n");
-        return -1;
-    }
-    send_msg[index++] = 0xe6;
-    send_msg[index++] = 0xe6;
-    if (seq_id < 0)
-        seq_id = ecb_seq_id++;
-
-    send_msg[index++] = seq_id >> 8;
-    send_msg[index++] = seq_id & 0xff;
-    send_msg[index++] = command;
-    send_msg[index++] = msg_len >> 8;
-    send_msg[index++] = msg_len & 0xff;
-    if (msg_len > 0 && msg != NULL)
-    {
-        memcpy(&send_msg[index], msg, msg_len);
-        index += msg_len;
-    }
-    unsigned short crc16 = CRC16_MAXIM((const unsigned char *)(send_msg + 2), index - 2);
-    send_msg[index++] = crc16 >> 8;
-    send_msg[index++] = crc16 & 0xff;
-    send_msg[index++] = 0x6e;
-    send_msg[index++] = 0x6e;
-    int res = ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
-    if (resend == 0 || res < 0)
-    {
-        free(send_msg);
-    }
-    return res;
 }
 
 static int ecb_recv_cb(void *arg)

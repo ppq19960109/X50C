@@ -14,6 +14,7 @@
 #include "POSIXTimer.h"
 #include "quad_burn.h"
 #include "cook_assist.h"
+#include "curl_http_request.h"
 
 static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
@@ -1032,11 +1033,16 @@ int cloud_init(void) //初始化
     }
     quad_burn_init();
     getNetworkMac(ETH_NAME, g_cloud_dev->mac, sizeof(g_cloud_dev->mac), "");
+    curl_http_request_init();
+    // char buf[] = {1, 33, 44, 55, 77, 99};
+    // http_report_hex("SET:", buf, sizeof(buf));
+    // http_report_hex("EVENT:", buf, sizeof(buf));
     return 0;
 }
 
 void cloud_deinit(void) //反初始化
 {
+    curl_http_request_deinit();
     quad_burn_deinit();
     link_model_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
