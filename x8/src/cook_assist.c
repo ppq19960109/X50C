@@ -6,12 +6,12 @@
 #include "cook_assist.h"
 
 #include "main.h"
-#include "KV_linux.h"
 #include "cloud_platform_task.h"
 #include "uart_task.h"
 #include "ecb_uart_parse_msg.h"
 #include "uds_protocol.h"
 #include "curl/curl.h"
+#include "curl_http_request.h"
 
 typedef struct
 {
@@ -108,54 +108,7 @@ void set_stove_status(unsigned char status, enum INPUT_DIR input_dir)
         g_cook_assist.RStoveStatus = status;
     }
 }
-size_t http_post_cb(void *ptr, size_t size, size_t nmemb, void *stream)
-{
-    printf("http_post_cb size:%lu,nmemb:%lu\n", size, nmemb);
-    printf("http_post_cb data:%s\n", (char *)ptr);
 
-    cJSON *root = cJSON_Parse(ptr);
-    if (root == NULL)
-        return -1;
-    char *json = cJSON_PrintUnformatted(root);
-    printf("http_post_cb json:%s\n", json);
-    free(json);
-    return size * nmemb;
-}
-static int curl_http_post(const char *path, const char *body)
-{
-    CURLcode res;
-    struct curl_slist *headers = NULL;
-    // get a curl handle
-    CURL *curl = curl_easy_init();
-    if (curl)
-    {
-        headers = curl_slist_append(headers, "Content-Type:application/json");
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-        curl_easy_setopt(curl, CURLOPT_URL, path);
-
-        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_post_cb);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1L);
-        curl_easy_setopt(curl, CURLOPT_POST, 1);
-
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
-        // perform the request, res will get the return code
-        res = curl_easy_perform(curl);
-        // check for errors
-        if (res != CURLE_OK)
-        {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        }
-        else
-        {
-            fprintf(stdout, "curl_easy_perform() success.\n");
-        }
-        // always cleanup
-        curl_easy_cleanup(curl);
-    }
-    return 0;
-}
 static void cookingCurve_post(const unsigned short temp)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();

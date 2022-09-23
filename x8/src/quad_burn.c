@@ -130,22 +130,26 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     if (cJSON_HasObjectItem(data, "productKey"))
     {
         ProductKey = cJSON_GetObjectItem(data, "productKey");
-        ++res;
+        if (strlen(ProductKey->valuestring) > 0)
+            ++res;
     }
     if (cJSON_HasObjectItem(data, "productSecret"))
     {
         ProductSecret = cJSON_GetObjectItem(data, "productSecret");
-        ++res;
+        if (strlen(ProductSecret->valuestring) > 0)
+            ++res;
     }
     if (cJSON_HasObjectItem(data, "deviceName"))
     {
         DeviceName = cJSON_GetObjectItem(data, "deviceName");
-        ++res;
+        if (strlen(DeviceName->valuestring) > 0)
+            ++res;
     }
     if (cJSON_HasObjectItem(data, "deviceSecret"))
     {
         DeviceSecret = cJSON_GetObjectItem(data, "deviceSecret");
-        ++res;
+        if (strlen(DeviceSecret->valuestring) > 0)
+            ++res;
     }
 
     if (res == 4 && save_quad_cb)
@@ -159,6 +163,10 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddNumberToObject(resp, "quadrupleId", quad_rupleId);
     cJSON_AddNumberToObject(resp, "state", res);
+    if (res != 1)
+    {
+        cJSON_AddStringToObject(resp, "QuadInfo", "四元组错误，可能存在空值");
+    }
     char *body = cJSON_PrintUnformatted(resp);
     printf("http_quad_cb report json:%s\n", body);
 
