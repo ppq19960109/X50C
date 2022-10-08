@@ -402,6 +402,13 @@
             "funType": 1,
             "uartCmd": 227,
             "uartByteLen": 29
+        },
+        {
+            "cloudKey": "ProductionTestStatus",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 0,
+            "uartByteLen": 1
         }
     ],
     "event": [],

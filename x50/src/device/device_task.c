@@ -10,6 +10,7 @@
 #include "database_task.h"
 #include "gesture_uart.h"
 #include "wifi_task.h"
+
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
