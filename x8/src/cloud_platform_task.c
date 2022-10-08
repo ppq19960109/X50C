@@ -528,6 +528,10 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                 else
                     demo_mode = 0;
             }
+            else if (strcmp("ProductionTestStatus", ptr->cloud_key) == 0)
+            {
+                *ptr->value = num;
+            }
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
@@ -1137,24 +1141,37 @@ void *cloud_task(void *arg) //云端任务
 #if 1
     do
     {
-        if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
+        sleep(2);
+
+        // curl_weather();
+        if (strlen(g_cloud_dev->device_secret) > 0)
         {
-            // curl_weather();
-            if (strlen(g_cloud_dev->device_secret) > 0)
+            cloud_attr_t *attr = get_attr_ptr("ProductionTestStatus");
+            if (attr == NULL)
+            {
+                dzlog_error("not attr ProductionTestStatus");
+            }
+            else
+            {
+                if (*attr->value > 0)
+                {
+                    dzlog_warn("wait ProductionTestStatus");
+                    continue;
+                }
+            }
+            if (getWifiRunningState() == RK_WIFI_State_CONNECTED)
             {
                 link_main(g_cloud_dev->product_key, g_cloud_dev->product_secret, g_cloud_dev->device_name, g_cloud_dev->device_secret, g_cloud_dev->software_ver);
                 break;
             }
             else
             {
-                dzlog_warn("wait curl_http_get_quad");
-                sleep(2);
+                dzlog_warn("no Internet...");
             }
         }
         else
         {
-            dzlog_warn("no Internet...");
-            sleep(2);
+            dzlog_warn("wait curl_http_get_quad");
         }
     } while (1);
 #else

@@ -89,6 +89,7 @@ int send_all_to_cloud(void);
 
 cloud_dev_t *get_cloud_dev(void);
 
+cloud_attr_t *get_attr_ptr(const char *name);
 unsigned int get_ErrorCode(void);
 unsigned char get_ErrorCodeShow(void);
 signed char get_HoodSpeed(void);

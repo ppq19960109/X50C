@@ -5,7 +5,7 @@ SOFTWARE_VERSION="0.0.3"
 
 #compress directory and compress file name
 PKG_DIRNAME="install"
-PKG_FINAL_FILENAME="upgrade_${SOFTWARE_VERSION}_X8.bin"
+PKG_FINAL_FILENAME="upgrade_X8GCZ_${SOFTWARE_VERSION}.bin"
 rm -f upgrade_*.bin
 #upgrade file name
 PKG_INSTALL_FILE="install.sh"

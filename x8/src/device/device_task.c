@@ -84,6 +84,7 @@ static void *Reset_cb(void *ptr, void *arg)
     // return NULL;
     link_reset_report();
     sleep(1);
+    
     wifi_reset();
     sleep(1);
     uds_event_all();

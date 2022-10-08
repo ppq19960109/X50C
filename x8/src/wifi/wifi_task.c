@@ -20,6 +20,7 @@ int get_link_state(void)
 }
 void wifi_reset(void)
 {
+    link_disconnect();
     g_wifi_state = 0;
     g_link_state = 0;
     wifiEnable(1);
@@ -270,9 +271,24 @@ static int wiFiCallback(int event)
     // {
     //     return -1;
     // }
-    if (event == RK_WIFI_State_CONNECTED && link_connected_state == 0 && secret_len > 0)
+    if (event == RK_WIFI_State_CONNECTED)
     {
-        return -1;
+        cloud_attr_t *attr = get_attr_ptr("ProductionTestStatus");
+        if (attr == NULL)
+        {
+            dzlog_error("not attr ProductionTestStatus");
+            if (link_connected_state == 0 && secret_len > 0)
+                return -1;
+        }
+        else
+        {
+            if (*attr->value == 0)
+            {
+                dzlog_warn("wait ProductionTestStatus");
+                if (link_connected_state == 0 && secret_len > 0)
+                    return -1;
+            }
+        }
     }
     return wiFiReport(event);
 }

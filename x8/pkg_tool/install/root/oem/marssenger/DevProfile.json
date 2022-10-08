@@ -299,6 +299,13 @@
             "uartByteLen": 4
         },
         {
+            "cloudKey": "LSteamGear",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 128,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "LStOvOperation",
             "valueType": 0,
             "funType": 2,
@@ -506,6 +513,13 @@
             "valueType": 0,
             "funType": 2,
             "uartCmd": -1,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "ProductionTestStatus",
+            "valueType": 0,
+            "funType": 2,
+            "uartCmd": 0,
             "uartByteLen": 1
         }
     ],
