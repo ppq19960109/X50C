@@ -425,7 +425,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                 dzlog_error("get_attr_set_value arraySize is 0\n");
                 return 0;
             }
-            ptr->uart_byte_len = arraySize * 12 + 1;
+            ptr->uart_byte_len = arraySize * 13 + 1;
             out[1] = arraySize;
             index = 2;
             cJSON *arraySub, *RemindText, *Mode, *Temp, *Timer, *SteamTime, *FanTime, *WaterTime, *SteamGear;

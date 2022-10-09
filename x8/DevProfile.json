@@ -275,14 +275,14 @@
             "valueType": 3,
             "funType": 2,
             "uartCmd": 76,
-            "uartByteLen": 13
+            "uartByteLen": 0
         },
         {
             "cloudKey": "CookbookParam",
             "valueType": 3,
             "funType": 2,
             "uartCmd": 76,
-            "uartByteLen": 13
+            "uartByteLen": 0
         },
         {
             "cloudKey": "MultiStageState",

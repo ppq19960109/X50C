@@ -311,7 +311,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         msg_get_timeout_count = 0;
         // ecb_resend_list_del_by_id(seq_id);
         send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK);
-        http_report_hex("GETACK:", &in[index], msg_index);
+        // http_report_hex("GETACK:", &in[index], msg_index);
     }
     else if (command == ECB_UART_COMMAND_ACK)
     {
