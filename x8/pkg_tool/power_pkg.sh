@@ -5,7 +5,7 @@ SOFTWARE_VERSION="0.1"
 
 #compress directory and compress file name
 PKG_DIRNAME="power_install"
-PKG_FINAL_FILENAME="power_upgrade_${SOFTWARE_VERSION}_X8.bin"
+PKG_FINAL_FILENAME="power_upgrade_X8_${SOFTWARE_VERSION}.bin"
 rm -f power_upgrade_*.bin
 #upgrade file name
 PKG_INSTALL_FILE="install.sh"

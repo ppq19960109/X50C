@@ -11,7 +11,7 @@
 #include "link_fota_power_posix.h"
 
 #define POWER_OTA_CONFIG_FILE "/tmp/power.json"
-#define POWER_OTA_FILE "/tmp/power_upgrade"
+#define POWER_OTA_FILE "/tmp/power_upgrade.bin"
 static const unsigned short ench_package_len = 256;
 
 static void *OTAState_cb(void *ptr, void *arg)
@@ -148,6 +148,7 @@ enum ota_cmd_status_t
 {
     OTA_CMD_START = 0,
     OTA_CMD_DATA,
+    OTA_CMD_NULL,
     OTA_CMD_STOP,
     OTA_CMD_END,
 };
@@ -182,7 +183,7 @@ static void *cloud_parse_power_json(void *input, const char *str)
         goto fail;
     }
     long file_size = getFileSize(POWER_OTA_FILE);
-    dzlog_warn("%s,getFileSize size:%ld", __func__, file_size);
+    dzlog_warn("%s,POWER_OTA_FILE getFileSize size:%ld", __func__, file_size);
     if (file_size <= 0)
         goto fail;
     if (file_size != FileSize->valueint)
@@ -238,7 +239,8 @@ static int ota_power_send_data(const char cmd)
         ++ota_current_package;
         buf[len++] = 0;
         buf[len++] = 0;
-        size_t read_len = fread(&buf[len], ench_package_len, 1, ota_fp);
+        size_t read_len = fread(&buf[len], 1, ench_package_len, ota_fp);
+        dzlog_warn("ota_power_send_data read data len:%ld", read_len);
         buf[len - 2] = read_len >> 8;
         buf[len - 1] = read_len;
         len += read_len;
@@ -262,13 +264,14 @@ static int ota_power_send_data(const char cmd)
     }
 
     ecb_uart_send_ota_msg(buf, len);
-    POSIXTimerSet(ota_power_timer, 0, 5);
+    // POSIXTimerSet(ota_power_timer, 0, 5);
     return 0;
 }
 void ota_power_ack(const unsigned char *data)
 {
     if (data[0] == 0)
     {
+        dzlog_warn("ota_power_ack :%d", ota_power_steps);
         if (ota_power_steps == OTA_CMD_START + 1)
         {
             if (ota_fp != NULL)
@@ -318,7 +321,15 @@ void ota_power_ack(const unsigned char *data)
     else
     {
         dzlog_error("ota_power_ack error:%d", data[1]);
-        ota_power_steps = -1;
+        if (data[1] == 5 || data[1] == 7)
+        {
+            ota_power_send_data(OTA_CMD_START);
+        }
+        else
+        {
+            ota_power_send_data(OTA_CMD_STOP);
+            ota_power_steps = -1;
+        }
     }
 }
 static int ota_install_cb(char *text)
@@ -345,11 +356,16 @@ static int ota_install_cb(char *text)
 fail:
     dzlog_warn("ota_power_install_cb ret:%d", ret);
     sprintf(cmd, "rm -rf %s", text);
-    system(cmd);
+    // system(cmd);
     return ret;
+}
+void power_ota_install()
+{
+    ota_install_cb("/oem/marssenger/power_upgrade.bin");
 }
 static void POSIXTimer_cb(union sigval val)
 {
+    dzlog_warn("%s, sigval:%d", __func__, val.sival_int);
     if (val.sival_int == 0)
     {
         ota_power_query_timer_end();
@@ -372,6 +388,7 @@ int ota_power_task_init(void)
 }
 void ota_power_task_deinit(void)
 {
+    ota_power_send_data(OTA_CMD_STOP);
     if (ota_fp != NULL)
     {
         fclose(ota_fp);

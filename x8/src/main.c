@@ -20,8 +20,8 @@ static int main_quit(void)
     if (running != 0)
     {
         running = 0;
-        uart_task_deinit();    // ECB串口资源释放
         uds_protocol_deinit(); // uds相关释放
+        uart_task_deinit();    // ECB串口资源释放
         cloud_deinit();        //阿里云相关释放
         zlog_fini();           // zlog释放
         usleep(1000);
@@ -61,12 +61,13 @@ int main(int argc, char **argv)
     registerQuitCb(main_quit); //注册退出信号回调
     signalQuit();              //退出信号初始化
 
+    uart_task_init();
     uds_protocol_init(); // uds相关初始化
     cloud_init();        //阿里云相关初始化
-    uart_task_init();
+   
     
-    pthread_create(&cloud_tid, NULL, cloud_task, NULL); //阿里云线程启动
-    pthread_detach(cloud_tid);
+    // pthread_create(&cloud_tid, NULL, cloud_task, NULL); //阿里云线程启动
+    // pthread_detach(cloud_tid);
 
     pthread_create(&uds_tid, NULL, uds_tcp_server_task, NULL); // UI uds通信线程启动
     pthread_detach(uds_tid);

@@ -49,6 +49,109 @@ static int height;               // LCD Y分辨率
 static void *screen_base = NULL; //映射后的显存基地址
 static int bpp;                  //像素深度
 
+void show_fix_screeninfo(struct fb_fix_screeninfo *p)
+{
+    printf("=== FIX SCREEN INFO === \n");
+
+    printf("\tid: %s\n", p->id);
+    printf("\tsmem_start: %#x\n", p->smem_start);
+    printf("\tsmem_len: %u bytes\n", p->smem_len);
+
+    printf("\ttype:");
+    switch (p->type)
+    {
+    case FB_TYPE_PACKED_PIXELS:
+        printf("PACKED_PIXELS\n");
+        break;
+    case FB_TYPE_PLANES:
+        printf("PLANES\n");
+        break;
+    case FB_TYPE_INTERLEAVED_PLANES:
+        printf("INTERLEAVED_PLANES\n");
+        break;
+    case FB_TYPE_TEXT:
+        printf("TEXT\n");
+        break;
+    case FB_TYPE_VGA_PLANES:
+        printf("VGA_PLANES\n");
+        break;
+    }
+
+    printf("\tvisual:");
+    switch (p->visual)
+    {
+    case FB_VISUAL_MONO01:
+        printf("MONO01\n");
+        break;
+    case FB_VISUAL_MONO10:
+        printf("MONO10\n");
+        break;
+    case FB_VISUAL_TRUECOLOR:
+        printf("TRUECOLOR\n");
+        break;
+    case FB_VISUAL_PSEUDOCOLOR:
+        printf("PSEUDOCOLOR\n");
+        break;
+    case FB_VISUAL_DIRECTCOLOR:
+        printf("DIRECTCOLOR\n");
+        break;
+    case FB_VISUAL_STATIC_PSEUDOCOLOR:
+        printf("STATIC_PSEUDOCOLOR\n");
+        break;
+    }
+
+    printf("\txpanstep: %u\n", p->xpanstep);
+    printf("\typanstep: %u\n", p->ypanstep);
+    printf("\tywrapstep: %u\n", p->ywrapstep);
+    printf("\tline_len: %u bytes\n", p->line_length);
+
+    printf("\tmmio_start: %#x\n", p->mmio_start);
+    printf("\tmmio_len: %u bytes\n", p->mmio_len);
+
+    printf("\taccel: ");
+    switch (p->accel)
+    {
+    case FB_ACCEL_NONE:
+        printf("none\n");
+        break;
+    default:
+        printf("unkown\n");
+    }
+
+    printf("\n");
+}
+
+void show_var_screeninfo(struct fb_var_screeninfo *p)
+{
+    printf("=== VAR SCREEN INFO === \n");
+
+    printf("\thsync_len: %u\n", p->hsync_len);
+    printf("\tvsync_len: %u\n", p->vsync_len);
+    printf("\tvmode: %u\n", p->vmode);
+
+    printf("\tvisible screen size: %ux%u\n",
+           p->xres, p->yres);
+    printf("\tvirtual screen size: %ux%u\n\n",
+           p->xres_virtual,
+           p->yres_virtual);
+
+    printf("\tbits per pixel: %u\n", p->bits_per_pixel);
+    printf("\tactivate: %u\n\n", p->activate);
+
+    printf("\txoffset: %d\n", p->xoffset);
+    printf("\tyoffset: %d\n", p->yoffset);
+
+    printf("\tcolor bit-fields:\n");
+    printf("\tR: [%u:%u]\n", p->red.offset,
+           p->red.offset + p->red.length - 1);
+    printf("\tG: [%u:%u]\n", p->green.offset,
+           p->green.offset + p->green.length - 1);
+    printf("\tB: [%u:%u]\n", p->blue.offset,
+           p->blue.offset + p->blue.length - 1);
+    printf("\tA: [%u:%u]\n", p->transp.offset,
+           p->transp.offset + p->transp.length - 1);
+    printf("\n");
+}
 /********************************************************************
  * 函数名称： show_bmp_image
  * 功能描述： 在LCD上显示指定的BMP图片
@@ -149,13 +252,16 @@ int main(int argc, char *argv[])
     ioctl(fd, FBIOGET_VSCREENINFO, &fb_var);
     ioctl(fd, FBIOGET_FSCREENINFO, &fb_fix);
 
+    show_fix_screeninfo(&fb_fix);
+    show_var_screeninfo(&fb_var);
+
     screen_size = fb_fix.line_length * fb_var.yres;
     width = fb_var.xres;
     height = fb_var.yres;
     bpp = fb_var.bits_per_pixel;
-    printf("xres:%d,yres:%d,bits_per_pixel:%d,line_length:%d\n", fb_var.xres, fb_var.yres, fb_var.bits_per_pixel, fb_fix.line_length);
+    printf("xres:%d,yres:%d,bits_per_pixel:%d,line_length:%d smem_len:%d\n", fb_var.xres, fb_var.yres, fb_var.bits_per_pixel, fb_fix.line_length,fb_fix.smem_len);
     /* 将显示缓冲区映射到进程地址空间 */
-    screen_base = mmap(NULL, screen_size, PROT_WRITE, MAP_SHARED, fd, 0);
+    screen_base = mmap(NULL, fb_fix.smem_len, PROT_WRITE, MAP_SHARED, fd, 0);
     if (MAP_FAILED == screen_base)
     {
         perror("mmap error");

@@ -403,7 +403,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         cJSON_AddItemToObject(resp, ptr->cloud_key, item);
     return 0;
 }
-
+void power_ota_install();
 int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把阿里云下发数据解析，并解析成串口数据
 {
     long num = 0;
@@ -531,6 +531,11 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             else if (strcmp("ProductionTestStatus", ptr->cloud_key) == 0)
             {
                 *ptr->value = num;
+            }
+            else if (strcmp("HoodSpeed", ptr->cloud_key) == 0)
+            {
+                power_ota_install();
+                return 0;
             }
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
