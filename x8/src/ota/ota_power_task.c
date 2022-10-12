@@ -12,7 +12,7 @@
 
 #define POWER_OTA_CONFIG_FILE "/tmp/power.json"
 #define POWER_OTA_FILE "/tmp/power_upgrade.bin"
-static const unsigned short ench_package_len = 256;
+static unsigned short ench_package_len = 256;
 
 static void *OTAState_cb(void *ptr, void *arg)
 {
@@ -191,7 +191,7 @@ static void *cloud_parse_power_json(void *input, const char *str)
         dzlog_error("FileSize is error:%ld %d\n", file_size, FileSize->valueint);
         // goto fail;
     }
-    ota_total_packages = file_size / 0xff + (file_size % 0xff > 0 ? 1 : 0);
+    ota_total_packages = file_size / ench_package_len + (file_size % ench_package_len > 0 ? 1 : 0);
     ota_current_package = 0;
     char *data = (char *)input;
     data[0] = FileSize->valueint >> 24;
@@ -240,19 +240,20 @@ static int ota_power_send_data(const char cmd)
         buf[len++] = 0;
         buf[len++] = 0;
         size_t read_len = fread(&buf[len], 1, ench_package_len, ota_fp);
-        dzlog_warn("ota_power_send_data read data len:%ld", read_len);
+        dzlog_warn("ota_power_send_data read data len:%ld,ota_total_packages:%d,ota_current_package:%d", read_len, ota_total_packages, ota_current_package);
         buf[len - 2] = read_len >> 8;
         buf[len - 1] = read_len;
         len += read_len;
-        if (read_len < ench_package_len)
-            ota_power_steps = OTA_CMD_END + 1;
-        else if (read_len == 0)
+        if (read_len == 0)
         {
-            buf[len] = OTA_CMD_END;
+            len = 2;
+            buf[len++] = OTA_CMD_END;
             ota_power_steps = OTA_CMD_END + 2;
         }
+        else if (read_len < ench_package_len)
+            ota_power_steps = OTA_CMD_END + 1;
         else
-            ota_power_steps = OTA_CMD_DATA + 2;
+            ota_power_steps = OTA_CMD_DATA + 1;
     }
     break;
     case OTA_CMD_STOP:
@@ -290,7 +291,10 @@ void ota_power_ack(const unsigned char *data)
         }
         else if (ota_power_steps == OTA_CMD_DATA + 1)
         {
-            ota_power_send_data(OTA_CMD_DATA);
+            if (ota_total_packages <= ota_current_package)
+                ota_power_send_data(OTA_CMD_END);
+            else
+                ota_power_send_data(OTA_CMD_DATA);
         }
         else if (ota_power_steps == OTA_CMD_STOP + 1)
         {

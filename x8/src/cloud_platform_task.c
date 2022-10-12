@@ -535,7 +535,6 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
             else if (strcmp("HoodSpeed", ptr->cloud_key) == 0)
             {
                 power_ota_install();
-                return 0;
             }
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
