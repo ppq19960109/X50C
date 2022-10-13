@@ -6,7 +6,9 @@
 #include "cloud_platform_task.h"
 #include "ota_power_task.h"
 #include "link_solo.h"
+#include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
+#include "uart_resend.h"
 #include "link_fota_posix.h"
 #include "link_fota_power_posix.h"
 
@@ -225,6 +227,10 @@ static int ota_power_send_data(const char cmd)
             ota_power_steps = -1;
             break;
         }
+        ecb_resend_list_clear();
+#ifdef OTA_RESEND
+        set_resend_wait_tick(2500);
+#endif
         len += 7;
         buf[len++] = ench_package_len >> 8;
         buf[len++] = ench_package_len;
@@ -264,8 +270,21 @@ static int ota_power_send_data(const char cmd)
         break;
     }
 
-    ecb_uart_send_ota_msg(buf, len);
-    // POSIXTimerSet(ota_power_timer, 0, 5);
+    if (OTA_CMD_START == cmd)
+    {
+        ecb_uart_send_ota_msg(buf, len, 0);
+        POSIXTimerSet(ota_power_timer, 0, 8);
+    }
+    else
+    {
+#ifdef OTA_RESEND
+        ecb_uart_send_ota_msg(buf, len, 1);
+#else
+        ecb_uart_send_ota_msg(buf, len, 0);
+#endif
+        if (OTA_CMD_STOP != cmd)
+            POSIXTimerSet(ota_power_timer, 0, 5);
+    }
     return 0;
 }
 void ota_power_ack(const unsigned char *data)
@@ -327,6 +346,23 @@ void ota_power_ack(const unsigned char *data)
         dzlog_error("ota_power_ack error:%d", data[1]);
         if (data[1] == 5 || data[1] == 7)
         {
+            // if (data[1] == 5)
+            // {
+            //     if (ota_fp != NULL)
+            //     {
+            //         fclose(ota_fp);
+            //         ota_fp = NULL;
+            //     }
+            //     ota_fp = fopen(POWER_OTA_FILE, "r");
+            //     if (ota_fp == NULL)
+            //     {
+            //         dzlog_error("fopen error NULL");
+            //         ota_power_steps = 0;
+            //         return;
+            //     }
+            //     ota_power_send_data(OTA_CMD_DATA);
+            // }
+            // else
             ota_power_send_data(OTA_CMD_START);
         }
         else
@@ -355,6 +391,9 @@ static int ota_install_cb(char *text)
     }
     dzlog_warn("ota_power_install_cb end...");
     POSIXTimerSet(ota_power_timer, 0, 0);
+#ifdef OTA_RESEND
+    set_resend_wait_tick(0);
+#endif
     set_ecb_ota_power_state(0);
     ret = ota_power_steps;
 fail:
@@ -376,6 +415,7 @@ static void POSIXTimer_cb(union sigval val)
     }
     else if (val.sival_int == 1)
     {
+        ota_power_send_data(OTA_CMD_STOP);
         ota_power_steps = -1;
     }
 }

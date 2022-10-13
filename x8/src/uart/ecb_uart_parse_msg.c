@@ -8,16 +8,11 @@
 #include "uds_protocol.h"
 #include "ota_power_task.h"
 #include "curl_http_request.h"
+#include "uart_resend.h"
 
 static int msg_get_timeout_count = 0;
 static int ecb_heart_count = 0;
-static char ota_power_state = 0;
 static unsigned short ecb_seq_id = 0;
-
-void set_ecb_ota_power_state(char state)
-{
-    ota_power_state = state;
-}
 
 void send_error_to_cloud(int error_code)
 {
@@ -69,7 +64,7 @@ int ecb_uart_heart_timeout(bool increase)
 
 int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id)
 {
-    if (ota_power_state != 0 && ECB_UART_COMMAND_OTA != command)
+    if (get_ecb_ota_power_state() != 0 && ECB_UART_COMMAND_OTA != command)
     {
         return -1;
     }
@@ -95,7 +90,7 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
         memcpy(&send_msg[index], msg, msg_len);
         index += msg_len;
     }
-    unsigned short crc16 = CRC16_MAXIM((const unsigned char *)(send_msg + 2), index - 2);
+    unsigned short crc16 = crc16_maxim_single((const unsigned char *)(send_msg + 2), index - 2);
     send_msg[index++] = crc16 >> 8;
     send_msg[index++] = crc16 & 0xff;
     send_msg[index++] = 0x6e;
@@ -123,9 +118,9 @@ int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
 }
-int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len)
+int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len, unsigned char resend)
 {
-    return ecb_uart_send_msg(ECB_UART_COMMAND_OTA, msg, msg_len, 0, -1);
+    return ecb_uart_send_msg(ECB_UART_COMMAND_OTA, msg, msg_len, resend, -1);
 }
 int ecb_uart_send_ack(int seq_id)
 {
@@ -242,7 +237,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         ecb_uart_send_nak(ECB_NAK_TAILER, seq_id);
         return ECB_UART_READ_TAILER_ERR;
     }
-    unsigned short crc16 = CRC16_MAXIM(&in[index + 2], msg_index - 2);
+    unsigned short crc16 = crc16_maxim_single(&in[index + 2], msg_index - 2);
     unsigned short check_sum = in[index + msg_index] * 256 + in[index + msg_index + 1];
     // dzlog_info("crc16:%x,check_sum:%x", crc16, check_sum);
     msg_index += 2;
@@ -323,6 +318,9 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_OTAACK)
     {
+#ifdef OTA_RESEND
+        ecb_resend_list_del_by_id(seq_id);
+#endif
         if (payload[0] == 0xfa)
             ota_power_ack(&payload[1]);
     }

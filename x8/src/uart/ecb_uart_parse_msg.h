@@ -20,7 +20,7 @@ typedef enum
     ECB_UART_COMMAND_EVENT,
     ECB_UART_COMMAND_KEYPRESS,
     ECB_UART_COMMAND_STORE,
-    ECB_UART_COMMAND_OTA=0X0A,
+    ECB_UART_COMMAND_OTA = 0X0A,
     ECB_UART_COMMAND_OTAACK,
     ECB_UART_COMMAND_HEART = 0X0C,
     ECB_UART_COMMAND_GETACK,
@@ -109,11 +109,11 @@ int ecb_uart_heart_timeout(bool increase);
 int ecb_uart_msg_get(bool increase);
 
 int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len);
-int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len);
+int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len, unsigned char resend);
 // int ecb_uart_send_factory(ft_ret_t ret);
 void send_error_to_cloud(int error_code);
 
 int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *));
-void set_ecb_ota_power_state(char state);
+
 #endif

@@ -6,6 +6,15 @@
 #include "uart_resend.h"
 #include "ecb_uart.h"
 
+unsigned short RESEND_WAIT_TICK = 800;
+void set_resend_wait_tick(short tick)
+{
+    if (tick <= 0)
+        RESEND_WAIT_TICK = 800;
+    else
+        RESEND_WAIT_TICK = tick;
+}
+
 unsigned long get_systime_ms(void)
 {
     struct timeval tv;
@@ -103,6 +112,7 @@ void resend_list_each(struct list_head *head)
         {
             if (resend_tick_compare(current_tick, ptr->wait_tick))
             {
+                printf("%s,resend_tick:%ld %ld RESEND_WAIT_TICK:%d\n", __func__, current_tick, ptr->wait_tick, RESEND_WAIT_TICK);
                 ptr->wait_tick = resend_tick_set(current_tick, RESEND_WAIT_TICK);
                 --ptr->resend_cnt;
 
@@ -116,5 +126,19 @@ void resend_list_each(struct list_head *head)
         {
             resend_list_del(ptr);
         }
+    }
+}
+
+void resend_list_clear(struct list_head *head)
+{
+    uart_resend_t *ptr, *next;
+    if (head == NULL)
+    {
+        printf("%s,head is null\n", __func__);
+        return;
+    }
+    list_for_each_entry_safe(ptr, next, head, node)
+    {
+        resend_list_del(ptr);
     }
 }

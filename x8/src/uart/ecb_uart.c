@@ -5,6 +5,7 @@
 #include "uart_resend.h"
 #include "uart_task.h"
 
+static char ota_power_state = 0;
 static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
 static int fd = -1;
@@ -23,37 +24,70 @@ void ecb_resend_list_del_by_id(const int resend_seq_id)
     resend_list_del_by_id(&ECB_LIST_RESEND, resend_seq_id);
 }
 
-static void InvertUint16(unsigned short *dBuf, unsigned short *srcBuf)
+void ecb_resend_list_clear()
 {
-    int i;
-    unsigned short tmp[4] = {0};
-
-    for (i = 0; i < 16; i++)
-    {
-        if (srcBuf[0] & (1 << i))
-            tmp[0] |= 1 << (15 - i);
-    }
-    dBuf[0] = tmp[0];
+    resend_list_clear(&ECB_LIST_RESEND);
 }
 
-unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
+void set_ecb_ota_power_state(char state)
 {
-    unsigned short wCRCin = 0x0000;
-    unsigned short wCPoly = 0x8005;
+    ota_power_state = state;
+}
+char get_ecb_ota_power_state()
+{
+    return ota_power_state;
+}
+// static void InvertUint16(unsigned short *dBuf, unsigned short *srcBuf)
+// {
+//     int i;
+//     unsigned short tmp[4] = {0};
 
-    InvertUint16(&wCPoly, &wCPoly);
-    while (datalen--)
+//     for (i = 0; i < 16; i++)
+//     {
+//         if (srcBuf[0] & (1 << i))
+//             tmp[0] |= 1 << (15 - i);
+//     }
+//     dBuf[0] = tmp[0];
+// }
+
+// unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
+// {
+//     unsigned short wCRCin = 0x0000;
+//     unsigned short wCPoly = 0x8005;
+
+//     InvertUint16(&wCPoly, &wCPoly);
+//     while (datalen--)
+//     {
+//         wCRCin ^= *(data++);
+//         for (int i = 0; i < 8; i++)
+//         {
+//             if (wCRCin & 0x01)
+//                 wCRCin = (wCRCin >> 1) ^ wCPoly;
+//             else
+//                 wCRCin = wCRCin >> 1;
+//         }
+//     }
+//     return (wCRCin ^ 0xFFFF);
+// }
+
+unsigned short crc16_maxim_single(const unsigned char *ptr, int len)
+{
+    unsigned int i;
+    unsigned short crc = 0x0000;
+
+    while (len--)
     {
-        wCRCin ^= *(data++);
-        for (int i = 0; i < 8; i++)
+        crc ^= *ptr++;
+        for (i = 0; i < 8; ++i)
         {
-            if (wCRCin & 0x01)
-                wCRCin = (wCRCin >> 1) ^ wCPoly;
+            if (crc & 1)
+                crc = (crc >> 1) ^ 0xA001;
             else
-                wCRCin = wCRCin >> 1;
+                crc = (crc >> 1);
         }
     }
-    return (wCRCin ^ 0xFFFF);
+
+    return ~crc;
 }
 
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
@@ -127,6 +161,9 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
 
 int ecb_uart_resend_cb(const unsigned char *in, int in_len)
 {
+    printf("%s,resend send...start\n", __func__);
+    hdzlog_info(in, in_len);
+    printf("%s,resend send...end\n", __func__);
     return ecb_uart_send(in, in_len, 0, 0);
 }
 
@@ -143,8 +180,8 @@ static int ecb_recv_cb(void *arg)
         // dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        //dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
-        // hdzlog_info(uart_read_buf, uart_read_buf_index);
+        // dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        //  hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;
 }
@@ -157,7 +194,8 @@ static int ecb_except_cb(void *arg)
 static int ecb_timeout_cb(void *arg)
 {
     resend_list_each(&ECB_LIST_RESEND);
-
+    if (ota_power_state != 0)
+        return 0;
     static int ecb_msg_get_timeout = MSG_GET_SHORT_TIME;
 
     int msg_get_status = ecb_uart_msg_get(false);
