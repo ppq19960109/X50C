@@ -7,6 +7,7 @@
 #include "ota_task.h"
 #include "link_fota_posix.h"
 #include "link_solo.h"
+#include "ecb_uart_parse_msg.h"
 
 static void *OTAState_cb(void *ptr, void *arg)
 {
@@ -164,6 +165,12 @@ static void ota_complete_cb(void)
     sync();
     if (get_OtaCmdPushType() == 1)
     {
+        unsigned char buf[4];
+        int len = 0;
+        buf[len++] = 0xf9;
+        buf[len++] = 0x01;
+        buf[len++] = 0x05;
+        ecb_uart_send_ota_msg(buf, len, 0);
         reboot(RB_AUTOBOOT);
     }
     else

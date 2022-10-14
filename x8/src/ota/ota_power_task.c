@@ -229,7 +229,7 @@ static int ota_power_send_data(const char cmd)
         }
         ecb_resend_list_clear();
 #ifdef OTA_RESEND
-        set_resend_wait_tick(2500);
+        set_resend_wait_tick(2000);
 #endif
         len += 7;
         buf[len++] = ench_package_len >> 8;
@@ -398,7 +398,7 @@ static int ota_install_cb(char *text)
     ret = ota_power_steps;
 fail:
     dzlog_warn("ota_power_install_cb ret:%d", ret);
-    sprintf(cmd, "rm -rf %s", text);
+    // sprintf(cmd, "rm -rf %s", text);
     // system(cmd);
     return ret;
 }
@@ -432,7 +432,6 @@ int ota_power_task_init(void)
 }
 void ota_power_task_deinit(void)
 {
-    ota_power_send_data(OTA_CMD_STOP);
     if (ota_fp != NULL)
     {
         fclose(ota_fp);

@@ -143,6 +143,8 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
         {
             // link_fota_power_report_version("0.1");
             // return;
+            if (ota_progress_cb)
+                ota_progress_cb(99);
             if (ota_install_cb(OTA_FILE) != 0)
             {
                 aiot_download_report_progress(handle, AIOT_OTAERR_UPGRADE_FAILED);
