@@ -173,13 +173,6 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "HoodSteplessSpeed",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 54,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "HoodOffTimer",
             "valueType": 0,
             "funType": 0,

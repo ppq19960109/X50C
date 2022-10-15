@@ -359,6 +359,7 @@ void cook_assist_init()
 
     cook_assist_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     // cook_assist_set_smartSmoke(1);
+    // cook_assistant_hood_speed_cb(0,INPUT_RIGHT);
 }
 void cook_assist_deinit()
 {

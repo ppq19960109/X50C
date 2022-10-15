@@ -156,24 +156,21 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
     state_handle_t *state_handle = get_input_handle(input_dir);
     mlogPrintf("%s,set_temp_control_switch:%d\n", get_current_time_format(), temp_control_switch);
     state_handle->temp_control_switch = temp_control_switch;
-    if (state_handle->input_dir != INPUT_MAX)
+    if (temp_control_switch)
     {
-        if (temp_control_switch)
-        {
-            state_handle->PID_Type.Ek = 0;
-            state_handle->PID_Type.Ek1 = 0;
-            state_handle->PID_Type.Ek2 = 0;
-            state_handle->PID_Type.LocSum = 0;
-        }
-        else
-        {
-            state_handle->temp_control_first = 0;
-            state_handle->temp_control_lock_countdown = 0;
-            if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_DRY)
-                set_fire_gear(FIRE_BIG, state_handle, 1);
-        }
-        state_handle->temp_control_enter_start_tick = 0;
+        state_handle->PID_Type.Ek = 0;
+        state_handle->PID_Type.Ek1 = 0;
+        state_handle->PID_Type.Ek2 = 0;
+        state_handle->PID_Type.LocSum = 0;
     }
+    else
+    {
+        state_handle->temp_control_first = 0;
+        state_handle->temp_control_lock_countdown = 0;
+        if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_DRY)
+            set_fire_gear(FIRE_BIG, state_handle, 1);
+    }
+    state_handle->temp_control_enter_start_tick = 0;
     if (temp_control_switch_cb != NULL)
         temp_control_switch_cb(temp_control_switch, input_dir);
 }

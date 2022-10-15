@@ -173,13 +173,6 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "HoodSteplessSpeed",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 54,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "HoodOffTimer",
             "valueType": 0,
             "funType": 0,
@@ -275,14 +268,14 @@
             "valueType": 3,
             "funType": 2,
             "uartCmd": 76,
-            "uartByteLen": 13
+            "uartByteLen": 0
         },
         {
             "cloudKey": "CookbookParam",
             "valueType": 3,
             "funType": 2,
             "uartCmd": 76,
-            "uartByteLen": 13
+            "uartByteLen": 0
         },
         {
             "cloudKey": "MultiStageState",

@@ -1027,13 +1027,11 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
     mlogPrintf("%s,cook_assistant_init\n", __func__);
     state_handle_t *state_handle = get_input_handle(input_dir);
     ring_buffer_init(&state_handle->ring_buffer, STATE_JUDGE_DATA_SIZE, 2);
-
+    state_handle->input_dir = input_dir;
     cook_assistant_reinit(state_handle);
 
     state_handle->ignition_switch = 0;
     state_handle->ignition_switch_close_temp = 0;
-
-    state_handle->input_dir = INPUT_MAX;
 
     if (input_dir == INPUT_LEFT)
         set_pan_fire_switch(0, input_dir);
@@ -1041,10 +1039,7 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
         set_pan_fire_switch(0, input_dir);
 
     // set_dry_switch(0, input_dir);
-    // set_temp_control_switch(0, input_dir);
     set_temp_control_target_temp(150, input_dir);
-
-    state_handle->input_dir = input_dir;
 }
 
 static int status_judge(state_handle_t *state_handle, const unsigned short *data, const int len)
