@@ -5,9 +5,6 @@ extern "C"
 {
 #endif
 
-#include "fsyd.h"
-PID_ParaDef *get_pid_para(void);
-
 #ifdef __cplusplus
 }
 #endif

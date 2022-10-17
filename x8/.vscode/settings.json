@@ -148,6 +148,7 @@
         "link_reset_posix.h": "c",
         "aiot_state_api.h": "c",
         "curl_http_request.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "cloud.h": "c"
     }
 }

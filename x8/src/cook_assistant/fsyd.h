@@ -5,11 +5,10 @@ extern "C"
 {
 #endif
 #include "ring_buffer.h"
-#include "pid.h"
 #include "cook_wrapper.h"
 
 #define STATE_JUDGE_DATA_SIZE (10)
-#define INPUT_DATA_HZ (2)
+#define INPUT_DATA_HZ (4)
 
     //大小火
     enum FIRE
@@ -36,13 +35,6 @@ extern "C"
         PAN_FIRE_ENTER,
     };
 
-    //防干烧状态
-    enum DRY
-    {
-        DRY_CLOSE = 0,
-        DRY_START,
-        DRY_CONFIRM = 0xffff,
-    };
     //风随烟动状态
     enum STATE_FSYD
     {
@@ -54,15 +46,11 @@ extern "C"
         STATE_GENTLE,
         STATE_IDLE,
         STATE_PAN_FIRE,
-        STATE_DRY,
     };
     enum TEMP_VALUE
     {
         PAN_FIRE_LOW_TEMP = 2000,
         PAN_FIRE_HIGH_TEMP = 2300,
-        DRY_START_TEMP = 600,
-        DRY_CONFIRM_TEMP = 850,
-        DRY_HIGH_TEMP = 3000,
         SHAKE_PERMIT_TEMP = 1100,
     };
 
@@ -75,9 +63,6 @@ extern "C"
         PAN_FIRE_RISE_JUMP_EXIT_LOCK_TICK = INPUT_DATA_HZ * 3,
         PAN_FIRE_HIGH_TEMP_EXIT_LOCK_TICK = INPUT_DATA_HZ * 5,
         PAN_FIRE_ERROR_LOCK_TICK = INPUT_DATA_HZ * 40,
-        DRY_CLOSE_TICK = INPUT_DATA_HZ * 30,
-        DRY_START_TICK = INPUT_DATA_HZ * 40,
-        DRY_PERIOD_TICK = INPUT_DATA_HZ * 30,
         SHAKE_EXIT_TICK = INPUT_DATA_HZ * 20,
         TEMP_CONTROL_LOCK_TICK = INPUT_DATA_HZ * 5,
     };
@@ -87,16 +72,12 @@ extern "C"
         enum INPUT_DIR input_dir;
 
         unsigned char pan_fire_switch;
-        unsigned char dry_switch;
         unsigned char temp_control_switch;
         //---------------------
         unsigned char last_prepare_state;
         unsigned int last_prepare_state_tick;
 
         unsigned char state;      //总状态
-        unsigned short dry_state; //防干烧状态
-        unsigned short dry_burn_temp[2];
-        unsigned int dry_gentle_tick; //防干烧平缓时间
 
         unsigned char pan_fire_state;
         unsigned char pan_fire_high_temp_exit_lock_tick; //高温时，移锅小火退出后，锁定时间
@@ -110,6 +91,7 @@ extern "C"
         unsigned short temp_control_first;
         unsigned char temp_control_lock_countdown; //控温，锁定时间
         unsigned short temp_control_enter_start_tick;
+        unsigned short temp_control_target_value;
 
         unsigned int shake_permit_start_tick; //允许翻炒开始的时间
         unsigned int shake_exit_tick;
@@ -131,8 +113,6 @@ extern "C"
         unsigned short state_jump_diff;
 
         ring_buffer_t ring_buffer;
-        short pid_sum;
-        PID_TypeDef PID_Type;
     } state_handle_t;
 
     typedef int (*state_func_def)(unsigned char prepare_state, state_handle_t *state_handle);

@@ -16,7 +16,7 @@ void register_oil_temp_cb(void (*cb)(const unsigned short, enum INPUT_DIR))
     oil_temp_cb = cb;
 }
 
-static char *state_info[] = {"shake", "down_jump", "rise_jump", "rise_slow", "down_slow", "gentle", "idle", "pan_fire", "dry"};
+static char *state_info[] = {"shake", "down_jump", "rise_jump", "rise_slow", "down_slow", "gentle", "idle", "pan_fire"};
 //档位切换延时
 static unsigned char g_gear_delay_time = INPUT_DATA_HZ * 2;
 
@@ -51,7 +51,7 @@ state_handle_t *get_input_handle(enum INPUT_DIR input_dir)
 }
 
 #ifdef SIMULATION
-static char *dispaly_state_info[] = {"翻炒", "跳降", "跳升", "缓升", "缓降", "平缓", "空闲", "移锅小火", "干烧"};
+static char *dispaly_state_info[] = {"翻炒", "跳降", "跳升", "缓升", "缓降", "平缓", "空闲", "移锅小火"};
 static char dispaly_msg[33];
 static char *fire_info[] = {"小火", "大火"};
 int get_fire_gear(char *msg, enum INPUT_DIR input_dir)
@@ -550,30 +550,6 @@ static int state_func_rise_slow(unsigned char prepare_state, state_handle_t *sta
     //         gear_change(1, 1, state_info[STATE_RISE_SLOW], state_handle);
     //     }
     // }
-
-    if (state_handle->dry_switch && state_handle->dry_state > DRY_CLOSE)
-    {
-        if (state_handle->dry_state == DRY_CONFIRM)
-        {
-            if (state_handle->dry_switch && state_handle->last_temp >= DRY_CONFIRM_TEMP)
-                return STATE_DRY;
-        }
-        else
-        {
-            unsigned short diff = state_handle->dry_burn_temp[1] > state_handle->dry_burn_temp[0] ? state_handle->dry_burn_temp[1] : state_handle->dry_burn_temp[0];
-
-            diff = state_handle->last_temp - diff;
-            mlogPrintf("%s,%s dry_state rise_slow diff:%f current_tick:%d\n", __func__, state_info[STATE_RISE_SLOW], diff, state_handle->current_tick);
-            if (diff > 60 && state_handle->current_tick > STATE_JUDGE_DATA_SIZE)
-            {
-                if (state_handle->dry_switch && state_handle->last_temp >= DRY_CONFIRM_TEMP)
-                    return STATE_DRY;
-                else
-                    state_handle->dry_state = DRY_CONFIRM;
-            }
-        }
-    }
-
 end:
     if (state_handle->last_prepare_state != prepare_state)
     {
@@ -636,16 +612,6 @@ static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_
         state_handle->last_prepare_state = STATE_IDLE;
         state_handle->last_prepare_state_tick = 0;
 
-        if (state_handle->dry_state == DRY_CLOSE)
-        {
-            state_handle->dry_burn_temp[0] = 0;
-            state_handle->dry_burn_temp[1] = 0;
-            state_handle->dry_gentle_tick = 0;
-        }
-        else
-        {
-            state_handle->current_tick = state_handle->dry_gentle_tick;
-        }
         return prepare_state;
     }
     else
@@ -677,58 +643,6 @@ static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_
     else
     {
     }
-    if (state_handle->dry_switch)
-    {
-        mlogPrintf("%s,%s current_tick:%d dry_state:%d\n", __func__, state_info[STATE_GENTLE], state_handle->current_tick, state_handle->dry_state);
-        if (state_handle->dry_state == DRY_CLOSE && state_handle->current_tick >= DRY_START_TICK && state_handle->state_jump_temp >= DRY_START_TEMP)
-        {
-            state_handle->dry_state = DRY_START;
-            state_handle->dry_burn_temp[0] = state_handle->state_jump_temp;
-
-            mlogPrintf("%s,%s dry_state start:%f\n", __func__, state_info[STATE_GENTLE], state_handle->dry_burn_temp[0]);
-        }
-        else if (state_handle->dry_state == DRY_CONFIRM)
-        {
-            if (state_handle->dry_switch && state_handle->last_temp >= DRY_CONFIRM_TEMP)
-                return STATE_DRY;
-        }
-        else if (state_handle->dry_state > DRY_CLOSE && (state_handle->current_tick / DRY_PERIOD_TICK > state_handle->dry_state))
-        {
-            ++state_handle->dry_state;
-            mlogPrintf("%s,%s dry_state judge temp 0:%d,1:%d\n", __func__, state_info[STATE_GENTLE], state_handle->dry_burn_temp[0], state_handle->dry_burn_temp[1]);
-            if (state_handle->dry_burn_temp[1] > 1)
-            {
-                signed short diff0 = state_handle->state_jump_temp - state_handle->dry_burn_temp[1];
-                signed short diff1 = state_handle->dry_burn_temp[1] - state_handle->dry_burn_temp[0];
-                mlogPrintf("%s,%s :dry_state diff0:%d,diff1:%d\n", __func__, state_info[STATE_GENTLE], diff0, diff1);
-                if (diff0 > 0 && diff1 > 0)
-                {
-                    diff1 = diff1 < 6 ? 6 : diff1;
-                    if (diff0 >= diff1 * 1.9)
-                    {
-                        if (state_handle->dry_switch && state_handle->last_temp >= DRY_CONFIRM_TEMP)
-                            return STATE_DRY;
-                        else
-                            state_handle->dry_state = DRY_CONFIRM;
-                    }
-                }
-                state_handle->dry_burn_temp[0] = state_handle->dry_burn_temp[1];
-                state_handle->dry_burn_temp[1] = state_handle->state_jump_temp;
-            }
-            else
-            {
-                state_handle->dry_burn_temp[1] = state_handle->state_jump_temp;
-                mlogPrintf("%s,%s :dry_state temp 0:%d,1:%d\n", __func__, state_info[STATE_GENTLE], state_handle->dry_burn_temp[0], state_handle->dry_burn_temp[1]);
-                if (state_handle->dry_burn_temp[1] - state_handle->dry_burn_temp[0] > 60)
-                {
-                    if (state_handle->dry_switch && state_handle->last_temp >= DRY_CONFIRM_TEMP)
-                        return STATE_DRY;
-                    else
-                        state_handle->dry_state = DRY_CONFIRM;
-                }
-            }
-        }
-    }
 end:
     if (state_handle->last_prepare_state != prepare_state)
     {
@@ -745,9 +659,6 @@ end:
         if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 10 > state_handle->current_tick)
             return STATE_GENTLE;
     }
-
-    if (state_handle->dry_state > 0)
-        state_handle->dry_gentle_tick = state_handle->current_tick;
 
     return prepare_state;
 }
@@ -950,41 +861,12 @@ end:
     return prepare_state;
 }
 
-static int state_func_dry(unsigned char prepare_state, state_handle_t *state_handle)
-{
-    if (!state_handle->dry_switch)
-        return prepare_state;
-
-    if (state_handle->current_tick == 0)
-    {
-        mlogPrintf("%s,enter state:%s\n", __func__, state_info[STATE_DRY]);
-        state_handle->current_tick = 1;
-
-        gear_change(1, 0, state_info[STATE_DRY], state_handle);
-        if (close_fire_cb != NULL)
-            close_fire_cb(state_handle->input_dir);
-        return prepare_state;
-    }
-    else
-    {
-        ++state_handle->current_tick;
-    }
-
-    if (state_handle->current_tick > DRY_CLOSE_TICK)
-    {
-        gear_change(0, 3, "dry switch close", state_handle);
-        cook_assistant_reinit(state_handle);
-    }
-    return prepare_state;
-}
-
-static state_func_def g_state_func_handle[] = {state_func_shake, state_func_down_jump, state_func_rise_jump, state_func_rise_slow, state_func_down_slow, state_func_gentle, state_func_idle, state_func_pan_fire, state_func_dry};
+static state_func_def g_state_func_handle[] = {state_func_shake, state_func_down_jump, state_func_rise_jump, state_func_rise_slow, state_func_down_slow, state_func_gentle, state_func_idle, state_func_pan_fire};
 
 void cook_assistant_reinit(state_handle_t *state_handle)
 {
     mlogPrintf("%s,cook_assistant_reinit\n", __func__);
     state_handle->state = STATE_IDLE;
-    state_handle->dry_state = DRY_CLOSE;
 
     state_handle->pan_fire_state = PAN_FIRE_CLOSE;
     state_handle->pan_fire_high_temp_exit_lock_tick = 0;
@@ -1012,12 +894,6 @@ void cook_assistant_reinit(state_handle_t *state_handle)
     // state_hood.gear = GEAR_CLOSE;
     // state_hood.prepare_gear = GEAR_INVALID;
     // state_hood.gear_tick = 0;
-
-    state_handle->pid_sum = 0;
-    state_handle->PID_Type.Ek = 0;
-    state_handle->PID_Type.Ek1 = 0;
-    state_handle->PID_Type.Ek2 = 0;
-    state_handle->PID_Type.LocSum = 0;
 }
 /***********************************************************
  * 初始化函数
@@ -1038,7 +914,6 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
     else
         set_pan_fire_switch(0, input_dir);
 
-    // set_dry_switch(0, input_dir);
     set_temp_control_target_temp(150, input_dir);
 }
 
@@ -1046,7 +921,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
 {
 #define START (3)
 
-    mlogPrintf("%s,total_tick:%d pan_fire_state:%d pan_fire_first_error:%d dry_state:%d\n", __func__, state_handle->total_tick, state_handle->pan_fire_state, state_handle->pan_fire_first_error, state_handle->dry_state);
+    mlogPrintf("%s,total_tick:%d pan_fire_state:%d pan_fire_first_error:%d\n", __func__, state_handle->total_tick, state_handle->pan_fire_state, state_handle->pan_fire_first_error);
     mlogPrintf("%s,ignition_switch_close_temp:%d last_temp:%d\n", __func__, state_handle->ignition_switch_close_temp, state_handle->last_temp);
     // STATE_PAN_FIRE
     if (!state_handle->temp_control_switch && state_handle->pan_fire_switch && state_handle->pan_fire_state == PAN_FIRE_CLOSE && state_handle->fire_gear == FIRE_BIG)
@@ -1062,27 +937,6 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
             mlogPrintf("%s judge STATE_PAN_FIRE\n", __func__);
             state_handle->pan_fire_enter_type = 0;
             return STATE_PAN_FIRE;
-        }
-    }
-    // STATE_DRY
-    if (state_handle->dry_switch && data[len - 1] > DRY_HIGH_TEMP && data[len - 2] > DRY_HIGH_TEMP && state_hood.gear > GEAR_CLOSE)
-    {
-        if (state_handle->pan_fire_enter_type == 2)
-        {
-            if (state_handle->pan_fire_state == PAN_FIRE_ERROR_CLOSE)
-                return STATE_DRY;
-        }
-        else
-        {
-            if (state_handle->fire_gear == FIRE_BIG)
-            {
-                state_handle->pan_fire_enter_type = 2;
-                return STATE_PAN_FIRE;
-            }
-            else
-            {
-                return STATE_DRY;
-            }
         }
     }
 
@@ -1226,12 +1080,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     signed short diff0_0, diff0_1, diff0_2, diff1_0, diff1_1, diff1_2, diff2_0, diff2_1, diff2_2;
     signed short before, after;
     signed short JUMP_RISE_VALUE = 150, JUMP_DOWN_VALUE = -150;
-    // if (state_handle->pan_fire_state == PAN_FIRE_START || state_handle->pan_fire_state == PAN_FIRE_ENTER)
-    // {
-    //     JUMP_DOWN_VALUE = -140;
-    //     JUMP_RISE_VALUE = 140;
-    // }
-    // || state_handle->state == STATE_RISE_SLOW
+
     if ((state_handle->state == STATE_GENTLE || (state_handle->state == STATE_RISE_SLOW && data[len - 1] - data[0] < 50 && data[len - 1] - data[0] > 0)) && state_handle->current_tick >= INPUT_DATA_HZ * 2 && state_handle->last_temp < 1000 && state_handle->last_temp > 650)
     {
         // JUMP_DOWN_VALUE = -150;
@@ -1242,15 +1091,10 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
         JUMP_DOWN_VALUE = -350;
         JUMP_RISE_VALUE = 350;
     }
-    // else
-    // {
-    //     JUMP_DOWN_VALUE = -150;
-    //     JUMP_RISE_VALUE = 46;
-    // }
 
     for (i = len - 1; i >= 6; --i)
     {
-        // if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_GENTLE && state_handle->dry_state == DRY_CLOSE)
+        // if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_GENTLE)
         if (0) // JUMP_RISE_VALUE <= 50
         {
             before = data[i - 4];
@@ -1400,10 +1244,6 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     // STATE_RISE_SLOW
 #define STEP (2)
     signed short slow_rise_value = -200;
-    if (state_handle->dry_state > DRY_CLOSE)
-    {
-        slow_rise_value = -30;
-    }
 
     signed short diff0 = data[START] - data[len - 1];
     signed short diff1 = data[START] - data[START + STEP];
@@ -1507,42 +1347,21 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
 }
 static void temp_control_func(state_handle_t *state_handle)
 {
-#if 0
-    signed short pid_ret = PID_Inc(state_handle->PID_Type.target_value, state_handle->last_temp,get_pid_para(), &state_handle->PID_Type);
-    state_handle->pid_sum += pid_ret;
-    mlogPrintf("%s,PID_Inc:%d pid_sum:%d \n", __func__, pid_ret, state_handle->pid_sum);
-    if (state_handle->state != STATE_PAN_FIRE && state_handle->state != STATE_DRY)
-    {
-        if (state_handle->pid_sum > 0)
-        {
-            if (state_handle->pid_sum > 25)
-                set_fire_gear(FIRE_BIG,state_handle,0);
-        }
-        else
-        {
-            if (state_handle->pid_sum < -25)
-                set_fire_gear(FIRE_SMALL,state_handle,0);
-        }
-    }
-    else
-    {
-    }
-#else
     int i, average;
 
     if (state_handle->temp_control_lock_countdown < TEMP_CONTROL_LOCK_TICK)
     {
         ++state_handle->temp_control_lock_countdown;
     }
-    if (state_handle->pan_fire_state > PAN_FIRE_ERROR_CLOSE || state_handle->state == STATE_DRY)
+    if (state_handle->pan_fire_state > PAN_FIRE_ERROR_CLOSE)
     {
         return;
     }
-    // if (state_handle->last_temp < state_handle->PID_Type.Target_value / 2)
+    // if (state_handle->last_temp < state_handle->temp_control_target_value / 2)
     // {
     //     for (i = 0; i < INPUT_DATA_HZ; ++i)
     //     {
-    //         if (state_handle->last_temp_data[state_handle->temp_data_size - 1 - i] > state_handle->PID_Type.Target_value / 2)
+    //         if (state_handle->last_temp_data[state_handle->temp_data_size - 1 - i] > state_handle->temp_control_target_value / 2)
     //         {
     //             break;
     //         }
@@ -1561,7 +1380,7 @@ static void temp_control_func(state_handle_t *state_handle)
     mlogPrintf("%s,temp_control_func average:%d\n", __func__, average);
     if (state_handle->temp_control_first == 0)
     {
-        if (state_handle->PID_Type.Target_value - 40 < average)
+        if (state_handle->temp_control_target_value - 40 < average)
         {
             state_handle->temp_control_enter_start_tick = INPUT_DATA_HZ * 60 * 3;
             set_fire_gear(FIRE_SMALL, state_handle, 0);
@@ -1571,7 +1390,7 @@ static void temp_control_func(state_handle_t *state_handle)
     }
     else
     {
-        if (state_handle->PID_Type.Target_value + 10 < average)
+        if (state_handle->temp_control_target_value + 10 < average)
         {
             if (state_handle->temp_control_lock_countdown >= TEMP_CONTROL_LOCK_TICK)
             {
@@ -1579,16 +1398,16 @@ static void temp_control_func(state_handle_t *state_handle)
                 state_handle->temp_control_lock_countdown = 0;
             }
         }
-        else if (state_handle->PID_Type.Target_value - 40 > average)
+        else if (state_handle->temp_control_target_value - 40 > average)
         {
-            if (state_handle->temp_control_lock_countdown >= TEMP_CONTROL_LOCK_TICK || abs(state_handle->PID_Type.Target_value - average) > state_handle->PID_Type.Target_value * 0.1)
+            if (state_handle->temp_control_lock_countdown >= TEMP_CONTROL_LOCK_TICK || abs(state_handle->temp_control_target_value - average) > state_handle->temp_control_target_value * 0.1)
             {
                 set_fire_gear(FIRE_BIG, state_handle, 0);
                 state_handle->temp_control_lock_countdown = 0;
             }
         }
     }
-#endif
+
     if (state_handle->temp_control_enter_start_tick < INPUT_DATA_HZ * 60 * 3)
     {
         ++state_handle->temp_control_enter_start_tick;
@@ -1634,7 +1453,7 @@ static void change_state(state_handle_t *state_handle)
     {
         temp_control_func(state_handle);
     }
-    if (state_hood.smart_smoke_switch == 0 && state_handle->pan_fire_switch == 0 && state_handle->dry_switch == 0)
+    if (state_hood.smart_smoke_switch == 0 && state_handle->pan_fire_switch == 0)
     {
         state_handle->state = STATE_IDLE;
         return;
@@ -1674,33 +1493,22 @@ static void change_state(state_handle_t *state_handle)
             }
         }
     }
-    //如果当前状态是防干烧
-    if (state_handle->state == STATE_DRY)
-    {
-        prepare_state = STATE_DRY;
-    }
-    else
-    {
-        //下一个状态判断
-        prepare_state = status_judge(state_handle, &state_handle->last_temp_data[state_handle->temp_data_size - STATE_JUDGE_DATA_SIZE], STATE_JUDGE_DATA_SIZE);
-        mlogPrintf("%s,prepare_state:%s\n", __func__, state_info[prepare_state]);
 
-        if (prepare_state == STATE_IDLE && state_handle->state != STATE_PAN_FIRE)
-        {
-            if (state_handle->current_tick != 0)
-                ++state_handle->current_tick;
-            return;
-        }
+    //下一个状态判断
+    prepare_state = status_judge(state_handle, &state_handle->last_temp_data[state_handle->temp_data_size - STATE_JUDGE_DATA_SIZE], STATE_JUDGE_DATA_SIZE);
+    mlogPrintf("%s,prepare_state:%s\n", __func__, state_info[prepare_state]);
+
+    if (prepare_state == STATE_IDLE && state_handle->state != STATE_PAN_FIRE)
+    {
+        if (state_handle->current_tick != 0)
+            ++state_handle->current_tick;
+        return;
     }
+
     //状态切换
     next_state = g_state_func_handle[state_handle->state](prepare_state, state_handle);
     if (state_handle->state != next_state)
     {
-        //下一个不是缓升或空闲，防干烧判断关闭
-        if (next_state != STATE_RISE_SLOW && next_state != STATE_IDLE) //&& next_state != STATE_GENTLE
-        {
-            state_handle->dry_state = DRY_CLOSE;
-        }
         state_handle->current_tick = 0;
         g_state_func_handle[next_state](state_handle->state, state_handle);
         state_handle->state = next_state;

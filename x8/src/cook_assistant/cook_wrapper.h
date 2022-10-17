@@ -38,17 +38,13 @@ extern "C"
     void set_work_mode(unsigned char mode);
     void set_smart_smoke_switch(unsigned char smart_smoke_switch);
     void set_pan_fire_switch(unsigned char pan_fire_switch, enum INPUT_DIR input_dir);
-    void set_dry_switch(unsigned char dry_switch, enum INPUT_DIR input_dir);
+
     void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR input_dir);
     void set_temp_control_target_temp(unsigned short temp, enum INPUT_DIR input_dir);
-    void set_temp_control_p(float kp);
-    void set_temp_control_i(float ki);
-    void set_temp_control_d(float kd);
 
     void register_work_mode_cb(int (*cb)(const unsigned char));
     void register_smart_smoke_switch_cb(int (*cb)(const unsigned char));
     void register_pan_fire_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR));
-    void register_dry_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR));
     void register_temp_control_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR));
     void register_temp_control_target_temp_cb(int (*cb)(const unsigned short, enum INPUT_DIR));
     void register_oil_temp_cb(void (*cb)(const unsigned short, enum INPUT_DIR));

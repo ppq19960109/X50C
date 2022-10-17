@@ -3,13 +3,7 @@
 #include <string.h>
 #include "mlog.h"
 #include "cloud.h"
-
-static PID_ParaDef PID_Para;
-
-PID_ParaDef *get_pid_para(void)
-{
-    return &PID_Para;
-}
+#include "fsyd.h"
 
 static int (*work_mode_cb)(const unsigned char);
 void register_work_mode_cb(int (*cb)(const unsigned char))
@@ -26,11 +20,7 @@ void register_pan_fire_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR))
 {
     pan_fire_switch_cb = cb;
 }
-static int (*dry_switch_cb)(const unsigned char, enum INPUT_DIR);
-void register_dry_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR))
-{
-    dry_switch_cb = cb;
-}
+
 static int (*temp_control_switch_cb)(const unsigned char, enum INPUT_DIR);
 void register_temp_control_switch_cb(int (*cb)(const unsigned char, enum INPUT_DIR))
 {
@@ -135,22 +125,6 @@ void set_pan_fire_switch(unsigned char pan_fire_switch, enum INPUT_DIR input_dir
         pan_fire_switch_cb(pan_fire_switch, input_dir);
 }
 
-void set_dry_switch(unsigned char dry_switch, enum INPUT_DIR input_dir)
-{
-    state_handle_t *state_handle = get_input_handle(input_dir);
-    mlogPrintf("%s,set_dry_switch:%d\n", get_current_time_format(), dry_switch);
-    state_handle->dry_switch = dry_switch;
-    if (dry_switch)
-    {
-    }
-    else
-    {
-        state_handle->dry_state = DRY_CLOSE;
-    }
-    if (dry_switch_cb != NULL)
-        dry_switch_cb(dry_switch, input_dir);
-}
-
 void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);
@@ -158,16 +132,12 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
     state_handle->temp_control_switch = temp_control_switch;
     if (temp_control_switch)
     {
-        state_handle->PID_Type.Ek = 0;
-        state_handle->PID_Type.Ek1 = 0;
-        state_handle->PID_Type.Ek2 = 0;
-        state_handle->PID_Type.LocSum = 0;
     }
     else
     {
         state_handle->temp_control_first = 0;
         state_handle->temp_control_lock_countdown = 0;
-        if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE && state_handle->state != STATE_DRY)
+        if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE)
             set_fire_gear(FIRE_BIG, state_handle, 1);
     }
     state_handle->temp_control_enter_start_tick = 0;
@@ -178,33 +148,9 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
 void set_temp_control_target_temp(unsigned short temp, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);
-    state_handle->PID_Type.Target_value = temp * 10;
-    mlogPrintf("%s,set_temp_control_target_temp:%d\n", get_current_time_format(), state_handle->PID_Type.Target_value);
+    state_handle->temp_control_target_value = temp * 10;
+    mlogPrintf("%s,set_temp_control_target_temp:%d\n", get_current_time_format(), state_handle->temp_control_target_value);
     if (temp_control_target_temp_cb != NULL)
         temp_control_target_temp_cb(temp, input_dir);
     state_handle->temp_control_enter_start_tick = 0;
-}
-
-void set_temp_control_p(float kp)
-{
-    PID_Para.Kp = kp;
-    mlogPrintf("%s,set_temp_control_p:%f\n", get_current_time_format(), PID_Para.Kp);
-    if (temp_control_p_cb != NULL)
-        temp_control_p_cb(kp);
-}
-
-void set_temp_control_i(float ki)
-{
-    PID_Para.Ki = ki;
-    mlogPrintf("%s,set_temp_control_i:%f\n", get_current_time_format(), PID_Para.Ki);
-    if (temp_control_i_cb != NULL)
-        temp_control_i_cb(ki);
-}
-
-void set_temp_control_d(float kd)
-{
-    PID_Para.Kd = kd;
-    mlogPrintf("%s,set_temp_control_d:%f\n", get_current_time_format(), PID_Para.Kd);
-    if (temp_control_d_cb != NULL)
-        temp_control_d_cb(kd);
 }
