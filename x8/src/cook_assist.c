@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "POSIXTimer.h"
 #include "mlog.h"
 #include "cook_assist.h"
 
@@ -32,7 +31,8 @@ static unsigned short right_temp = 0;
 static unsigned short right_environment_temp = 0;
 static unsigned long curveKey = 0;
 //-----------------------------------------------
-static char resp_all_flag = 0;
+
+static pthread_mutex_t lock;
 static cook_assist_t g_cook_assist = {
     workMode : 0,
     OilTempSwitch : 0,
@@ -43,7 +43,6 @@ static cook_assist_t g_cook_assist = {
     RAuxiliaryTemp : 0
 };
 static cJSON *resp = NULL;
-static timer_t cook_assist_timer;
 
 static void cook_assist_judge_work_mode()
 {
@@ -64,7 +63,7 @@ void cook_assist_set_smartSmoke(const char status)
     set_smart_smoke_switch(status);
 }
 
-int cook_assist_recv_property_set(const char *key, cJSON *value)
+static int cook_assist_recv_property_set(const char *key, cJSON *value)
 {
     if (strcmp("RAuxiliarySwitch", key) == 0)
     {
@@ -193,6 +192,7 @@ static int temp_control_target_temp_cb(const unsigned short temp, enum INPUT_DIR
 }
 void cook_assist_report_all(cJSON *root)
 {
+    pthread_mutex_lock(&lock);
     cJSON_AddNumberToObject(root, "RAuxiliarySwitch", g_cook_assist.RAuxiliarySwitch);
     cJSON_AddNumberToObject(root, "RAuxiliaryTemp", g_cook_assist.RAuxiliaryTemp);
     cJSON_AddNumberToObject(root, "CookingCurveSwitch", g_cook_assist.CookingCurveSwitch);
@@ -202,39 +202,27 @@ void cook_assist_report_all(cJSON *root)
     if (resp != NULL)
         cJSON_Delete(resp);
     resp = NULL;
-}
-static void POSIXTimer_cb(union sigval val)
-{
-    if (val.sival_int == 0)
-    {
-        if (resp_all_flag == 0)
-        {
-            if (resp == NULL)
-                return;
-            report_msg_all_platform(resp);
-        }
-        else
-        {
-            cJSON *root = cJSON_CreateObject();
-            cook_assist_report_all(root);
-            report_msg_all_platform(root);
-        }
-        resp = NULL;
-    }
+    pthread_mutex_unlock(&lock);
 }
 
-void cook_assist_start_single_recv()
+int cook_assist_link_recv(const char *key, cJSON *value)
 {
-    if (resp == NULL)
-        return;
-    POSIXTimerSet(cook_assist_timer, 0, 0);
-    resp_all_flag = 1;
-}
-void cook_assist_end_single_recv()
-{
-    if (resp == NULL && resp_all_flag == 0)
-        return;
-    POSIXTimerSet(cook_assist_timer, 0, 1);
+    int res = -1;
+    pthread_mutex_lock(&lock);
+    if (key == NULL || value == NULL)
+    {
+        if (resp != NULL)
+        {
+            report_msg_all_platform(resp);
+            resp = NULL;
+        }
+    }
+    else
+    {
+        res = cook_assist_recv_property_set(key, value);
+    }
+    pthread_mutex_unlock(&lock);
+    return res;
 }
 //-----------------------------------------------------------------
 static int cook_assistant_hood_speed_cb(const int gear)
@@ -273,7 +261,7 @@ static int cook_assist_recv_cb(void *arg)
     int uart_read_len;
 
     uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));
-
+    cook_assist_link_recv(NULL, NULL);
     if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
         return -1;
     if (uart_read_len > 0)
@@ -328,6 +316,7 @@ static int cook_assist_remind_cb(int index)
 
 void cook_assist_init()
 {
+    pthread_mutex_init(&lock, NULL);
     register_oil_temp_cb(oil_temp_cb);
     register_pan_fire_switch_cb(pan_fire_switch_cb);
     register_smart_smoke_switch_cb(smart_smoke_switch_cb);
@@ -357,16 +346,11 @@ void cook_assist_init()
 
     add_select_client_uart(&select_client_event);
 
-    cook_assist_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     // cook_assist_set_smartSmoke(1);
     // cook_assistant_hood_speed_cb(0,INPUT_RIGHT);
 }
 void cook_assist_deinit()
 {
-    if (cook_assist_timer != NULL)
-    {
-        POSIXTimerDelete(cook_assist_timer);
-        cook_assist_timer = NULL;
-    }
     close(fd);
+    pthread_mutex_destroy(&lock);
 }

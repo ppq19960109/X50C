@@ -735,7 +735,6 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
-    cook_assist_start_single_recv();
     unsigned char uart_buf[256];
     int uart_buf_len = 0;
 
@@ -748,7 +747,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
         if ((attr->cloud_fun_type == LINK_FUN_TYPE_ATTR_REPORT_CTRL || attr->cloud_fun_type == LINK_FUN_TYPE_ATTR_CTRL) && cJSON_HasObjectItem(root, attr->cloud_key))
         {
             cJSON *item = cJSON_GetObjectItem(root, attr->cloud_key);
-            if (cook_assist_recv_property_set(attr->cloud_key, item) != 0)
+            if (cook_assist_link_recv(attr->cloud_key, item) != 0)
                 uart_buf_len += get_attr_set_value(attr, item, &uart_buf[uart_buf_len]);
         }
     }
@@ -756,7 +755,6 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     {
         ecb_uart_send_cloud_msg(uart_buf, uart_buf_len);
     }
-    cook_assist_end_single_recv();
     pthread_mutex_unlock(&mutex);
     return 0;
 }

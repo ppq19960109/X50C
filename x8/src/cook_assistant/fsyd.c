@@ -103,7 +103,7 @@ void register_thread_unlock_cb(int (*cb)())
     thread_unlock_cb = cb;
 }
 static int (*cook_assist_remind_cb)();
-void register_cook_assist_remind_cb(int (*cb)(int))
+void register_cook_assist_remind_cb(int (*cb)(int)) //0:辅助控温3分钟 1:移锅小火3分钟
 {
     cook_assist_remind_cb = cb;
 }
@@ -1382,7 +1382,7 @@ static void temp_control_func(state_handle_t *state_handle)
     {
         if (state_handle->temp_control_target_value - 40 < average)
         {
-            state_handle->temp_control_enter_start_tick = INPUT_DATA_HZ * 60 * 3;
+            state_handle->temp_control_enter_start_tick = INPUT_DATA_HZ * 60 * 2;
             set_fire_gear(FIRE_SMALL, state_handle, 0);
             state_handle->temp_control_first = 1;
             state_handle->temp_control_lock_countdown = 0;
@@ -1408,10 +1408,10 @@ static void temp_control_func(state_handle_t *state_handle)
         }
     }
 
-    if (state_handle->temp_control_enter_start_tick < INPUT_DATA_HZ * 60 * 3)
+    if (state_handle->temp_control_enter_start_tick < INPUT_DATA_HZ * 60 * 2)
     {
         ++state_handle->temp_control_enter_start_tick;
-        if (state_handle->temp_control_enter_start_tick == INPUT_DATA_HZ * 60 * 3)
+        if (state_handle->temp_control_enter_start_tick == INPUT_DATA_HZ * 60 * 2)
         {
             if (cook_assist_remind_cb != NULL)
                 cook_assist_remind_cb(0);
