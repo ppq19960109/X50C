@@ -649,8 +649,17 @@ static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_
     {
     }
 #ifdef BOIL_ENABLE
-    mlogPrintf("%s,%s current_tick:%d\n", __func__, state_info[STATE_GENTLE], state_handle->current_tick);
-    if (state_handle->current_tick >= BOIL_START_TICK && state_handle->state_jump_temp >= BOIL_LOW_TEMP && state_handle->state_jump_temp <= BOIL_HIGH_TEMP)
+    if (state_handle->state_jump_temp >= BOIL_LOW_TEMP && state_handle->state_jump_temp <= BOIL_HIGH_TEMP)
+    {
+        if (state_handle->boil_start_tick == 0)
+            state_handle->boil_start_tick = state_handle->current_tick;
+    }
+    else
+    {
+        state_handle->boil_start_tick = 0;
+    }
+    mlogPrintf("%s,%s current_tick:%d boil_start_tick:%d\n", __func__, state_info[STATE_GENTLE], state_handle->current_tick, state_handle->boil_start_tick);
+    if (state_handle->boil_start_tick > 0 && state_handle->current_tick - state_handle->boil_start_tick >= BOIL_START_TICK)
     {
         return STATE_BOIL;
     }
@@ -895,7 +904,7 @@ static int state_func_boil(unsigned char prepare_state, state_handle_t *state_ha
     }
     if (prepare_state == STATE_RISE_SLOW)
     {
-        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 5 > state_handle->current_tick)
+        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 10 > state_handle->current_tick)
             return STATE_BOIL;
     }
     else if (prepare_state == STATE_DOWN_SLOW)

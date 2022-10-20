@@ -1,17 +1,8 @@
 #include "main.h"
 
-// #include "link_reset_posix.h"
-// #include "uart_resend.h"
-#include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
-#include "cloud_platform_task.h"
 #include "uds_protocol.h"
-#include "ota_power_task.h"
-#include "curl_http_request.h"
-#include "uart_resend.h"
 
-static int msg_get_timeout_count = 0;
-static int ecb_heart_count = 0;
 static unsigned short ecb_seq_id = 0;
 
 unsigned short crc16_maxim_single(const unsigned char *ptr, int len)
@@ -34,60 +25,8 @@ unsigned short crc16_maxim_single(const unsigned char *ptr, int len)
     return ~crc;
 }
 
-void send_error_to_cloud(int error_code)
-{
-    unsigned char payload[8] = {0};
-    int index = 0, code = 0;
-    if (error_code > 0)
-        code = 1 << (error_code - 1);
-
-    payload[index++] = 0x0a;
-    payload[index++] = code >> 24;
-    payload[index++] = code >> 16;
-    payload[index++] = code >> 8;
-    payload[index++] = code;
-    payload[index++] = 0x0b;
-    payload[index++] = error_code;
-    send_data_to_cloud(payload, index, ECB_UART_COMMAND_EVENT);
-}
-
-int ecb_uart_msg_get(bool increase)
-{
-    if (increase)
-    {
-        if (msg_get_timeout_count <= ECB_UART_DISCONNECT_COUNT)
-            ++msg_get_timeout_count;
-        if (msg_get_timeout_count == ECB_UART_DISCONNECT_COUNT)
-        {
-            // send_error_to_cloud(POWER_BOARD_ERROR_CODE);
-        }
-        return ecb_uart_send_msg(ECB_UART_COMMAND_GET, NULL, 0, 0, -1);
-    }
-    else
-    {
-        if (msg_get_timeout_count >= ECB_UART_DISCONNECT_COUNT)
-            return ECB_UART_DISCONNECT;
-        else if (msg_get_timeout_count == 0)
-        {
-            return ECB_UART_CONNECTED;
-        }
-        return ECB_UART_CONNECTINT;
-    }
-}
-int ecb_uart_heart_timeout(bool increase)
-{
-    if (increase)
-        return ++ecb_heart_count;
-    else
-        return ecb_heart_count;
-}
-
 int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id)
 {
-    if (get_ecb_ota_power_state() != 0 && ECB_UART_COMMAND_OTA != command)
-    {
-        return -1;
-    }
     int index = 0;
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     if (send_msg == NULL)
@@ -118,34 +57,21 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
 
     if (ECB_UART_COMMAND_ACK != command)
     {
-        // dzlog_warn("uart send to ecb--------------------------%ld", get_systime_ms());
-        dzlog_warn("uart send to ecb--------------------------");
+        dzlog_warn("uart send to comm board--------------------------");
         hdzlog_info(send_msg, ECB_MSG_MIN_LEN + msg_len);
     }
-    if (ECB_UART_COMMAND_SET == command)
-    {
-        http_report_hex("SET:", send_msg, ECB_MSG_MIN_LEN + msg_len);
-    }
-#ifdef DISPLAY_ENABLE
-    int res = display_send(send_msg, ECB_MSG_MIN_LEN + msg_len);
-    free(send_msg);
-#else
-    int res = ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
-    if (resend == 0 || res < 0)
-    {
-        free(send_msg);
-    }
-#endif
+    int res = send_to_uds(send_msg, ECB_MSG_MIN_LEN + msg_len);
 
+    // if (resend == 0 || res < 0)
+    // {
+    free(send_msg);
+    // }
     return res;
 }
-int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len)
+
+int ecb_uart_send_event_msg(unsigned char *msg, const int msg_len)
 {
-    return ecb_uart_send_msg(ECB_UART_COMMAND_SET, msg, msg_len, 1, -1);
-}
-int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len, unsigned char resend)
-{
-    return ecb_uart_send_msg(ECB_UART_COMMAND_OTA, msg, msg_len, resend, -1);
+    return ecb_uart_send_msg(ECB_UART_COMMAND_EVENT, msg, msg_len, 0, -1);
 }
 int ecb_uart_send_ack(int seq_id)
 {
@@ -163,10 +89,8 @@ void keypress_local_pro(unsigned char value)
     case KEYPRESS_LOCAL_POWER_ON: /* 上电提示 */
         break;
     case KEYPRESS_LOCAL_FT_START: /* 厂测开始 */
-    {
         dzlog_warn("Factory test began");
-    }
-    break;
+        break;
     case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
         dzlog_error("End of the factory test");
         break;
@@ -187,8 +111,6 @@ void keypress_local_pro(unsigned char value)
     case KEYPRESS_LOCAL_RESET: /* 通讯板重启（主要用于强制断电前进行通知和追溯） */
     case 0xFF:                 /*重启 */
         dzlog_error("now reboot......");
-        sync();
-        reboot(RB_AUTOBOOT);
         break;
 
     default:
@@ -273,22 +195,20 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     {
         dzlog_error("data check error");
         ecb_uart_send_nak(ECB_NAK_CHECKSUM, seq_id);
-        return ECB_UART_READ_CHECK_ERR;
+        // return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
-    if (command != ECB_UART_COMMAND_HEART)
-    {
-        dzlog_info("read from ecb-------------------- command:%d", command);
-        // if (data_len > 0)
-        //     hdzlog_info((unsigned char *)payload, data_len);
-        hdzlog_info(&in[index], msg_index);
-    }
-    if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
+
+    dzlog_info("read from comm board-------------------- command:%d", command);
+    // if (data_len > 0)
+    //     hdzlog_info((unsigned char *)payload, data_len);
+    hdzlog_info(&in[index], msg_index);
+
+    if (command == ECB_UART_COMMAND_SET || command == ECB_UART_COMMAND_KEYPRESS)
     {
         ecb_uart_send_ack(seq_id);
-        if (command == ECB_UART_COMMAND_EVENT)
+        if (command == ECB_UART_COMMAND_SET)
         {
-            send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_EVENT);
         }
         else if (command == ECB_UART_COMMAND_KEYPRESS)
         {
@@ -304,50 +224,17 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         else
         {
         }
-        http_report_hex("EVENT:", &in[index], msg_index);
     }
-    else if (command == ECB_UART_COMMAND_HEART)
+    else if (command == ECB_UART_COMMAND_GET)
     {
-        if (data_len == 0 || payload[0] == 0)
-        {
-            if (ecb_heart_count >= MSG_HEART_TIME)
-            {
-                uds_report_reset();
-            }
-            ecb_heart_count = 0;
-        }
-        else
-        {
-            if (ecb_heart_count < MSG_HEART_TIME)
-            {
-                ecb_heart_count = MSG_HEART_TIME;
-                send_error_to_cloud(POWER_BOARD_ERROR_CODE);
-            }
-        }
-        ecb_uart_send_ack(seq_id);
-    }
-    else if (command == ECB_UART_COMMAND_GETACK)
-    {
-        msg_get_timeout_count = 0;
-        // ecb_resend_list_del_by_id(seq_id);
-        send_data_to_cloud(payload, data_len, ECB_UART_COMMAND_GETACK);
-        // http_report_hex("GETACK:", &in[index], msg_index);
     }
     else if (command == ECB_UART_COMMAND_ACK)
     {
-        ecb_resend_list_del_by_id(seq_id);
+        dzlog_warn("uart ack");
     }
     else if (command == ECB_UART_COMMAND_NAK)
     {
         dzlog_warn("uart nak:%d", payload[0]);
-    }
-    else if (command == ECB_UART_COMMAND_OTAACK)
-    {
-#ifdef OTA_RESEND
-        ecb_resend_list_del_by_id(seq_id);
-#endif
-        if (payload[0] == 0xfa)
-            ota_power_ack(&payload[1]);
     }
     else
     {

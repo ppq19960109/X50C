@@ -149,6 +149,9 @@
         "aiot_state_api.h": "c",
         "curl_http_request.h": "c",
         "math.h": "c",
-        "cloud.h": "c"
+        "cloud.h": "c",
+        "socket.h": "c",
+        "in.h": "c",
+        "thread2client.h": "c"
     }
 }

@@ -38,7 +38,7 @@ struct EpollTcpEvent
     Recv_cb recv_cb;             //回调函数
     Disconnect_cb disconnect_cb; //回调函数
     Connect_cb connect_cb;
-    pthread_mutex_t mutex;
+    // pthread_mutex_t mutex;
     struct list_head node;
 };
 

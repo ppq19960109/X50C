@@ -70,26 +70,6 @@ char get_ecb_ota_power_state()
 //     return (wCRCin ^ 0xFFFF);
 // }
 
-unsigned short crc16_maxim_single(const unsigned char *ptr, int len)
-{
-    unsigned int i;
-    unsigned short crc = 0x0000;
-
-    while (len--)
-    {
-        crc ^= *ptr++;
-        for (i = 0; i < 8; ++i)
-        {
-            if (crc & 1)
-                crc = (crc >> 1) ^ 0xA001;
-            else
-                crc = (crc >> 1);
-        }
-    }
-
-    return ~crc;
-}
-
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag, unsigned char iscopy)
 {

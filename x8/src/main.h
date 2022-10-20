@@ -27,7 +27,6 @@
 #include "base64.h"
 #include "curl/curl.h"
 
-
 #include "cmd_run.h"
 #include "commonFunc.h"
 #include "networkFunc.h"
@@ -35,4 +34,8 @@
 #include "POSIXTimer.h"
 #include "UartCfg.h"
 
+#define DISPLAY_ENABLE
+#ifdef DISPLAY_ENABLE
+#include "display_client_task.h"
+#endif
 #endif

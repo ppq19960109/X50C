@@ -5,7 +5,7 @@
 #include "tcp_uds.h"
 #include "uds_tcp_server.h"
 
-#define UNIX_DOMAIN "/tmp/unix_server.domain"
+#define UNIX_DOMAIN "/tmp/unix_display_server.domain"
 static struct Select_Server_Event select_server_event;
 static struct App_Select_Client_Tcp app_select_client_Tcp_Server = {
     .select_client_event.fd = -1};

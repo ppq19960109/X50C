@@ -4,7 +4,7 @@
 #include "select_server.h"
 
 #define SELECT_TCP_MAX_CLIENT 2
-#define BUFLEN 4096 /*缓存区大小*/
+#define BUFLEN 2048 /*缓存区大小*/
 
 typedef int (*Recv_cb)(char *data, unsigned int len);
 typedef int (*Disconnect_cb)(int fd);

@@ -24,16 +24,12 @@ int epollClientSend(struct EpollTcpEvent *myevents, void *send, unsigned int len
     myevents->send_len = Send(myevents->fd, send, len, 0);
     // pthread_mutex_unlock(&myevents->mutex);
 #else
-    pthread_mutex_lock(&myevents->mutex);
-
     myevents->events |= EPOLLOUT;
     eventmod(myevents->epollfd, myevents->events, myevents);
 
     int send_max_len = sizeof(myevents->send_buf);
     myevents->send_len = len > send_max_len ? send_max_len : len;
     memcpy(myevents->send_buf, recv, myevents->send_len);
-
-    pthread_mutex_unlock(&myevents->mutex);
 #endif
     return myevents->send_len;
 }
@@ -52,7 +48,6 @@ int epollClientCb(int fd, int events, void *arg)
             eventdel(myevent->epollfd, myevent); //将该节点从红黑树上摘除
             close(myevent->fd);
             myevent->fd = 0;
-            pthread_mutex_destroy(&myevent->mutex);
             if (myevent->disconnect_cb != NULL)
                 myevent->disconnect_cb();
         }
@@ -67,17 +62,12 @@ int epollClientCb(int fd, int events, void *arg)
     }
     if (events & EPOLLOUT)
     {
-        pthread_mutex_lock(&myevent->mutex);
         len = Send(fd, myevent->send_buf, myevent->send_len, 0);
-        if (len < 0)
-            goto sendFail;
 
         myevent->send_len = 0;
 
         myevent->events &= ~EPOLLOUT;
         eventmod(myevent->epollfd, myevent->events, myevent);
-    sendFail:
-        pthread_mutex_unlock(&myevent->mutex);
     }
 
     return 0;
@@ -99,7 +89,6 @@ static void epollListConnect(struct EpollTcpEvent *event)
         return;
     if (tcpClientConnect(&event->fd, event->addr, event->port) < 0)
         return;
-    pthread_mutex_init(&event->mutex, NULL);
     epollClientInit(epollClient.epollfd, event, epollClientCb);
 }
 
@@ -108,8 +97,6 @@ static void epollListClose(struct EpollTcpEvent *event)
     if (event->fd == 0)
         return;
     Close(event->fd);
-
-    pthread_mutex_destroy(&event->mutex);
 }
 #ifdef EPOLLCHECK
 void epollListCheck(struct EpollTcpEvent *event)

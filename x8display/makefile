@@ -32,7 +32,7 @@ LDFLAGS += -L$(LINKTOOL_PATH)/lib
 LDFLAGS += -L$(TOPDIR)
 
 LIBS += -Wl,--start-group	\
-		-Wl,-Bstatic  -lzlog \
+		-Wl,-Bstatic  -llinktool -lzlog \
 		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lcurl \
 		-Wl,--end-group
 

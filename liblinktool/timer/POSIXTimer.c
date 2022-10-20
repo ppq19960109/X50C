@@ -58,7 +58,7 @@ timer_t POSIXTimerCreate(int sival, POSIXTimerFunc POSIXTimerFun)
         perror("fail to timer_create............................");
         return NULL;
     }
-    printf("timer_create success:%d, %ld\n", sival, timerid);
+    printf("timer_create success:%d, %p\n", sival, timerid);
     return timerid;
 }
 

@@ -16,5 +16,5 @@
 
 int tcpClientConnect(int *fd, const char *addr, const short port);
 int tcpServerListen(int *fd, const char *addr, const short port, int listenNum);
-
+int tcpClientConnect2(int fd, struct sockaddr *addr);
 #endif

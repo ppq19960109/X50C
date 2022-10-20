@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "ecb_uart_parse_msg.h": "c"
+    }
+}

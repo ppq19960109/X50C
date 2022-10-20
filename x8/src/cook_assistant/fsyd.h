@@ -58,7 +58,7 @@ extern "C"
         SHAKE_PERMIT_TEMP = 1100,
 #ifdef BOIL_ENABLE
         BOIL_LOW_TEMP = 700,
-        BOIL_HIGH_TEMP = 1000,
+        BOIL_HIGH_TEMP = 1050,
 #endif
     };
 
@@ -123,6 +123,9 @@ extern "C"
         unsigned short state_jump_temp;
         unsigned short state_jump_diff;
 
+#ifdef BOIL_ENABLE
+        unsigned short boil_start_tick;
+#endif
         ring_buffer_t ring_buffer;
     } state_handle_t;
 

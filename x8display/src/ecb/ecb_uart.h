@@ -10,16 +10,9 @@ enum msg_get_time_t
 
 // unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen);
 
-void ecb_resend_list_add(void *resend);
-void ecb_resend_list_del_by_id(const int resend_seq_id);
-void ecb_resend_list_clear();
-
 void ecb_uart_init(void);
 void ecb_uart_deinit(void);
 
-int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy);
-
-void set_ecb_ota_power_state(char state);
-char get_ecb_ota_power_state();
+int ecb_uart_send(const unsigned char *in, int in_len);
 
 #endif

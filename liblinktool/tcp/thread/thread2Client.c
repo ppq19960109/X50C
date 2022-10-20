@@ -1,6 +1,5 @@
-
 #include "tcp.h"
-#include "threadClient.h"
+#include "thread2Client.h"
 
 static void *threadHander(void *arg)
 {
@@ -13,7 +12,7 @@ static void *threadHander(void *arg)
         while (threadTcp->status && threadTcp->isServer == 0)
         {
             sleep(2);
-            if (tcpClientConnect(&threadTcp->fd, threadTcp->addr, threadTcp->port) > 0)
+            if (tcpClientConnect2(threadTcp->fd, threadTcp->addr) > 0)
                 break;
         }
 
@@ -38,29 +37,29 @@ static void *threadHander(void *arg)
                     threadTcp->recv_cb(threadTcp->recv_buf, threadTcp->recv_len);
             }
         }
-        Close(threadTcp->fd);
-        threadTcp->fd = 0;
 
     } while (threadTcp->status && threadTcp->isServer == 0);
     threadTcp->status = 0;
     threadTcp->tid = 0;
+    if (threadTcp->fd != 0)
+    {
+        Close(threadTcp->fd);
+        threadTcp->fd = 0;
+    }
     pthread_exit(0);
 }
 
-int threadClientOpen(ThreadTcp *threadTcp)
+int thread2ClientOpen(ThreadTcp *threadTcp)
 {
-    // clientMethod为此线程客户端，要执行的程序。
-    pthread_create(&threadTcp->tid, NULL, (void *)threadHander, threadTcp->arg);
-    //要将id分配出去。
-    pthread_detach(threadTcp->tid);
+    // pthread_create(&threadTcp->tid, NULL, (void *)threadHander, threadTcp->arg); // clientMethod为此线程客户端，要执行的程序。
+    // pthread_detach(threadTcp->tid); //要将id分配出去。
 
+    threadHander(threadTcp->arg);
     return 0;
 }
 
-int threadClientClose(ThreadTcp *threadTcp)
+int thread2ClientClose(ThreadTcp *threadTcp)
 {
-    if (threadTcp->status == 0)
-        return -1;
     threadTcp->status = 0;
     usleep(60000);
     if (threadTcp->tid != 0)
@@ -77,7 +76,7 @@ int threadClientClose(ThreadTcp *threadTcp)
     return 0;
 }
 
-int threadClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
+int thread2ClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
 {
     if (send == NULL)
         return -1;
@@ -91,9 +90,9 @@ int threadClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
     return ret;
 }
 
-void tcpEventSet(ThreadTcp *threadTcp, const char *addr, const short port, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer)
+void tcpEvent2Set(ThreadTcp *threadTcp, struct sockaddr *addr, int fd, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer)
 {
-    threadTcp->fd = 0;
+    threadTcp->fd = fd;
     threadTcp->arg = threadTcp;
     threadTcp->status = 0;
     if (threadTcp->recv_len <= 0)
@@ -101,9 +100,8 @@ void tcpEventSet(ThreadTcp *threadTcp, const char *addr, const short port, Recv_
         memset(threadTcp->recv_buf, 0, sizeof(threadTcp->recv_buf));
         threadTcp->recv_len = 0;
     }
+    threadTcp->addr = addr;
 
-    strcpy(threadTcp->addr, addr);
-    threadTcp->port = port;
     threadTcp->recv_cb = recv_cb;
     threadTcp->disconnect_cb = disconnect_cb;
     threadTcp->connect_cb = connect_cb;

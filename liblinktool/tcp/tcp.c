@@ -5,7 +5,7 @@ int tcpClientConnect(int *fd, const char *addr, const short port)
     struct sockaddr_in server;
     server.sin_family = AF_INET;              //簇
     server.sin_port = htons(port);            //端口
-    server.sin_addr.s_addr = inet_addr(addr); //ip地址
+    server.sin_addr.s_addr = inet_addr(addr); // ip地址
 
     int cfd = Socket(AF_INET, SOCK_STREAM);
 
@@ -36,10 +36,19 @@ int tcpClientConnect(int *fd, const char *addr, const short port)
     return cfd;
 }
 
+int tcpClientConnect2(int fd, struct sockaddr *addr)
+{
+    if (Connect(fd, addr, sizeof(struct sockaddr)) != 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
 int tcpServerListen(int *fd, const char *addr, const short port, int listenNum)
 {
     struct sockaddr_in sin;
-    memset(&sin, 0, sizeof(sin)); //bzero(&sin, sizeof(sin))
+    memset(&sin, 0, sizeof(sin)); // bzero(&sin, sizeof(sin))
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = inet_addr(addr);
     sin.sin_port = htons(port);
@@ -75,5 +84,3 @@ int tcpServerListen(int *fd, const char *addr, const short port, int listenNum)
     }
     return lfd;
 }
-
-

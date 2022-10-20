@@ -102,20 +102,9 @@ enum ecb_uart_status_t
     ECB_UART_DISCONNECT_COUNT = 4,
 };
 
-// #define WIFI_TEST_SSID "moduletest" /* 厂测SSID */
-// #define WIFI_TEST_PASSWD "58185818" /* 厂测PSK */
-unsigned short crc16_maxim_single(const unsigned char *ptr, int len);
-
-int ecb_uart_heart_timeout(bool increase);
-int ecb_uart_msg_get(bool increase);
-
-int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int msg_len, unsigned char resend, int seq_id);
-int ecb_uart_send_cloud_msg(unsigned char *msg, const int msg_len);
-int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len, unsigned char resend);
-// int ecb_uart_send_factory(ft_ret_t ret);
-void send_error_to_cloud(int error_code);
-
 int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *));
+int ecb_uart_send_event_msg(unsigned char *msg, const int msg_len);
 
+unsigned short crc16_maxim_single(const unsigned char *ptr, int len);
 #endif
