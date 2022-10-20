@@ -16,7 +16,12 @@ void register_oil_temp_cb(void (*cb)(const unsigned short, enum INPUT_DIR))
     oil_temp_cb = cb;
 }
 
-static char *state_info[] = {"shake", "down_jump", "rise_jump", "rise_slow", "down_slow", "gentle", "idle", "pan_fire"};
+static char *state_info[] = {"shake", "down_jump", "rise_jump", "rise_slow", "down_slow", "gentle", "idle", "pan_fire"
+#ifdef BOIL_ENABLE
+                             ,
+                             "boil"
+#endif
+};
 //档位切换延时
 static unsigned char g_gear_delay_time = INPUT_DATA_HZ * 2;
 
@@ -51,7 +56,7 @@ state_handle_t *get_input_handle(enum INPUT_DIR input_dir)
 }
 
 #ifdef SIMULATION
-static char *dispaly_state_info[] = {"翻炒", "跳降", "跳升", "缓升", "缓降", "平缓", "空闲", "移锅小火"};
+static char *dispaly_state_info[] = {"翻炒", "跳降", "跳升", "缓升", "缓降", "平缓", "空闲", "移锅小火", "煮炖"};
 static char dispaly_msg[33];
 static char *fire_info[] = {"小火", "大火"};
 int get_fire_gear(char *msg, enum INPUT_DIR input_dir)
@@ -103,7 +108,7 @@ void register_thread_unlock_cb(int (*cb)())
     thread_unlock_cb = cb;
 }
 static int (*cook_assist_remind_cb)();
-void register_cook_assist_remind_cb(int (*cb)(int)) //0:辅助控温3分钟 1:移锅小火3分钟
+void register_cook_assist_remind_cb(int (*cb)(int)) // 0:辅助控温3分钟 1:移锅小火3分钟
 {
     cook_assist_remind_cb = cb;
 }
@@ -643,6 +648,13 @@ static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_
     else
     {
     }
+#ifdef BOIL_ENABLE
+    mlogPrintf("%s,%s current_tick:%d\n", __func__, state_info[STATE_GENTLE], state_handle->current_tick);
+    if (state_handle->current_tick >= BOIL_START_TICK && state_handle->state_jump_temp >= BOIL_LOW_TEMP && state_handle->state_jump_temp <= BOIL_HIGH_TEMP)
+    {
+        return STATE_BOIL;
+    }
+#endif
 end:
     if (state_handle->last_prepare_state != prepare_state)
     {
@@ -860,8 +872,51 @@ end:
     mlogPrintf("%s,%s :%s\n", __func__, state_info[STATE_PAN_FIRE], "set big fire");
     return prepare_state;
 }
+#ifdef BOIL_ENABLE
+static int state_func_boil(unsigned char prepare_state, state_handle_t *state_handle)
+{
+    if (state_handle->current_tick == 0)
+    {
+        mlogPrintf("%s,enter state:%s\n", __func__, state_info[STATE_BOIL]);
+        state_handle->current_tick = 1;
+        set_fire_gear(FIRE_SMALL, state_handle, 0);
+        gear_change(2, 0, state_info[STATE_BOIL], state_handle);
+        return prepare_state;
+    }
+    else
+    {
+        ++state_handle->current_tick;
+    }
 
-static state_func_def g_state_func_handle[] = {state_func_shake, state_func_down_jump, state_func_rise_jump, state_func_rise_slow, state_func_down_slow, state_func_gentle, state_func_idle, state_func_pan_fire};
+    if (state_handle->last_prepare_state != prepare_state)
+    {
+        state_handle->last_prepare_state = prepare_state;
+        state_handle->last_prepare_state_tick = state_handle->current_tick;
+    }
+    if (prepare_state == STATE_RISE_SLOW)
+    {
+        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 5 > state_handle->current_tick)
+            return STATE_BOIL;
+    }
+    else if (prepare_state == STATE_DOWN_SLOW)
+    {
+        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 5 > state_handle->current_tick)
+            return STATE_BOIL;
+    }
+    else if (prepare_state == STATE_GENTLE)
+    {
+        return STATE_BOIL;
+    }
+    set_fire_gear(FIRE_BIG, state_handle, 0);
+    return prepare_state;
+}
+#endif
+static state_func_def g_state_func_handle[] = {state_func_shake, state_func_down_jump, state_func_rise_jump, state_func_rise_slow, state_func_down_slow, state_func_gentle, state_func_idle, state_func_pan_fire
+#ifdef BOIL_ENABLE
+                                               ,
+                                               state_func_boil
+#endif
+};
 
 void cook_assistant_reinit(state_handle_t *state_handle)
 {

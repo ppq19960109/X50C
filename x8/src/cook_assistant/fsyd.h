@@ -7,6 +7,8 @@ extern "C"
 #include "ring_buffer.h"
 #include "cook_wrapper.h"
 
+// #define BOIL_ENABLE
+
 #define STATE_JUDGE_DATA_SIZE (10)
 #define INPUT_DATA_HZ (4)
 
@@ -34,7 +36,6 @@ extern "C"
         PAN_FIRE_START,
         PAN_FIRE_ENTER,
     };
-
     //风随烟动状态
     enum STATE_FSYD
     {
@@ -46,12 +47,19 @@ extern "C"
         STATE_GENTLE,
         STATE_IDLE,
         STATE_PAN_FIRE,
+#ifdef BOIL_ENABLE
+        STATE_BOIL,
+#endif
     };
     enum TEMP_VALUE
     {
         PAN_FIRE_LOW_TEMP = 2000,
         PAN_FIRE_HIGH_TEMP = 2300,
         SHAKE_PERMIT_TEMP = 1100,
+#ifdef BOIL_ENABLE
+        BOIL_LOW_TEMP = 700,
+        BOIL_HIGH_TEMP = 1000,
+#endif
     };
 
     enum TICK_VALUE
@@ -65,6 +73,9 @@ extern "C"
         PAN_FIRE_ERROR_LOCK_TICK = INPUT_DATA_HZ * 40,
         SHAKE_EXIT_TICK = INPUT_DATA_HZ * 20,
         TEMP_CONTROL_LOCK_TICK = INPUT_DATA_HZ * 5,
+#ifdef BOIL_ENABLE
+        BOIL_START_TICK = INPUT_DATA_HZ * 20,
+#endif
     };
 
     typedef struct
@@ -77,7 +88,7 @@ extern "C"
         unsigned char last_prepare_state;
         unsigned int last_prepare_state_tick;
 
-        unsigned char state;      //总状态
+        unsigned char state; //总状态
 
         unsigned char pan_fire_state;
         unsigned char pan_fire_high_temp_exit_lock_tick; //高温时，移锅小火退出后，锁定时间
@@ -99,7 +110,7 @@ extern "C"
 
         unsigned char ignition_switch;
         unsigned short ignition_switch_close_temp;
-        
+
         unsigned char fire_gear;
         unsigned char hood_gear;
         unsigned int current_tick;
