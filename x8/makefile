@@ -26,7 +26,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(LINKTOOL_PATH)/include/md5
 CFLAGS += -I$(ALI_PATH)/include
 
-CFLAGS += -Wall #-Werror
+CFLAGS += -Wall -DICE#-Werror
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
 endif
