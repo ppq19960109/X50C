@@ -12,9 +12,10 @@
 #include <fcntl.h>
 
 #include <errno.h>
+#include <sys/un.h>
 #include "socketFunc.h"
 
 int tcpClientConnect(int *fd, const char *addr, const short port);
 int tcpServerListen(int *fd, const char *addr, const short port, int listenNum);
-int tcpClientConnect2(int fd, struct sockaddr *addr);
+int tcpClientConnect2(int *fd, void *addr, int domain);
 #endif

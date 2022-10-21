@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "ecb_uart_parse_msg.h": "c"
+        "ecb_uart_parse_msg.h": "c",
+        "kv_linux.h": "c",
+        "ecb_parse.h": "c"
     }
 }

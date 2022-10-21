@@ -148,7 +148,7 @@ int threadServerSend(ThreadTcpServer *threadTcpServer, void *send, unsigned int 
 {
     if (send == NULL)
         return -1;
-    if (threadTcpServer->threadTcp.fd == 0)
+    if (threadTcpServer->threadTcp.fd < 0)
     {
         printf("socketfd is null\n");
         return -1;

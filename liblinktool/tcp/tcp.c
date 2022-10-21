@@ -36,13 +36,28 @@ int tcpClientConnect(int *fd, const char *addr, const short port)
     return cfd;
 }
 
-int tcpClientConnect2(int fd, struct sockaddr *addr)
+int tcpClientConnect2(int *fd, void *addr, int domain)
 {
-    if (Connect(fd, addr, sizeof(struct sockaddr)) != 0)
+    int cfd = Socket(domain, SOCK_STREAM);
+    socklen_t addrlen;
+    if (domain == AF_UNIX)
     {
+        addrlen = sizeof(struct sockaddr_un);
+    }
+    else
+    {
+        addrlen = sizeof(struct sockaddr_in);
+    }
+    if (Connect(cfd, addr, addrlen) != 0)
+    {
+        close(cfd);
         return -1;
     }
-    return 0;
+    if (fd != NULL)
+    {
+        *fd = cfd;
+    }
+    return *fd;
 }
 
 int tcpServerListen(int *fd, const char *addr, const short port, int listenNum)
@@ -76,7 +91,11 @@ int tcpServerListen(int *fd, const char *addr, const short port, int listenNum)
     }
 
     bind(lfd, (struct sockaddr *)&sin, sizeof(sin));
-
+    {
+        printf("%s bind error:%s\n", __func__, strerror(errno));
+        close(lfd);
+        return -1;
+    }
     listen(lfd, listenNum);
     if (fd != NULL)
     {

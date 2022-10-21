@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "uds_protocol.h"
 
@@ -246,6 +247,9 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
 
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *))
 {
+    ecb_uart_send(in, *in_len);
+    *in_len = 0;
+    return;
     int index = 0, end;
     int msg_len = *in_len;
     ecb_uart_read_status_t status;

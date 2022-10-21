@@ -10,8 +10,7 @@ static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
 static int fd = -1;
 static pthread_mutex_t lock;
-// LIST_HEAD(ECB_LIST_RESEND);
-static struct list_head ECB_LIST_RESEND;
+LIST_HEAD(ECB_LIST_RESEND);
 
 void ecb_resend_list_add(void *resend)
 {
@@ -226,7 +225,7 @@ void ecb_uart_init(void)
     }
     dzlog_info("ecb_uart,fd:%d", fd);
     pthread_mutex_init(&lock, NULL);
-    resend_list_init(&ECB_LIST_RESEND);
+
     register_select_uart_timeout_cb(ecb_timeout_cb);
 
     select_client_event.fd = fd;

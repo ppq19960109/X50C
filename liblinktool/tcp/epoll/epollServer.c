@@ -19,7 +19,7 @@ int epollServerSend(struct EpollTcpEvent *myevents, void *send, unsigned int len
         return -1;
 
     struct EpollTcpEvent *clientEvents = epollServer.events;
-    if (myevents->fd == 0)
+    if (myevents->fd < 0)
     {
         printf("send socketfd is null\n");
         return -1;
@@ -68,11 +68,11 @@ static int epollAccetpCb(int lfd, int events, void *arg)
             close(cfd);
             break;
         }
-        if (setNonBlock(cfd) < 0) //将cfd也设置为非阻塞
-        {
-            printf("%s: fcntl nonblocking failed, %s\n", __func__, strerror(errno));
-            break;
-        }
+        // if (setNonBlock(cfd) < 0) //将cfd也设置为非阻塞
+        // {
+        //     printf("%s: fcntl nonblocking failed, %s\n", __func__, strerror(errno));
+        //     break;
+        // }
         printf("new connect[%s:%d]\n", inet_ntoa(cin.sin_addr), ntohs(cin.sin_port));
         getsockname(lfd, (struct sockaddr *)&cin, &len);
 
@@ -109,11 +109,11 @@ static void epollListClose(struct EpollTcpEvent *event)
 {
     if (event == NULL)
         return;
-    if (event->status > 0 && event->fd != 0)
+    if (event->status > 0 && event->fd >= 0)
     {
         printf("test:%s,port:%d,fd:%d\n", event->addr, event->port, event->fd);
         Close(event->fd);
-        event->fd = 0;
+        event->fd = -1;
         eventdel(epollServer.epollfd, event);
 
         epoll_list_del(event);
@@ -130,16 +130,16 @@ int epollServerClose(void)
         if (epollServer.events[i].status > 0 && epollServer.events[i].fd != 0)
         {
             Close(epollServer.events[i].fd);
-            epollServer.events[i].fd = 0;
+            epollServer.events[i].fd = -1;
             eventdel(epollServer.epollfd, &epollServer.events[i]);
         }
     }
     epoll_list_for_each(epollListClose, &epollServerList);
 
-    if (epollServer.epollfd != 0)
+    if (epollServer.epollfd >= 0)
     {
         Close(epollServer.epollfd);
-        epollServer.epollfd = 0;
+        epollServer.epollfd = -1;
     }
     epollServer.run_flag = 0;
     return 0;

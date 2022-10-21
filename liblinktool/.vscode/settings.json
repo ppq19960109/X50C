@@ -17,6 +17,7 @@
         "posixtimer.h": "c",
         "time.h": "c",
         "time_t.h": "c",
-        "sockaddr.h": "c"
+        "sockaddr.h": "c",
+        "un.h": "c"
     }
 }

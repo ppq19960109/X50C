@@ -39,7 +39,7 @@ int tcp_uds_server_init(int *fd, const char *path, const int listen_num)
 
 int tcp_uds_client_init(int *fd, const char *path, const int delay)
 {
-    unlink(path);
+    // unlink(path);
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     // struct sockaddr_un addr;
@@ -59,9 +59,9 @@ int tcp_uds_client_init(int *fd, const char *path, const int delay)
 reconnect:
     if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
+        perror("connect failed:");
         if (delay == 0)
         {
-            perror("connect failed:");
             close(sockfd);
             return -1;
         }

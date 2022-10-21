@@ -12,7 +12,7 @@ static void *threadHander(void *arg)
         while (threadTcp->status && threadTcp->isServer == 0)
         {
             sleep(2);
-            if (tcpClientConnect2(threadTcp->fd, threadTcp->addr) > 0)
+            if (tcpClientConnect2(&threadTcp->fd, threadTcp->addr, threadTcp->domain) >= 0)
                 break;
         }
 
@@ -37,15 +37,15 @@ static void *threadHander(void *arg)
                     threadTcp->recv_cb(threadTcp->recv_buf, threadTcp->recv_len);
             }
         }
-
+        if (threadTcp->fd >= 0)
+        {
+            Close(threadTcp->fd);
+            threadTcp->fd = -1;
+        }
     } while (threadTcp->status && threadTcp->isServer == 0);
     threadTcp->status = 0;
     threadTcp->tid = 0;
-    if (threadTcp->fd != 0)
-    {
-        Close(threadTcp->fd);
-        threadTcp->fd = 0;
-    }
+
     pthread_exit(0);
 }
 
@@ -60,16 +60,18 @@ int thread2ClientOpen(ThreadTcp *threadTcp)
 
 int thread2ClientClose(ThreadTcp *threadTcp)
 {
+    if (threadTcp->status == 0)
+        return -1;
     threadTcp->status = 0;
     usleep(60000);
     if (threadTcp->tid != 0)
     {
         pthread_cancel(threadTcp->tid);
     }
-    if (threadTcp->fd != 0)
+    if (threadTcp->fd >= 0)
     {
         Close(threadTcp->fd);
-        threadTcp->fd = 0;
+        threadTcp->fd = -1;
     }
     // sleep(1);
 
@@ -80,7 +82,7 @@ int thread2ClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
 {
     if (send == NULL)
         return -1;
-    if (threadTcp->fd == 0 || threadTcp->status == 0)
+    if (threadTcp->fd < 0 || threadTcp->status == 0)
     {
         printf("socketfd is null\n");
         return -1;
@@ -90,9 +92,9 @@ int thread2ClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
     return ret;
 }
 
-void tcpEvent2Set(ThreadTcp *threadTcp, struct sockaddr *addr, int fd, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer)
+void tcpEvent2Set(ThreadTcp *threadTcp, struct sockaddr *addr, int domain, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer)
 {
-    threadTcp->fd = fd;
+    threadTcp->fd = -1;
     threadTcp->arg = threadTcp;
     threadTcp->status = 0;
     if (threadTcp->recv_len <= 0)
@@ -101,7 +103,7 @@ void tcpEvent2Set(ThreadTcp *threadTcp, struct sockaddr *addr, int fd, Recv_cb r
         threadTcp->recv_len = 0;
     }
     threadTcp->addr = addr;
-
+    threadTcp->domain = domain;
     threadTcp->recv_cb = recv_cb;
     threadTcp->disconnect_cb = disconnect_cb;
     threadTcp->connect_cb = connect_cb;

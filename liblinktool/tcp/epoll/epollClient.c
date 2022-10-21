@@ -14,7 +14,7 @@ int epollClientSend(struct EpollTcpEvent *myevents, void *send, unsigned int len
     if (send == NULL)
         return -1;
 
-    if (myevents->fd == 0)
+    if (myevents->fd < 0)
     {
         printf("send socketfd is null\n");
         return -1;
@@ -47,7 +47,7 @@ int epollClientCb(int fd, int events, void *arg)
             printf("recv[fd=%d] error[%d]:%s\n", fd, errno, strerror(errno));
             eventdel(myevent->epollfd, myevent); //将该节点从红黑树上摘除
             close(myevent->fd);
-            myevent->fd = 0;
+            myevent->fd = -1;
             if (myevent->disconnect_cb != NULL)
                 myevent->disconnect_cb();
         }
@@ -94,7 +94,7 @@ static void epollListConnect(struct EpollTcpEvent *event)
 
 static void epollListClose(struct EpollTcpEvent *event)
 {
-    if (event->fd == 0)
+    if (event->fd < 0)
         return;
     Close(event->fd);
 }
@@ -119,10 +119,10 @@ void epollListCheck(struct EpollTcpEvent *event)
 #endif
 int epollClientClose(void)
 {
-    if (epollClient.epollfd != 0)
+    if (epollClient.epollfd >= 0)
     {
         Close(epollClient.epollfd);
-        epollClient.epollfd = 0;
+        epollClient.epollfd = -1;
     }
     epoll_list_for_each(epollListClose, &epollClientList);
 
@@ -134,7 +134,7 @@ int epollHandle(struct epoll_event *events, int nfd)
     int i, res = 0;
     for (i = 0; i < nfd; ++i)
     {
-        //evtAdd()函数中，添加到监听树中监听事件的时候将myevents_t结构体类型给了ptr指针
+        // evtAdd()函数中，添加到监听树中监听事件的时候将myevents_t结构体类型给了ptr指针
         //这里epoll_wait返回的时候，同样会返回对应fd的myevents_t类型的指针
         struct EpollTcpEvent *ev = (struct EpollTcpEvent *)events[i].data.ptr;
         //如果监听的是读事件，并返回的是读事件

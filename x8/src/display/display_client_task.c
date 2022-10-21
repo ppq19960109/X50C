@@ -16,11 +16,12 @@
 #include "thread2Client.h"
 #include "ecb_uart_parse_msg.h"
 
-#define UNIX_DOMAIN "/tmp/unix_display_server.domain"
+#define UNIX_DOMAIN "/tmp/display.domain"
 static ThreadTcp threadTcp;
 int display_send(unsigned char *data, unsigned int len)
 {
-    printf("%s:%u,%s...\n", __func__, len, data);
+    // dzlog_warn("display_send--------------------------len:%d", len);
+    // hdzlog_info(data, len);
     return thread2ClientSend(&threadTcp, data, len);
 }
 static int display_recv(char *data, unsigned int uart_read_len)
@@ -31,7 +32,7 @@ static int display_recv(char *data, unsigned int uart_read_len)
 
     if (data == NULL || uart_read_len <= 0)
         return -1;
-    dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+    // dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
 
     if (uart_read_buf_index > 0)
     {
@@ -45,7 +46,7 @@ static int display_recv(char *data, unsigned int uart_read_len)
         uart_read_buf_index += uart_read_len;
         uart_parse_msg((unsigned char *)data, &uart_read_buf_index, ecb_uart_parse_msg);
     }
-    dzlog_warn("after uart_read_buf_index:%d", uart_read_buf_index);
+    // dzlog_warn("after uart_read_buf_index:%d", uart_read_buf_index);
     if (uart_read_buf_index > 0)
     {
         memcpy(uart_read_buf, data, uart_read_buf_index);
@@ -70,12 +71,13 @@ void display_client_close(void)
 }
 void *display_client_task(void *arg)
 {
-    int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-    struct sockaddr_un server_addr;
+    printf("%s UNIX_DOMAIN:%s\r\n", __func__, UNIX_DOMAIN);
+
+    struct sockaddr_un server_addr = {0};
     server_addr.sun_family = AF_UNIX;
     strcpy(server_addr.sun_path, UNIX_DOMAIN);
 
-    tcpEvent2Set(&threadTcp, (struct sockaddr *)&server_addr, sockfd, display_recv, display_disconnect, display_connect, 0);
+    tcpEvent2Set(&threadTcp, (struct sockaddr *)&server_addr, AF_UNIX, display_recv, display_disconnect, display_connect, 0);
     thread2ClientOpen(&threadTcp);
     return 0;
 }

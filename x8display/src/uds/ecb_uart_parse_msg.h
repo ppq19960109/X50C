@@ -87,20 +87,6 @@ typedef enum
     UART_STORE_CMD_SRC,          /* 指令来源 */
 } ecb_uart_store_type_t;
 
-enum uart_error_code_t
-{
-    POWER_BOARD_ERROR_CODE = 9,
-    COMMUNICATION_BOARD_ERROR_CODE = 11,
-};
-
-enum ecb_uart_status_t
-{
-    ECB_UART_CONNECTED = 0,
-    ECB_UART_CONNECTINT,
-    ECB_UART_DISCONNECT,
-
-    ECB_UART_DISCONNECT_COUNT = 4,
-};
 
 int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *));

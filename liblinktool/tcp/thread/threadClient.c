@@ -13,7 +13,7 @@ static void *threadHander(void *arg)
         while (threadTcp->status && threadTcp->isServer == 0)
         {
             sleep(2);
-            if (tcpClientConnect(&threadTcp->fd, threadTcp->addr, threadTcp->port) > 0)
+            if (tcpClientConnect(&threadTcp->fd, threadTcp->addr, threadTcp->port) >= 0)
                 break;
         }
 
@@ -38,9 +38,11 @@ static void *threadHander(void *arg)
                     threadTcp->recv_cb(threadTcp->recv_buf, threadTcp->recv_len);
             }
         }
-        Close(threadTcp->fd);
-        threadTcp->fd = 0;
-
+        if (threadTcp->fd >= 0)
+        {
+            Close(threadTcp->fd);
+            threadTcp->fd = -1;
+        }
     } while (threadTcp->status && threadTcp->isServer == 0);
     threadTcp->status = 0;
     threadTcp->tid = 0;
@@ -67,10 +69,10 @@ int threadClientClose(ThreadTcp *threadTcp)
     {
         pthread_cancel(threadTcp->tid);
     }
-    if (threadTcp->fd != 0)
+    if (threadTcp->fd >= 0)
     {
         Close(threadTcp->fd);
-        threadTcp->fd = 0;
+        threadTcp->fd = -1;
     }
     // sleep(1);
 
@@ -81,7 +83,7 @@ int threadClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
 {
     if (send == NULL)
         return -1;
-    if (threadTcp->fd == 0 || threadTcp->status == 0)
+    if (threadTcp->fd < 0 || threadTcp->status == 0)
     {
         printf("socketfd is null\n");
         return -1;
@@ -93,7 +95,7 @@ int threadClientSend(ThreadTcp *threadTcp, void *send, unsigned int len)
 
 void tcpEventSet(ThreadTcp *threadTcp, const char *addr, const short port, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer)
 {
-    threadTcp->fd = 0;
+    threadTcp->fd = -1;
     threadTcp->arg = threadTcp;
     threadTcp->status = 0;
     if (threadTcp->recv_len <= 0)

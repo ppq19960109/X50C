@@ -62,7 +62,7 @@ int Connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
     if (connect(sockfd, addr, addrlen) < 0)
     {
-        perrPrintf("connect error\n");
+        perrPrintf("connect error:\n");
         return -1;
     }
 

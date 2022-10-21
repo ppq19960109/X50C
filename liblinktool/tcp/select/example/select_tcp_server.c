@@ -19,7 +19,8 @@
 #include "select_tcp_server.h"
 
 struct Select_Server_Event select_server_event;
-static struct App_Select_Client_Tcp app_select_client_Tcp_Server;
+static struct App_Select_Client_Tcp app_select_client_Tcp_Server = {
+    .select_client_event.fd = -1};
 static struct App_Select_Client_Tcp app_select_client_Tcp_Client[SELECT_TCP_MAX_CLIENT];
 
 void app_select_client_tcp_server_send(char *data, unsigned short len)
@@ -28,7 +29,8 @@ void app_select_client_tcp_server_send(char *data, unsigned short len)
     int i;
     for (i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
     {
-        send(app_select_client_Tcp_Client[i].select_client_event.fd, data, len, 0);
+        if (app_select_client_Tcp_Client[i].select_client_event.fd >= 0)
+            send(app_select_client_Tcp_Client[i].select_client_event.fd, data, len, 0);
     }
     pthread_mutex_unlock(&app_select_client_Tcp_Server.mutex);
 }
@@ -43,9 +45,9 @@ static int app_select_server_recv_cb(void *arg)
     {
         printf("recv[fd=%d] error[%d]:%s\n", client_event->fd, errno, strerror(errno));
 
-        delete_select_client_event(&select_server_event,client_event);
+        delete_select_client_event(&select_server_event, client_event);
         close(client_event->fd);
-        client_event->fd = 0;
+        client_event->fd = -1;
         if (app_select_tcp->disconnect_cb != NULL)
             app_select_tcp->disconnect_cb();
 
@@ -66,7 +68,7 @@ static int app_add_select_tcp_client_event(int cfd)
     int i;
     for (i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
     {
-        if (app_select_client_Tcp_Client[i].select_client_event.fd == 0)
+        if (app_select_client_Tcp_Client[i].select_client_event.fd < 0)
         {
             app_select_client_Tcp_Client[i].select_client_event.fd = cfd;
             app_select_client_Tcp_Client[i].select_client_event.read_cb = app_select_server_recv_cb;
@@ -75,7 +77,7 @@ static int app_add_select_tcp_client_event(int cfd)
             app_select_client_Tcp_Client[i].disconnect_cb = app_select_client_Tcp_Server.disconnect_cb;
             if (add_select_server_event(&app_select_client_Tcp_Client[i].select_client_event) < 0)
             {
-                app_select_client_Tcp_Client[i].select_client_event.fd = 0;
+                app_select_client_Tcp_Client[i].select_client_event.fd = -1;
                 return -1;
             }
             if (app_select_client_Tcp_Client[i].connect_cb != NULL)
@@ -136,6 +138,10 @@ void app_select_tcp_server_deinit(void)
 
 void app_select_tcp_server_task()
 {
+    for (int i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
+    {
+        app_select_client_Tcp_Client[i].select_client_event.fd = -1;
+    }
     select_server_init(&select_server_event);
     app_select_tcp_server_init();
     int fd;
@@ -144,7 +150,7 @@ void app_select_tcp_server_task()
     app_select_client_Tcp_Server.recv_cb = NULL;
     app_select_client_Tcp_Server.connect_cb = NULL;
     app_select_client_Tcp_Server.disconnect_cb = NULL;
-    add_select_server_event(&select_server_event,&app_select_client_Tcp_Server.select_client_event);
+    add_select_server_event(&select_server_event, &app_select_client_Tcp_Server.select_client_event);
     select_server_task(&select_server_event, 200);
     select_server_deinit(&select_server_event);
     app_select_tcp_server_deinit();

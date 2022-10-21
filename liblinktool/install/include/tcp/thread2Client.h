@@ -20,6 +20,7 @@ typedef struct
     void *arg;
 
     struct sockaddr *addr;
+    int domain;
     Recv_cb recv_cb;             //回调函数
     Disconnect_cb disconnect_cb; //回调函数
     Connect_cb connect_cb;
@@ -29,5 +30,5 @@ typedef struct
 int thread2ClientOpen(ThreadTcp *threadTcp);
 int thread2ClientClose(ThreadTcp *threadTcp);
 int thread2ClientSend(ThreadTcp *threadTcp, void *send, unsigned int len);
-void tcpEvent2Set(ThreadTcp *threadTcp, struct sockaddr *addr, int fd, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer);
+void tcpEvent2Set(ThreadTcp *threadTcp, struct sockaddr *addr, int domain, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer);
 #endif

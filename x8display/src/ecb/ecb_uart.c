@@ -3,6 +3,7 @@
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "uart_task.h"
+#include "uds_protocol.h"
 
 static struct Select_Client_Event select_client_event;
 static int fd = -1;
@@ -43,10 +44,11 @@ static int ecb_recv_cb(void *arg)
     uart_read_len = read(fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf) - uart_read_buf_index);
     if (uart_read_len > 0)
     {
-        uart_read_buf_index += uart_read_len;
+        // uart_read_buf_index += uart_read_len;
+        send_to_uds(&uart_read_buf[uart_read_buf_index],uart_read_len);
         // dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
-        uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
+        // uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
         // dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
         //  hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
@@ -57,7 +59,6 @@ static int ecb_except_cb(void *arg)
 {
     return 0;
 }
-
 static int ecb_timeout_cb(void *arg)
 {
 
@@ -77,7 +78,7 @@ void ecb_uart_deinit(void)
  **********************************************************************************/
 void ecb_uart_init(void)
 {
-    fd = uart_init("/dev/ttyS4", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
+    fd = uart_init("/dev/ttyS4", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
         dzlog_error("ecb_uart uart init error:%d,%s", errno, strerror(errno));

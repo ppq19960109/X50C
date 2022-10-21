@@ -20,7 +20,7 @@ LIST_HEAD(epollServerList);
  */
 void epollTcpEventSet(struct EpollTcpEvent *ev, const char *addr, const short port, Recv_cb recv_cb, Disconnect_cb disconnect_cb, Connect_cb connect_cb, const int isServer)
 {
-    ev->fd = 0;
+    ev->fd = -1;
     ev->epoll_cb = NULL;
     ev->events = 0;
     ev->arg = ev;

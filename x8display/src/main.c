@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "uart_task.h"
 #include "uds_tcp_server.h"
 #include "uds_protocol.h"
 #include "KV_linux.h"
@@ -19,6 +20,7 @@ static int main_quit(void)
     {
         running = 0;
         uds_protocol_deinit(); // uds相关释放
+        uart_task_deinit();
         zlog_fini();           // zlog释放
         usleep(1000);
 #ifdef DEBUG
@@ -48,12 +50,13 @@ int main(int argc, char **argv)
     registerQuitCb(main_quit); //注册退出信号回调
     signalQuit();              //退出信号初始化
 
+    uart_task_init();
     uds_protocol_init(); // uds相关初始化
 
     pthread_create(&uds_tid, NULL, uds_tcp_server_task, NULL); // UI uds通信线程启动
     pthread_detach(uds_tid);
 
-    while(1);
+    uart_task(NULL);
 
     main_quit();
 }

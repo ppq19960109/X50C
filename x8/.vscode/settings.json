@@ -152,6 +152,7 @@
         "cloud.h": "c",
         "socket.h": "c",
         "in.h": "c",
-        "thread2client.h": "c"
+        "thread2client.h": "c",
+        "un.h": "c"
     }
 }
