@@ -19,8 +19,7 @@ static int uds_recv_cb(char *data, unsigned int uart_read_len) // uds接受回�
 
     if (data == NULL || uart_read_len <= 0)
         return -1;
-
-    // dzlog_warn("recv from comm board-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+    dzlog_warn("recv from comm board-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
 
     if (uart_read_buf_index > 0)
     {

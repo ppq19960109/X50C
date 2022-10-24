@@ -32,6 +32,19 @@ int POSIXTimerSet(timer_t timerid, int interval_sec, int sec)
     return ret;
 }
 
+int POSIXTimerGet(timer_t timerid)
+{
+    struct itimerspec it = {0};
+
+    int ret = timer_gettime(timerid, &it);
+    if (ret < 0)
+    {
+        perror("fail to timer_gettime!");
+        return ret;
+    }
+    return it.it_value.tv_sec;
+}
+
 timer_t POSIXTimerCreate(int sival, POSIXTimerFunc POSIXTimerFun)
 {
 

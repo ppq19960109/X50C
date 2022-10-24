@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "ecb_parse.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "uds_protocol.h"
@@ -210,6 +211,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
         ecb_uart_send_ack(seq_id);
         if (command == ECB_UART_COMMAND_SET)
         {
+            ecb_parse_set_msg(payload, data_len);
         }
         else if (command == ECB_UART_COMMAND_KEYPRESS)
         {
@@ -228,6 +230,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_GET)
     {
+        ecb_parse_event_uds(1);
     }
     else if (command == ECB_UART_COMMAND_ACK)
     {
@@ -247,9 +250,9 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
 
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *))
 {
-    ecb_uart_send(in, *in_len);
-    *in_len = 0;
-    return;
+    // ecb_uart_send(in, *in_len);
+    // *in_len = 0;
+    // return;
     int index = 0, end;
     int msg_len = *in_len;
     ecb_uart_read_status_t status;

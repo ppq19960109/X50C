@@ -34,7 +34,7 @@
 #include "POSIXTimer.h"
 #include "UartCfg.h"
 
-// #define DISPLAY_ENABLE
+#define DISPLAY_ENABLE
 #ifdef DISPLAY_ENABLE
 #include "display_client_task.h"
 #endif

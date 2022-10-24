@@ -575,7 +575,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
     }
     cJSON *root = cJSON_CreateObject();
     cloud_attr_t *attr;
-    for (i = 0; i < value_len; ++i)
+    for (i = 0; i < value_len - 1; ++i)
     {
         for (j = 0; j < cloud_dev->attr_len; ++j)
         {
