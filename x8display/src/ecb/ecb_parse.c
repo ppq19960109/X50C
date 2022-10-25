@@ -359,10 +359,13 @@ static int ecb_parse_event_cmd(unsigned char *data)
     else if (state == WORK_STATE_PREHEAT_PAUSE || state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
     {
         state = REPORT_WORK_STATE_PAUSE;
-        if ((left_work_time_remaining & 0x8000) == 0)
+        if (state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
         {
-            POSIXTimerSet(left_work_timer, 0, 0);
-            left_work_time_remaining |= 0x8000;
+            if (left_work_time_remaining > 0 && (left_work_time_remaining & 0x8000) == 0)
+            {
+                POSIXTimerSet(left_work_timer, 0, 0);
+                left_work_time_remaining |= 0x8000;
+            }
         }
     }
     else if (state == WORK_STATE_RUN)
@@ -372,8 +375,9 @@ static int ecb_parse_event_cmd(unsigned char *data)
             POSIXTimerSet(left_work_timer, 60, 60);
             left_work_time_remaining &= 0x7fff;
         }
-        else if (left_work_time_remaining == 0)
+        if (left_work_time_remaining == 0)
         {
+            POSIXTimerSet(left_work_timer, 0, 0);
             work_state_operation(0, WORK_STATE_NOWORK);
         }
     }
@@ -478,6 +482,14 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         {
             work_state = WORK_STATE_FINISH;
         }
+        else if (*value == 3)
+        {
+            work_state = WORK_STATE_NOWORK;
+        }
+        else if (*value == 4)
+        {
+            work_state = WORK_STATE_PREHEAT;
+        }
         work_state_operation(0, work_state);
     }
     break;
@@ -503,12 +515,22 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         ecb_attr->value[0] = value[0];
         ecb_attr->value[1] = value[1];
         ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_LStOvSetTimerLeft);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->value[1] = value[1];
+        ecb_attr->change = 1;
         ret = 2;
     }
     break;
     case EVENT_SET_RStOvSetTimer:
     {
         ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvSetTimer);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->value[1] = value[1];
+        ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_RStOvSetTimerLeft);
         ecb_attr->value[0] = value[0];
         ecb_attr->value[1] = value[1];
         ecb_attr->change = 1;
@@ -537,8 +559,17 @@ static void POSIXTimer_cb(union sigval val)
 {
     if (val.sival_int == 0)
     {
+        left_work_time_remaining &= 0x7fff;
         if (left_work_time_remaining > 0)
+        {
             --left_work_time_remaining;
+
+            ecb_attr_t *ecb_attr = get_event_state(EVENT_LStOvSetTimerLeft);
+            ecb_attr->value[0] = left_work_time_remaining >> 8;
+            ecb_attr->value[1] = left_work_time_remaining;
+            ecb_attr->change = 1;
+        }
+
         if ((left_work_time_remaining & 0x7fff) <= 0)
         {
             POSIXTimerSet(left_work_timer, 0, 0);

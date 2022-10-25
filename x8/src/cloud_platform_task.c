@@ -11,7 +11,6 @@
 #include "link_ntp_posix.h"
 #include "cloud_platform_task.h"
 #include "device_task.h"
-#include "POSIXTimer.h"
 #include "quad_burn.h"
 #include "cook_assist.h"
 #include "curl_http_request.h"
