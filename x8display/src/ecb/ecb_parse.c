@@ -7,19 +7,51 @@
 static timer_t left_work_timer;
 static timer_t right_work_timer;
 static unsigned short left_work_time_remaining = 0;
+static unsigned short left_order_time_remaining = 0;
 static unsigned short right_work_time_remaining = 0;
+static unsigned short right_order_time_remaining = 0;
+multistage_state_t left_multistage_state;
+multistage_state_t right_multistage_state;
 
 static unsigned char ecb_set_state[26];
 
+void system_poweroff()
+{
+    if (left_work_time_remaining != 0 || left_order_time_remaining != 0)
+    {
+        POSIXTimerSet(left_work_timer, 0, 0);
+        left_work_time_remaining = 0;
+        left_order_time_remaining = 0;
+    }
+    if (right_work_time_remaining != 0 || right_order_time_remaining != 0)
+    {
+        POSIXTimerSet(right_work_timer, 0, 0);
+        right_work_time_remaining = 0;
+        right_order_time_remaining = 0;
+    }
+}
 void work_state_operation(char dir, char state)
 {
     if (dir == 0)
     {
+        if (state == WORK_STATE_NOWORK)
+        {
+            ecb_set_state[10] = 0;
+            ecb_set_state[17] &= 0x0f;
+        }
         ecb_set_state[7] &= 0xf0;
         ecb_set_state[7] |= state;
     }
     else
     {
+        if (state == WORK_STATE_NOWORK)
+        {
+            ecb_set_state[11] = 0;
+            ecb_set_state[17] &= 0xf0;
+            // ecb_attr_t *ecb_attr = get_event_state(EVEN_SET_RMultiMode);
+            // ecb_attr->value[0] = 0;
+            // ecb_attr->change = 1;
+        }
         ecb_set_state[7] &= 0x0f;
         ecb_set_state[7] |= state << 4;
     }
@@ -119,6 +151,10 @@ static ecb_attr_t g_event_state[] = {
         uart_byte_len : 1,
     },
     {
+        uart_cmd : 0x4d,
+        uart_byte_len : 4,
+    },
+    {
         uart_cmd : 0x4f,
         uart_byte_len : 1,
     },
@@ -166,6 +202,18 @@ static ecb_attr_t g_event_state[] = {
         uart_cmd : 0x5b,
         uart_byte_len : 1,
     },
+    // {
+    //     uart_cmd : 0x5f,
+    //     uart_byte_len : 1,
+    // },
+    {
+        uart_cmd : 0x80,
+        uart_byte_len : 1,
+    },
+    {
+        uart_cmd : 0xf6,
+        uart_byte_len : 1,
+    },
 };
 
 static int g_event_state_len = sizeof(g_event_state) / sizeof(g_event_state[0]);
@@ -181,20 +229,38 @@ ecb_attr_t *get_event_state(signed short uart_cmd)
     }
     return NULL;
 }
+unsigned short crc16_XMODEM(unsigned char *ptr, int len)
+{
+    unsigned int i;
+    unsigned short crc = 0x0000;
+
+    while (len--)
+    {
+        crc ^= (unsigned short)(*ptr++) << 8;
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 0x8000)
+                crc = (crc << 1) ^ 0x1021;
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}
 int ecb_parse_set_heart()
 {
     ecb_set_state[0] = 0xfa;
     ecb_set_state[1] = 0x19;
     ecb_set_state[2] = 0x04;
     ecb_set_state[3] = 0x01;
-    unsigned short crc16 = crc16_maxim_single(&ecb_set_state[0], 24);
+    unsigned short crc16 = crc16_XMODEM(&ecb_set_state[1], 23);
     ecb_set_state[24] = crc16;
     ecb_set_state[25] = crc16 >> 8;
     return ecb_uart_send(ecb_set_state, sizeof(ecb_set_state));
 }
 int ecb_parse_event_uds(unsigned char cmd)
 {
-    static unsigned char event_buf[255];
+    unsigned char event_buf[255];
     int index = 0;
     dzlog_warn("%s", __func__);
     for (int i = 0; i < g_event_state_len; ++i)
@@ -205,6 +271,7 @@ int ecb_parse_event_uds(unsigned char cmd)
             event_buf[index++] = ecb_attr->uart_cmd;
             memcpy(&event_buf[index], ecb_attr->value, ecb_attr->uart_byte_len);
             index += ecb_attr->uart_byte_len;
+            ecb_attr->change = 0;
         }
     }
     if (index > 0)
@@ -213,11 +280,31 @@ int ecb_parse_event_uds(unsigned char cmd)
 }
 static int ecb_parse_event_cmd(unsigned char *data)
 {
+    unsigned short state;
     ecb_attr_t *ecb_attr;
-    ecb_attr = get_event_state(EVENT_SET_SysPower);
-    if (*ecb_attr->value != data[4])
+
+    switch (data[4])
     {
-        *ecb_attr->value = data[4];
+    case 0:
+        ecb_set_state[4] = 1;
+        break;
+    default:
+        break;
+    }
+    state = data[4];
+    if (state <= 1)
+    {
+        state = 0;
+        system_poweroff();
+    }
+    else
+    {
+        state = 1;
+    }
+    ecb_attr = get_event_state(EVENT_SET_SysPower);
+    if (*ecb_attr->value != state)
+    {
+        *ecb_attr->value = state;
         ecb_attr->change = 1;
     }
 
@@ -296,8 +383,6 @@ static int ecb_parse_event_cmd(unsigned char *data)
         ecb_attr->change = 1;
     }
 
-    unsigned short state;
-
     state = input_state & (1 << 3);
     ecb_attr = get_event_state(EVENT_LStOvDoorState);
     if (ecb_attr->value[0] != state)
@@ -314,6 +399,29 @@ static int ecb_parse_event_cmd(unsigned char *data)
     }
 
     state = data[9];
+    switch (data[9])
+    {
+    case 17:
+        state = 0x04;
+        break;
+    case 5:
+        state = 0x23;
+        break;
+    case 6:
+        state = 0x24;
+        break;
+    case 7:
+        state = 0x26;
+        break;
+    case 15:
+        state = 0x28;
+        break;
+    case 16:
+        state = 0x2a;
+        break;
+    default:
+        break;
+    }
     ecb_attr = get_event_state(EVENT_SET_LStOvMode);
     if (ecb_attr->value[0] != state)
     {
@@ -321,6 +429,29 @@ static int ecb_parse_event_cmd(unsigned char *data)
         ecb_attr->change = 1;
     }
     state = data[10];
+    switch (data[10])
+    {
+    case 1:
+        state = 0x01;
+        break;
+    case 2:
+        state = 0x03;
+        break;
+    case 17:
+        state = 0x04;
+        break;
+    case 9:
+        state = 0x41;
+        break;
+    case 12:
+        state = 0x42;
+        break;
+    case 11:
+        state = 0x44;
+        break;
+    default:
+        break;
+    }
     ecb_attr = get_event_state(EVENT_SET_RStOvMode);
     if (ecb_attr->value[0] != state)
     {
@@ -344,67 +475,74 @@ static int ecb_parse_event_cmd(unsigned char *data)
         ecb_attr->value[1] = data[16];
         ecb_attr->change = 1;
     }
-    state = data[7] & 0x0f;
-    if (state == WORK_STATE_PREHEAT)
+    if (left_order_time_remaining == 0)
     {
-        state = REPORT_WORK_STATE_PREHEAT;
-        if (set_temp <= real_temp)
+        state = data[7] & 0x0f;
+        dzlog_warn("%s,------------------start left_work_time_remaining:%x", __func__, left_work_time_remaining);
+        if (state == WORK_STATE_PREHEAT)
         {
-            ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_LStOvSetTimer);
-            left_work_time_remaining = (ecb_attr->value[0] << 8) + ecb_attr->value[1];
-            left_work_time_remaining |= 0x8000;
-            work_state_operation(0, WORK_STATE_RUN);
-        }
-    }
-    else if (state == WORK_STATE_PREHEAT_PAUSE || state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
-    {
-        state = REPORT_WORK_STATE_PAUSE;
-        if (state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
-        {
-            if (left_work_time_remaining > 0 && (left_work_time_remaining & 0x8000) == 0)
+            state = REPORT_WORK_STATE_PREHEAT;
+            if (set_temp <= real_temp)
             {
-                POSIXTimerSet(left_work_timer, 0, 0);
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_LStOvSetTimer);
+                left_work_time_remaining = (ecb_attr->value[0] << 8) + ecb_attr->value[1];
                 left_work_time_remaining |= 0x8000;
+                work_state_operation(0, WORK_STATE_RUN);
             }
         }
-    }
-    else if (state == WORK_STATE_RUN)
-    {
-        if (left_work_time_remaining & 0x8000)
+        else if (state == WORK_STATE_PREHEAT_PAUSE || state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
         {
-            POSIXTimerSet(left_work_timer, 60, 60);
-            left_work_time_remaining &= 0x7fff;
+            if (state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
+            {
+                if (left_work_time_remaining > 0 && (left_work_time_remaining & 0x8000) == 0)
+                {
+                    POSIXTimerSet(left_work_timer, 0, 0);
+                    left_work_time_remaining |= 0x8000;
+                }
+            }
+            state = REPORT_WORK_STATE_PAUSE;
         }
-        if (left_work_time_remaining == 0)
+        else if (state == WORK_STATE_RUN)
         {
-            POSIXTimerSet(left_work_timer, 0, 0);
-            work_state_operation(0, WORK_STATE_NOWORK);
+            if (left_work_time_remaining & 0x8000)
+            {
+                POSIXTimerSet(left_work_timer, 60, 60);
+                left_work_time_remaining &= 0x7fff;
+            }
+            if (left_work_time_remaining == 0)
+            {
+                POSIXTimerSet(left_work_timer, 0, 0);
+                work_state_operation(0, WORK_STATE_NOWORK);
+            }
         }
-    }
-    else if (state == WORK_STATE_FINISH || state == WORK_STATE_NOWORK)
-    {
-        if (state == WORK_STATE_FINISH)
-            state = REPORT_WORK_STATE_FINISH;
-        else
-            state = REPORT_WORK_STATE_STOP;
-        if (left_work_time_remaining > 0)
+        else if (state == WORK_STATE_FINISH || state == WORK_STATE_NOWORK)
         {
-            POSIXTimerSet(left_work_timer, 0, 0);
-            left_work_time_remaining = 0;
+            if (state == WORK_STATE_FINISH)
+                state = REPORT_WORK_STATE_FINISH;
+            else
+                state = REPORT_WORK_STATE_STOP;
+            if (left_work_time_remaining > 0)
+            {
+                POSIXTimerSet(left_work_timer, 0, 0);
+                left_work_time_remaining = 0;
+            }
+            left_multistage_state.valid = 0;
+        }
+        else if (state == WORK_STATE_RESERVE)
+        {
+            state = REPORT_WORK_STATE_RESERVE;
+        }
+        dzlog_warn("%s,---------------------end left_work_time_remaining:%x left_multistage_state.valid:%d", __func__, left_work_time_remaining, left_multistage_state.valid);
+        ecb_attr = get_event_state(EVENT_LStOvState);
+        if (ecb_attr->value[0] != state)
+        {
+            ecb_attr->value[0] = state;
+            ecb_attr->change = 1;
         }
     }
-    else if (state == WORK_STATE_RESERVE)
-    {
-        state = REPORT_WORK_STATE_RESERVE;
-    }
-
-    ecb_attr = get_event_state(EVENT_LStOvState);
-    if (ecb_attr->value[0] != state)
-    {
-        ecb_attr->value[0] = state;
-        ecb_attr->change = 1;
-    }
-
+    else
+        dzlog_warn("%s,------------------left_order_time_remaining:%x", __func__, left_order_time_remaining);
+    set_temp = (data[13] << 8) + data[14];
     ecb_attr = get_event_state(EVENT_SET_RStOvSetTemp);
     if (ecb_attr->value[0] != data[13] || ecb_attr->value[1] != data[14])
     {
@@ -412,7 +550,7 @@ static int ecb_parse_event_cmd(unsigned char *data)
         ecb_attr->value[1] = data[14];
         ecb_attr->change = 1;
     }
-
+    real_temp = (data[17] << 8) + data[18];
     ecb_attr = get_event_state(EVENT_RStOvRealTemp);
     if (ecb_attr->value[0] != data[17] || ecb_attr->value[1] != data[18])
     {
@@ -420,13 +558,73 @@ static int ecb_parse_event_cmd(unsigned char *data)
         ecb_attr->value[1] = data[18];
         ecb_attr->change = 1;
     }
-    state = (data[7] & 0xf0) >> 4;
-    ecb_attr = get_event_state(EVENT_RStOvState);
-    if (ecb_attr->value[0] != state)
+    if (right_order_time_remaining == 0)
     {
-        ecb_attr->value[0] = state;
-        ecb_attr->change = 1;
+        state = (data[7] & 0xf0) >> 4;
+        dzlog_warn("%s,------------------start right_work_time_remaining:%x", __func__, right_work_time_remaining);
+        if (state == WORK_STATE_PREHEAT)
+        {
+            state = REPORT_WORK_STATE_PREHEAT;
+            if (set_temp <= real_temp)
+            {
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvSetTimer);
+                right_work_time_remaining = (ecb_attr->value[0] << 8) + ecb_attr->value[1];
+                right_work_time_remaining |= 0x8000;
+                work_state_operation(0, WORK_STATE_RUN);
+            }
+        }
+        else if (state == WORK_STATE_PREHEAT_PAUSE || state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
+        {
+            if (state == WORK_STATE_PAUSE || state == WORK_STATE_ERROR)
+            {
+                if (right_work_time_remaining > 0 && (right_work_time_remaining & 0x8000) == 0)
+                {
+                    POSIXTimerSet(right_work_timer, 0, 0);
+                    right_work_time_remaining |= 0x8000;
+                }
+            }
+            state = REPORT_WORK_STATE_PAUSE;
+        }
+        else if (state == WORK_STATE_RUN)
+        {
+            if (right_work_time_remaining & 0x8000)
+            {
+                POSIXTimerSet(right_work_timer, 60, 60);
+                right_work_time_remaining &= 0x7fff;
+            }
+            if (right_work_time_remaining == 0)
+            {
+                POSIXTimerSet(right_work_timer, 0, 0);
+                work_state_operation(0, WORK_STATE_NOWORK);
+            }
+        }
+        else if (state == WORK_STATE_FINISH || state == WORK_STATE_NOWORK)
+        {
+            if (state == WORK_STATE_FINISH)
+                state = REPORT_WORK_STATE_FINISH;
+            else
+                state = REPORT_WORK_STATE_STOP;
+            if (right_work_time_remaining > 0)
+            {
+                POSIXTimerSet(right_work_timer, 0, 0);
+                right_work_time_remaining = 0;
+            }
+            right_multistage_state.valid = 0;
+        }
+        else if (state == WORK_STATE_RESERVE)
+        {
+            state = REPORT_WORK_STATE_RESERVE;
+        }
+        dzlog_warn("%s,---------------------end right_work_time_remaining:%x right_multistage_state.valid:%d", __func__, right_work_time_remaining, right_multistage_state.valid);
+        ecb_attr = get_event_state(EVENT_RStOvState);
+        if (ecb_attr->value[0] != state)
+        {
+            ecb_attr->value[0] = state;
+            ecb_attr->change = 1;
+        }
     }
+    else
+        dzlog_warn("%s,------------------right_order_time_remaining:%x", __func__, right_order_time_remaining);
     return 0;
 }
 int ecb_parse_event_msg(unsigned char *data, unsigned int len)
@@ -440,19 +638,199 @@ int ecb_parse_event_msg(unsigned char *data, unsigned int len)
         return 0;
     }
     unsigned short crc16_src = (data[25] << 8) + data[24];
-    unsigned short crc16 = crc16_maxim_single(&data[0], 24);
+    unsigned short crc16 = crc16_XMODEM(&data[1], 23);
     dzlog_warn("crc16:%d,%d", crc16_src, crc16);
     ecb_parse_event_cmd(&data[index + 0]);
     ecb_parse_event_uds(0);
     return 0;
 }
+
+static int set_work_operation(char work_state, char operation)
+{
+    switch (operation)
+    {
+    case 0x00:
+        if (work_state == WORK_STATE_NOWORK || work_state == WORK_STATE_PREHEAT_PAUSE || work_state == WORK_STATE_FINISH || work_state == WORK_STATE_ERROR)
+            work_state = WORK_STATE_PREHEAT;
+        else if (work_state == WORK_STATE_PAUSE)
+            work_state = WORK_STATE_RUN;
+        break;
+    case 0x01:
+        if (work_state == WORK_STATE_PREHEAT)
+            work_state = WORK_STATE_PREHEAT_PAUSE;
+        else if (work_state == WORK_STATE_RUN)
+            work_state = WORK_STATE_PAUSE;
+        break;
+    case 0x02:
+        work_state = WORK_STATE_NOWORK;
+        break;
+    case 0x03:
+        work_state = WORK_STATE_NOWORK;
+        break;
+    case 0x04:
+        work_state = WORK_STATE_PREHEAT;
+        break;
+    }
+    return work_state;
+}
+static int set_work_mode(char dir, char mode)
+{
+    if (dir == 0)
+    {
+        switch (mode)
+        {
+        case 0x04:
+            mode = 17;
+            break;
+        case 0x23:
+            mode = 5;
+            break;
+        case 0x24:
+            mode = 6;
+            break;
+        case 0x26:
+            mode = 7;
+            break;
+        case 0x28:
+            mode = 15;
+            break;
+        case 0x2a:
+            mode = 16;
+            break;
+        default:
+            break;
+        }
+        if (ecb_set_state[10] != mode)
+        {
+            ecb_set_state[7] &= 0x0f;
+        }
+        ecb_set_state[10] = mode;
+    }
+    else
+    {
+        switch (mode)
+        {
+        case 0x01:
+            mode = 1;
+            break;
+        case 0x03:
+            mode = 2;
+            break;
+        case 0x04:
+            mode = 17;
+            break;
+        case 0x41:
+            mode = 9;
+            break;
+        case 0x42:
+            mode = 12;
+            break;
+        case 0x44:
+            mode = 11;
+            break;
+        default:
+            break;
+        }
+        if (ecb_set_state[11] != mode)
+        {
+            ecb_set_state[7] &= 0xf0;
+        }
+        ecb_set_state[11] = mode;
+    }
+    return 0;
+}
+static int set_work_time(char dir, unsigned short time)
+{
+    ecb_attr_t *ecb_attr;
+    if (dir == 0)
+    {
+        ecb_attr = get_event_state(EVENT_SET_LStOvSetTimer);
+        ecb_attr->value[0] = time >> 8;
+        ecb_attr->value[1] = time;
+        ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_LStOvSetTimerLeft);
+        ecb_attr->value[0] = time >> 8;
+        ecb_attr->value[1] = time;
+        ecb_attr->change = 1;
+
+        if (time > 15)
+            time = 15;
+        ecb_set_state[17] &= 0x0f;
+        ecb_set_state[17] |= time;
+    }
+    else
+    {
+        ecb_attr = get_event_state(EVENT_SET_RStOvSetTimer);
+        ecb_attr->value[0] = time >> 8;
+        ecb_attr->value[1] = time;
+        ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_RStOvSetTimerLeft);
+        ecb_attr->value[0] = time >> 8;
+        ecb_attr->value[1] = time;
+        ecb_attr->change = 1;
+
+        if (time > 15)
+            time = 15;
+        ecb_set_state[17] &= 0xf0;
+        ecb_set_state[17] |= time << 4;
+    }
+    return 0;
+}
+static int set_work_temp(char dir, unsigned short temp)
+{
+    if (dir == 0)
+    {
+        ecb_set_state[12] = temp >> 8;
+        ecb_set_state[13] = temp;
+    }
+    else
+    {
+        ecb_set_state[14] = temp >> 8;
+        ecb_set_state[15] = temp;
+    }
+    return 0;
+}
+static int set_work_mode_time_temp(char dir, char mode, unsigned short time, unsigned short temp)
+{
+    set_work_mode(dir, mode);
+    set_work_time(dir, time);
+    set_work_temp(dir, temp);
+    return 0;
+}
+static void set_multiStageState(char dir)
+{
+    if (dir == 0)
+    {
+        ecb_attr_t *ecb_attr;
+        ecb_attr = get_event_state(EVENT_MultiStageState);
+        ecb_attr->value[0] = left_multistage_state.total_step;
+        ecb_attr->value[1] = left_multistage_state.current_step;
+        ecb_attr->change = 1;
+
+        set_work_mode_time_temp(0, left_multistage_state.step[left_multistage_state.current_step - 1].mode, left_multistage_state.step[left_multistage_state.current_step - 1].temp, left_multistage_state.step[left_multistage_state.current_step - 1].time);
+    }
+    else
+    {
+    }
+}
+
 static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value)
 {
+    ecb_attr_t *ecb_attr;
     int ret = 1;
     switch (cmd)
     {
     case EVENT_SET_SysPower:
-        ecb_set_state[4] = *value;
+        if (*value)
+        {
+            ecb_set_state[4] = 3;
+        }
+        else
+        {
+            ecb_set_state[4] = 1;
+        }
         break;
     case EVENT_SET_HoodLight:
         if (*value)
@@ -462,81 +840,203 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         break;
     case EVENT_SET_HoodSpeed:
         ecb_set_state[16] = *value;
+        ecb_attr = get_event_state(EVENT_SET_HoodSpeed);
+        ecb_attr->value[0] = *value;
+        ecb_attr->change = 1;
+        break;
+    case EVENT_SET_LStOvMode:
+        set_work_mode(WORK_DIR_LEFT, value[0]);
+        break;
+    case EVENT_SET_RStOvMode:
+        set_work_mode(WORK_DIR_RIGHT, value[0]);
+        break;
+    case EVENT_SET_LStOvSetTemp:
+        set_work_temp(WORK_DIR_LEFT, (value[0] << 8) + value[1]);
+        ret = 2;
+        break;
+    case EVENT_SET_RStOvSetTemp:
+        set_work_temp(WORK_DIR_RIGHT, (value[0] << 8) + value[1]);
+        ret = 2;
+        break;
+    case EVENT_SET_LStOvSetTimer:
+        set_work_time(WORK_DIR_LEFT, (value[0] << 8) + value[1]);
+        ret = 2;
+        break;
+    case EVENT_SET_RStOvSetTimer:
+        set_work_time(WORK_DIR_RIGHT, (value[0] << 8) + value[1]);
+        ret = 2;
+        break;
+    case EVENT_SET_LStOvOrderTimer:
+        ecb_attr = get_event_state(EVENT_SET_LStOvOrderTimer);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->value[1] = value[1];
+        ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_LStOvOrderTimerLeft);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->value[1] = value[1];
+        ecb_attr->change = 1;
+
+        left_order_time_remaining = (value[0] << 8) + value[1];
+        ret = 2;
+        break;
+    case EVENT_SET_RStOvOrderTimer:
+        ecb_attr = get_event_state(EVENT_SET_RStOvOrderTimer);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->value[1] = value[1];
+        ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_RStOvOrderTimerLeft);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->value[1] = value[1];
+        ecb_attr->change = 1;
+
+        right_order_time_remaining = (value[0] << 8) + value[1];
+        ret = 2;
         break;
     case SET_LStOvOperation:
     {
         char work_state = ecb_set_state[7] & 0x0f;
-        if (*value == 0)
+        char operation = *value;
+        if (left_order_time_remaining == 0)
         {
-            if (work_state == WORK_STATE_NOWORK || work_state == WORK_STATE_PREHEAT_PAUSE || work_state == WORK_STATE_PAUSE || work_state == WORK_STATE_FINISH)
-                work_state = 1;
+            work_state = set_work_operation(work_state, operation);
+            work_state_operation(0, work_state);
         }
-        else if (*value == 1)
+        else
         {
-            if (work_state == WORK_STATE_PREHEAT)
-                work_state = WORK_STATE_PREHEAT_PAUSE;
-            else if (work_state == WORK_STATE_RUN)
-                work_state = WORK_STATE_PAUSE;
-        }
-        else if (*value == 2)
-        {
-            work_state = WORK_STATE_FINISH;
-        }
-        else if (*value == 3)
-        {
-            work_state = WORK_STATE_NOWORK;
-        }
-        else if (*value == 4)
-        {
-            work_state = WORK_STATE_PREHEAT;
-        }
-        work_state_operation(0, work_state);
-    }
-    break;
-    case EVENT_SET_LStOvMode:
-        ecb_set_state[10] = *value;
-        break;
-    case EVENT_SET_RStOvMode:
-        ecb_set_state[11] = *value;
-        break;
-    case EVENT_SET_LStOvSetTemp:
-        ecb_set_state[12] = value[0];
-        ecb_set_state[13] = value[1];
-        ret = 2;
-        break;
-    case EVENT_SET_RStOvSetTemp:
-        ecb_set_state[14] = value[0];
-        ecb_set_state[15] = value[1];
-        ret = 2;
-        break;
-    case EVENT_SET_LStOvSetTimer:
-    {
-        ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_LStOvSetTimer);
-        ecb_attr->value[0] = value[0];
-        ecb_attr->value[1] = value[1];
-        ecb_attr->change = 1;
+            switch (operation)
+            {
+            case 0x00:
+                left_order_time_remaining &= 0x7fff;
+                POSIXTimerSet(left_work_timer, 60, 60);
+                work_state = REPORT_WORK_STATE_RESERVE;
+                break;
+            case 0x01:
+                left_order_time_remaining |= 0x8000;
+                POSIXTimerSet(left_work_timer, 0, 0);
+                work_state = REPORT_WORK_STATE_RESERVE_PAUSE;
+                break;
+            case 0x02:
+                left_order_time_remaining = 0;
+                POSIXTimerSet(left_work_timer, 0, 0);
+                work_state = REPORT_WORK_STATE_STOP;
+                break;
+            case 0x03:
 
-        ecb_attr = get_event_state(EVENT_LStOvSetTimerLeft);
-        ecb_attr->value[0] = value[0];
-        ecb_attr->value[1] = value[1];
-        ecb_attr->change = 1;
-        ret = 2;
+                break;
+            case 0x04:
+                left_order_time_remaining = 0;
+                work_state = WORK_STATE_PREHEAT;
+                work_state_operation(0, work_state);
+                break;
+            }
+            if (operation != 0x04)
+            {
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_LStOvState);
+                if (ecb_attr->value[0] != work_state)
+                {
+                    ecb_attr->value[0] = work_state;
+                    ecb_attr->change = 1;
+                    ecb_parse_event_uds(0);
+                }
+            }
+        }
     }
     break;
-    case EVENT_SET_RStOvSetTimer:
+    case SET_RStOvOperation:
     {
-        ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvSetTimer);
-        ecb_attr->value[0] = value[0];
-        ecb_attr->value[1] = value[1];
-        ecb_attr->change = 1;
+        char work_state = ecb_set_state[7] >> 4;
+        char operation = *value;
+        if (right_order_time_remaining == 0)
+        {
+            work_state = set_work_operation(work_state, operation);
+            work_state_operation(1, work_state);
+        }
+        else
+        {
+            switch (operation)
+            {
+            case 0x00:
+                right_order_time_remaining &= 0x7fff;
+                POSIXTimerSet(right_work_timer, 60, 60);
+                work_state = REPORT_WORK_STATE_RESERVE;
+                break;
+            case 0x01:
+                right_order_time_remaining |= 0x8000;
+                POSIXTimerSet(right_work_timer, 0, 0);
+                work_state = REPORT_WORK_STATE_RESERVE_PAUSE;
+                break;
+            case 0x02:
+                right_order_time_remaining = 0;
+                POSIXTimerSet(right_work_timer, 0, 0);
+                work_state = REPORT_WORK_STATE_STOP;
+                break;
+            case 0x03:
 
-        ecb_attr = get_event_state(EVENT_RStOvSetTimerLeft);
-        ecb_attr->value[0] = value[0];
-        ecb_attr->value[1] = value[1];
-        ecb_attr->change = 1;
-        ret = 2;
+                break;
+            case 0x04:
+                right_order_time_remaining = 0;
+                work_state = WORK_STATE_PREHEAT;
+                work_state_operation(1, work_state);
+                break;
+            }
+            if (operation != 0x04)
+            {
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_RStOvState);
+                if (ecb_attr->value[0] != work_state)
+                {
+                    ecb_attr->value[0] = work_state;
+                    ecb_attr->change = 1;
+                    ecb_parse_event_uds(0);
+                }
+            }
+        }
     }
     break;
+    case EVENT_SET_MultiMode:
+        ecb_attr = get_event_state(EVENT_SET_MultiMode);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->change = 1;
+        break;
+    case SET_MultiStageContent:
+    {
+        left_multistage_state.valid = 1;
+        left_multistage_state.total_step = value[0];
+        left_multistage_state.current_step = 1;
+        unsigned char index = 1;
+        for (int i = 0; i < 3; ++i)
+        {
+            left_multistage_state.step[i].mode = value[index + 2];
+            left_multistage_state.step[i].temp = (value[index + 3] << 8) + value[index + 4];
+            left_multistage_state.step[i].time = (value[index + 5] << 8) + value[index + 6];
+            index += 13;
+        }
+        set_multiStageState(0);
+    }
+    break;
+    case EVENT_SET_CookbookID:
+        ecb_attr = get_event_state(EVENT_SET_CookbookID);
+        memcpy(ecb_attr->value, value, ecb_attr->uart_byte_len);
+        ecb_attr->change = 1;
+        break;
+    case EVEN_SET_RMultiMode:
+        ecb_attr = get_event_state(EVEN_SET_RMultiMode);
+        memcpy(ecb_attr->value, value, ecb_attr->uart_byte_len);
+        ecb_attr->change = 1;
+        break;
+    case EVENT_SET_LSteamGear:
+        ecb_attr = get_event_state(EVENT_SET_LSteamGear);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->change = 1;
+        break;
+    case EVENT_SET_DataReportReason:
+        ecb_attr = get_event_state(EVENT_SET_DataReportReason);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->change = 1;
+        break;
+    case SET_BuzControl:
+        break;
     default:
         ret = 0;
         break;
@@ -557,28 +1057,108 @@ int ecb_parse_set_msg(const unsigned char *data, unsigned int len)
 
 static void POSIXTimer_cb(union sigval val)
 {
+    dzlog_warn("%s,val.sival_int:%d", __func__, val.sival_int);
     if (val.sival_int == 0)
     {
-        left_work_time_remaining &= 0x7fff;
-        if (left_work_time_remaining > 0)
+        if (left_order_time_remaining == 0)
         {
-            --left_work_time_remaining;
+            left_work_time_remaining &= 0x7fff;
+            if (left_work_time_remaining > 0)
+            {
+                --left_work_time_remaining;
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_LStOvSetTimerLeft);
+                ecb_attr->value[0] = left_work_time_remaining >> 8;
+                ecb_attr->value[1] = left_work_time_remaining;
+                ecb_attr->change = 1;
 
-            ecb_attr_t *ecb_attr = get_event_state(EVENT_LStOvSetTimerLeft);
-            ecb_attr->value[0] = left_work_time_remaining >> 8;
-            ecb_attr->value[1] = left_work_time_remaining;
-            ecb_attr->change = 1;
+                if (left_work_time_remaining > 15)
+                    left_work_time_remaining = 15;
+                ecb_set_state[17] &= 0x0f;
+                ecb_set_state[17] |= left_work_time_remaining;
+            }
+
+            if ((left_work_time_remaining & 0x7fff) <= 0)
+            {
+                POSIXTimerSet(left_work_timer, 0, 0);
+                left_work_time_remaining = 0;
+                if (left_multistage_state.valid && left_multistage_state.current_step < left_multistage_state.total_step)
+                {
+                    left_multistage_state.current_step += 1;
+                    set_multiStageState(0);
+                    work_state_operation(0, WORK_STATE_PREHEAT);
+                }
+                else
+                    work_state_operation(0, WORK_STATE_FINISH);
+            }
         }
-
-        if ((left_work_time_remaining & 0x7fff) <= 0)
+        else
         {
-            POSIXTimerSet(left_work_timer, 0, 0);
-            work_state_operation(0, WORK_STATE_FINISH);
-            left_work_time_remaining = 0;
+            left_order_time_remaining &= 0x7fff;
+            if (left_order_time_remaining > 0)
+            {
+                --left_order_time_remaining;
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_LStOvOrderTimerLeft);
+                ecb_attr->value[0] = left_order_time_remaining >> 8;
+                ecb_attr->value[1] = left_order_time_remaining;
+                ecb_attr->change = 1;
+                ecb_parse_event_uds(0);
+            }
+
+            if ((left_order_time_remaining & 0x7fff) <= 0)
+            {
+                POSIXTimerSet(left_work_timer, 0, 0);
+                work_state_operation(0, WORK_STATE_PREHEAT);
+                left_order_time_remaining = 0;
+            }
         }
     }
     else if (val.sival_int == 1)
     {
+        if (right_order_time_remaining == 0)
+        {
+            right_work_time_remaining &= 0x7fff;
+            if (right_work_time_remaining > 0)
+            {
+                --right_work_time_remaining;
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_RStOvSetTimerLeft);
+                ecb_attr->value[0] = right_work_time_remaining >> 8;
+                ecb_attr->value[1] = right_work_time_remaining;
+                ecb_attr->change = 1;
+
+                if (right_work_time_remaining > 15)
+                    right_work_time_remaining = 15;
+                ecb_set_state[17] &= 0xf0;
+                ecb_set_state[17] |= right_work_time_remaining << 4;
+            }
+
+            if ((right_work_time_remaining & 0x7fff) <= 0)
+            {
+                POSIXTimerSet(right_work_timer, 0, 0);
+                work_state_operation(1, WORK_STATE_FINISH);
+                right_work_time_remaining = 0;
+            }
+        }
+        else
+        {
+            right_order_time_remaining &= 0x7fff;
+            if (right_order_time_remaining > 0)
+            {
+                --right_order_time_remaining;
+                ecb_attr_t *ecb_attr = get_event_state(EVENT_RStOvOrderTimerLeft);
+                ecb_attr->value[0] = right_order_time_remaining >> 8;
+                ecb_attr->value[1] = right_order_time_remaining;
+                ecb_attr->change = 1;
+                ecb_parse_event_uds(0);
+            }
+
+            if ((right_order_time_remaining & 0x7fff) <= 0)
+            {
+                POSIXTimerSet(right_work_timer, 0, 0);
+                right_order_time_remaining = 0;
+
+                work_state_operation(1, WORK_STATE_PREHEAT);
+            }
+        }
     }
 }
 

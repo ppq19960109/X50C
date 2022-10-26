@@ -26,10 +26,10 @@ int ecb_uart_send(const unsigned char *in, int in_len)
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
-        // dzlog_warn("ecb_uart_send-------------");
-        // hdzlog_warn(in, in_len);
+        dzlog_warn("ecb_uart_send-------------");
+        hdzlog_warn(in, in_len);
         write(fd, in, in_len);
-        usleep(60000);
+        usleep(50000);
         pthread_mutex_unlock(&lock);
     }
     else
@@ -42,7 +42,7 @@ int ecb_uart_send(const unsigned char *in, int in_len)
 
 static int ecb_recv_cb(void *arg)
 {
-    static unsigned char uart_read_buf[512];
+    static unsigned char uart_read_buf[128];
     int uart_read_len;
     static int uart_read_buf_index = 0;
 
@@ -68,7 +68,7 @@ static int ecb_except_cb(void *arg)
 static int ecb_timeout_cb(void *arg)
 {
     ++heart_timeout;
-    if (heart_timeout == 5)
+    if (heart_timeout == 6)
     {
         ecb_parse_set_heart();
     }
@@ -89,7 +89,7 @@ void ecb_uart_deinit(void)
  **********************************************************************************/
 void ecb_uart_init(void)
 {
-    fd = uart_init("/dev/ttyS4", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
+    fd = uart_init("/dev/ttyS4", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
         dzlog_error("ecb_uart uart init error:%d,%s", errno, strerror(errno));

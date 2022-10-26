@@ -150,8 +150,8 @@ void *uds_tcp_server_task(void *arg) // uds任务
         app_select_client_Tcp_Client[i].select_client_event.fd = -1;
     }
     select_server_init(&select_server_event);
-    
-    app_select_client_Tcp_Server.select_client_event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT); // uds server fd初始化 
+
+    app_select_client_Tcp_Server.select_client_event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT); // uds server fd初始化
     // app_select_client_Tcp_Server.select_client_event.fd = tcpServerListen(NULL,"0.0.0.0",9999,SELECT_TCP_MAX_CLIENT); //htonl(INADDR_ANY)
     app_select_client_Tcp_Server.select_client_event.read_cb = app_select_tcp_server_accetp_cb;
     app_select_client_Tcp_Server.select_client_event.except_cb = app_select_tcp_server_except_cb;
@@ -167,4 +167,12 @@ void *uds_tcp_server_task(void *arg) // uds任务
 void uds_tcp_server_task_deinit(void)
 {
     select_server_deinit(&select_server_event);
+    for (int i = 0; i < SELECT_TCP_MAX_CLIENT; ++i)
+    {
+        if (app_select_client_Tcp_Client[i].select_client_event.fd >= 0)
+        {
+            close(app_select_client_Tcp_Client[i].select_client_event.fd);
+            app_select_client_Tcp_Client[i].select_client_event.fd = -1;
+        }
+    }
 }

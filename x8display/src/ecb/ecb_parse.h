@@ -9,6 +9,25 @@ typedef struct
     char *value;
 } ecb_attr_t;
 
+typedef struct
+{
+    unsigned char mode;
+    unsigned short temp;
+    unsigned short time;
+} multistage_step_t;
+typedef struct
+{
+    unsigned char valid;
+    unsigned char total_step;
+    unsigned char current_step;
+    multistage_step_t step[3];
+} multistage_state_t;
+
+enum work_dir
+{
+    WORK_DIR_LEFT,
+    WORK_DIR_RIGHT,
+};
 enum work_state
 {
     WORK_STATE_NOWORK,
@@ -56,6 +75,8 @@ enum event_set_state_enum
     EVENT_LStOvOrderTimerLeft = 0X49,
     EVENT_LStOvDoorState = 0X4A,
     EVENT_LStOvLightState = 0X4B,
+    SET_MultiStageContent= 0X4C,
+    EVENT_MultiStageState= 0X4D,
     EVENT_SET_MultiMode = 0X4F,
     EVENT_SET_CookbookID = 0X50,
     SET_RStOvOperation = 0X51,
@@ -69,6 +90,10 @@ enum event_set_state_enum
     EVENT_RStOvOrderTimerLeft = 0X58,
     EVENT_RStOvDoorState = 0X59,
     EVENT_RStOvLightState = 0X5A,
+    EVEN_SET_RMultiMode = 0X5f,
+    EVENT_SET_LSteamGear = 0X80,
+    EVENT_SET_DataReportReason = 0Xf6,
+    SET_BuzControl = 0Xf7,
 };
 void ecb_parse_init();
 void ecb_parse_deinit();

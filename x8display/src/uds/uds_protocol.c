@@ -24,16 +24,17 @@ static int uds_recv_cb(char *data, unsigned int uart_read_len) // uds接受回�
     if (uart_read_buf_index > 0)
     {
         memcpy(&uart_read_buf[uart_read_buf_index], data, uart_read_len);
-        // hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_read_buf_index += uart_read_len;
+        hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
     }
     else
     {
         uart_read_buf_index += uart_read_len;
+        hdzlog_info(data, uart_read_buf_index);
         uart_parse_msg((unsigned char *)data, &uart_read_buf_index, ecb_uart_parse_msg);
     }
-    // dzlog_warn("after uart_read_buf_index:%d", uart_read_buf_index);
+    dzlog_warn("after uart_read_buf_index:%d", uart_read_buf_index);
     if (uart_read_buf_index > 0)
     {
         memcpy(uart_read_buf, data, uart_read_buf_index);
