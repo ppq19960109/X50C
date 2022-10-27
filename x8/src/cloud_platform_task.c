@@ -411,7 +411,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
         int index = 0;
-        if (strcmp("MultiStageContent", ptr->cloud_key) == 0 || strcmp("CookbookParam", ptr->cloud_key) == 0)
+        if (strcmp("MultiStageContent", ptr->cloud_key) == 0 || strcmp("CookbookParam", ptr->cloud_key) == 0 || strcmp("RMultiStageContent", ptr->cloud_key) == 0)
         {
             if (strcmp("MultiStageContent", ptr->cloud_key) == 0)
             {

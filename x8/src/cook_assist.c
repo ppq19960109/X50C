@@ -11,6 +11,7 @@
 #include "uds_protocol.h"
 #include "curl/curl.h"
 #include "curl_http_request.h"
+#include "md5_func.h"
 
 typedef struct
 {
@@ -108,29 +109,52 @@ void set_stove_status(unsigned char status, enum INPUT_DIR input_dir)
     }
 }
 
-static void cookingCurve_post(const unsigned short temp)
+static void cookingCurve_post(const signed short *temp, const unsigned char len)
 {
     cloud_dev_t *cloud_dev = get_cloud_dev();
 
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(resp, "deviceMac", cloud_dev->mac);
-    cJSON_AddStringToObject(resp, "iotId", cloud_dev->device_name);
-    cJSON_AddNumberToObject(resp, "Temp", temp);
-    cJSON_AddNumberToObject(resp, "curveKey", curveKey);
+    cJSON_AddStringToObject(root, "deviceMac", cloud_dev->mac);
+    cJSON_AddStringToObject(root, "iotId", cloud_dev->device_name);
+    cJSON_AddNumberToObject(root, "Temp", 0);
+    cJSON_AddNumberToObject(root, "curveKey", curveKey);
 
+    char buf[48];
+    char md5_str[33] = {0};
+    sprintf(buf, "%s%s", "device", cloud_dev->device_name);
+    Compute_string_md5((unsigned char *)buf, strlen(buf), md5_str);
+    cJSON_AddStringToObject(root, "Token", md5_str);
+
+    time_t now_time = time(NULL);
+    cJSON *cookCurveTempDTOS = cJSON_AddArrayToObject(root, "cookCurveTempDTOS");
+    for (int i = 0; i < len; ++i)
+    {
+        cJSON *item = cJSON_CreateObject();
+        cJSON_AddNumberToObject(item, "temp", temp[i]);
+        cJSON_AddNumberToObject(item, "time", now_time - (len - i + 1) / 2);
+        cJSON_AddItemToArray(cookCurveTempDTOS, item);
+    }
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/", json);
+    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/addCookCurve", json);
     free(json);
     cJSON_Delete(root);
 }
 static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
 {
+    static signed short right_oil_curve[20];
+    static unsigned char right_oil_curve_len;
+
     static unsigned char report_temp_count = 15;
     static unsigned short left_oil_temp = 0;
     static unsigned short right_oil_temp = 0;
 
     if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0)
+    {
+        report_temp_count = 15;
+        right_oil_curve_len = 0;
         return;
+    }
+
     if (INPUT_LEFT == input_dir)
     {
         left_oil_temp = temp;
@@ -149,14 +173,27 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
         {
             report_temp_count = 0;
             report_msg_all_platform(root);
-            if (g_cook_assist.RStoveStatus > 0 && g_cook_assist.CookingCurveSwitch > 0)
-            {
-                cookingCurve_post(right_oil_temp / 10);
-            }
         }
         else
         {
             send_event_uds(root, NULL);
+        }
+
+        if (report_temp_count % 2 == 0)
+        {
+            if (g_cook_assist.RStoveStatus > 0 && g_cook_assist.CookingCurveSwitch > 0)
+            {
+                right_oil_curve[right_oil_curve_len++] = right_oil_temp / 10;
+                if (right_oil_curve_len >= 20)
+                {
+                    cookingCurve_post(right_oil_curve, right_oil_curve_len);
+                    right_oil_curve_len = 0;
+                }
+            }
+            else
+            {
+                right_oil_curve_len = 0;
+            }
         }
     }
 }

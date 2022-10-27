@@ -313,6 +313,13 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "RMultiMode",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 95,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "RStOvSetTemp",
             "valueType": 0,
             "funType": 0,
@@ -374,6 +381,20 @@
             "funType": 0,
             "uartCmd": 91,
             "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RMultiStageContent",
+            "valueType": 3,
+            "funType": 2,
+            "uartCmd": 92,
+            "uartByteLen": 0
+        },
+        {
+            "cloudKey": "RMultiStageState",
+            "valueType": 3,
+            "funType": 1,
+            "uartCmd": 93,
+            "uartByteLen": 3
         },
         {
             "cloudKey": "RStOvOperation",

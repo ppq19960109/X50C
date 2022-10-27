@@ -1,6 +1,8 @@
 #include "main.h"
 #include "link_solo.h"
+#include "cloud_platform_task.h"
 
+static time_t logStartTime = 0;
 static pthread_mutex_t mutex;
 static CURL *curl = NULL;
 static size_t curl_http_request_cb(void *ptr, size_t size, size_t nmemb, void *stream)
@@ -79,6 +81,10 @@ void curl_http_request_reset()
 static int hex_to_str(const unsigned char *buff, int buff_len, char *out, int out_len)
 {
     time_t now_time = time(NULL);
+    if (logStartTime == 0 && now_time > 1640966400)
+    {
+        logStartTime = now_time;
+    }
     struct tm *now_tm = localtime(&now_time);
     strftime(out, 21, "%Y-%m-%d %H:%M:%S,", now_tm);
     int len = strlen(out);
@@ -109,7 +115,21 @@ void http_report_hex(char *title, const unsigned char *buff, int buff_len)
     {
         printf("http_report_hex:%.*s\n", http_report_hex_len, http_report_hex_buf);
         http_report_hex_buf[http_report_hex_len - 1] = 0;
-        // curl_http_post("", http_report_hex_buf);
+        cJSON *root = cJSON_CreateObject();
+        cloud_dev_t *cloud_dev = get_cloud_dev();
+        cJSON_AddStringToObject(root, "deviceName", cloud_dev->device_name);
+        cJSON_AddStringToObject(root, "mac", cloud_dev->mac);
+        cJSON_AddStringToObject(root, "mac", cloud_dev->mac);
+        cJSON_AddNumberToObject(root, "startTime", logStartTime);
+        time_t now_time = time(NULL);
+        logStartTime = now_time;
+        cJSON_AddNumberToObject(root, "stopTime", now_time);
+        cJSON_AddStringToObject(root, "softVersion", cloud_dev->software_ver);
+        cJSON_AddStringToObject(root, "logContent", http_report_hex_buf);
+        char *json = cJSON_PrintUnformatted(root);
+        curl_http_post("http://mcook.iotmars.com/api/log/upload/device", http_report_hex_buf);
+        cJSON_free(json);
+        cJSON_Delete(root);
         http_report_hex_len = 0;
     }
     pthread_mutex_unlock(&mutex_log);
