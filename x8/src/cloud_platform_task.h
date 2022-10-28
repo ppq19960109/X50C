@@ -49,7 +49,8 @@ typedef struct
     char mac[16];
     char hardware_ver[6];
     char software_ver[6];
-    char remind[3][48];
+    char lRemindText[3][48];
+    char rRemindText[3][48];
     char update_log[960];
     cloud_attr_t *attr;
     int attr_len;

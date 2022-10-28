@@ -15,12 +15,12 @@
 #include "cook_assist.h"
 #include "curl_http_request.h"
 
-static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
 static char first_uds_report = 0;
 static char demo_mode = 0;
 
+// void power_ota_install();
 void uds_report_reset(void)
 {
     dzlog_warn("%s", __func__);
@@ -168,29 +168,17 @@ signed char set_OtaCmdPushType(char type)
 }
 // #define SOFT_TEST
 #ifdef SOFT_TEST
+static timer_t cook_name_timer;
 static char *cloud_set_json = NULL;
-#endif
 static void POSIXTimer_cb(union sigval val)
 {
-#ifndef SOFT_TEST
-
-    // if (val.sival_int == 0)
-    // {
-    cloud_attr_t *attr = get_attr_ptr("CookbookName");
-    if (attr == NULL)
-        return;
-    cJSON *resp = cJSON_CreateObject();
-    cJSON_AddStringToObject(resp, "CookbookName", attr->value);
-    report_msg_all_platform(resp);
-    // }
-#else
     if (cloud_set_json == NULL)
         return;
     link_send_property_post(cloud_set_json);
     cJSON_free(cloud_set_json);
     cloud_set_json = NULL;
-#endif
 }
+#endif
 
 int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回调函数，并拼包
 {
@@ -290,7 +278,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
     cJSON *item = NULL;
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
-        if (strcmp("MultiStageState", ptr->cloud_key) == 0)
+        if (strcmp("LMultiStageState", ptr->cloud_key) == 0 || strcmp("RMultiStageState", ptr->cloud_key) == 0)
         {
             item = cJSON_CreateObject();
 
@@ -304,7 +292,10 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
                     remind_num = 2;
                 if (remind_num > 0)
                     --remind_num;
-                cJSON_AddStringToObject(item, "RemindText", g_cloud_dev->remind[remind_num]);
+                if (strcmp("LMultiStageState", ptr->cloud_key) == 0)
+                    cJSON_AddStringToObject(item, "RemindText", g_cloud_dev->lRemindText[remind_num]);
+                else
+                    cJSON_AddStringToObject(item, "RemindText", g_cloud_dev->rRemindText[remind_num]);
             }
             else
             {
@@ -332,17 +323,10 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         {
             if (strcmp("SysPower", ptr->cloud_key) == 0)
             {
-                // set_gesture_power(cloud_val);
                 if (demo_mode != 0 && cloud_val == 0)
                 {
                     demo_mode = 0;
                 }
-            }
-            else if (strcmp("ErrorCode", ptr->cloud_key) == 0)
-            {
-            }
-            else if (strcmp("ErrorCodeShow", ptr->cloud_key) == 0)
-            {
             }
             item = cJSON_CreateNumber(cloud_val);
         }
@@ -402,7 +386,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
         cJSON_AddItemToObject(resp, ptr->cloud_key, item);
     return 0;
 }
-void power_ota_install();
+
 int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把阿里云下发数据解析，并解析成串口数据
 {
     long num = 0;
@@ -411,11 +395,15 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
     if (LINK_VALUE_TYPE_STRUCT == ptr->cloud_value_type)
     {
         int index = 0;
-        if (strcmp("MultiStageContent", ptr->cloud_key) == 0 || strcmp("CookbookParam", ptr->cloud_key) == 0 || strcmp("RMultiStageContent", ptr->cloud_key) == 0)
+        if (strcmp("LMultiStageContent", ptr->cloud_key) == 0 || strcmp("LCookbookParam", ptr->cloud_key) == 0 || strcmp("RMultiStageContent", ptr->cloud_key) == 0 || strcmp("RCookbookParam", ptr->cloud_key) == 0)
         {
-            if (strcmp("MultiStageContent", ptr->cloud_key) == 0)
+            if (strcmp("LMultiStageContent", ptr->cloud_key) == 0)
             {
-                memset(g_cloud_dev->remind, 0, sizeof(g_cloud_dev->remind));
+                memset(g_cloud_dev->lRemindText, 0, sizeof(g_cloud_dev->lRemindText));
+            }
+            if (strcmp("RMultiStageContent", ptr->cloud_key) == 0)
+            {
+                memset(g_cloud_dev->rRemindText, 0, sizeof(g_cloud_dev->rRemindText));
             }
 
             int arraySize = cJSON_GetArraySize(item);
@@ -440,7 +428,10 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
                     RemindText = cJSON_GetObjectItem(arraySub, "RemindText");
                     if (strlen(RemindText->valuestring) > 0)
                     {
-                        strcpy(g_cloud_dev->remind[i], RemindText->valuestring);
+                        if (strcmp("LCookbookParam", ptr->cloud_key) == 0)
+                            strcpy(g_cloud_dev->lRemindText[i], RemindText->valuestring);
+                        else
+                            strcpy(g_cloud_dev->rRemindText[i], RemindText->valuestring);
                         out[index++] = 1;
                     }
                     else
@@ -538,7 +529,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把
         }
         else if (LINK_VALUE_TYPE_STRING == ptr->cloud_value_type)
         {
-            if (strcmp("CookbookName", ptr->cloud_key) == 0)
+            if (strcmp("LCookbookName", ptr->cloud_key) == 0 || strcmp("RCookbookName", ptr->cloud_key) == 0)
             {
                 strcpy(ptr->value, item->valuestring);
                 return 0;
@@ -590,7 +581,15 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                 {
                 case 0x4f:
                 {
-                    cloud_attr_t *ptr = get_attr_ptr("CookbookName");
+                    cloud_attr_t *ptr = get_attr_ptr("LCookbookName");
+                    if (ptr != NULL)
+                    {
+                        get_attr_report_value(root, ptr);
+                    }
+                }
+                case 0x5e:
+                {
+                    cloud_attr_t *ptr = get_attr_ptr("RCookbookName");
                     if (ptr != NULL)
                     {
                         get_attr_report_value(root, ptr);
@@ -1018,8 +1017,9 @@ int cloud_init(void) //初始化
 #ifdef DYNREGMQ
     register_dynreg_device_secret_cb(save_device_secret);
 #endif
+#ifdef SOFT_TEST
     cook_name_timer = POSIXTimerCreate(0, POSIXTimer_cb);
-
+#endif
     g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
@@ -1058,11 +1058,13 @@ void cloud_deinit(void) //反初始化
     free(g_cloud_dev->attr);
     free(g_cloud_dev);
     dzlog_warn("cloud_deinit...........\n");
+#ifdef SOFT_TEST
     if (cook_name_timer != NULL)
     {
         POSIXTimerDelete(cook_name_timer);
         cook_name_timer = NULL;
     }
+#endif
     pthread_mutex_destroy(&mutex);
 }
 

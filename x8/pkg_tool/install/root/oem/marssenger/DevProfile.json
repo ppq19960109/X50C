@@ -187,7 +187,7 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "MultiMode",
+            "cloudKey": "LMultiMode",
             "valueType": 0,
             "funType": 0,
             "uartCmd": 79,
@@ -264,28 +264,28 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "MultiStageContent",
+            "cloudKey": "LMultiStageContent",
             "valueType": 3,
             "funType": 2,
             "uartCmd": 76,
             "uartByteLen": 0
         },
         {
-            "cloudKey": "CookbookParam",
+            "cloudKey": "LCookbookParam",
             "valueType": 3,
             "funType": 2,
             "uartCmd": 76,
             "uartByteLen": 0
         },
         {
-            "cloudKey": "MultiStageState",
+            "cloudKey": "LMultiStageState",
             "valueType": 3,
             "funType": 1,
             "uartCmd": 77,
             "uartByteLen": 3
         },
         {
-            "cloudKey": "CookbookID",
+            "cloudKey": "LCookbookID",
             "valueType": 0,
             "funType": 0,
             "uartCmd": 80,
@@ -310,6 +310,20 @@
             "valueType": 0,
             "funType": 1,
             "uartCmd": 82,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RMultiMode",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 95,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RCookbookID",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 96,
             "uartByteLen": 1
         },
         {
@@ -376,6 +390,27 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "RMultiStageContent",
+            "valueType": 3,
+            "funType": 2,
+            "uartCmd": 92,
+            "uartByteLen": 0
+        },
+        {
+            "cloudKey": "RCookbookParam",
+            "valueType": 3,
+            "funType": 2,
+            "uartCmd": 92,
+            "uartByteLen": 0
+        },
+        {
+            "cloudKey": "RMultiStageState",
+            "valueType": 3,
+            "funType": 1,
+            "uartCmd": 93,
+            "uartByteLen": 3
+        },
+        {
             "cloudKey": "RStOvOperation",
             "valueType": 0,
             "funType": 2,
@@ -411,7 +446,14 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "CookbookName",
+            "cloudKey": "LCookbookName",
+            "valueType": 2,
+            "funType": 0,
+            "uartCmd": 0,
+            "uartByteLen": 64
+        },
+        {
+            "cloudKey": "RCookbookName",
             "valueType": 2,
             "funType": 0,
             "uartCmd": 0,

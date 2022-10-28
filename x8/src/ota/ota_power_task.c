@@ -402,10 +402,10 @@ fail:
     // system(cmd);
     return ret;
 }
-void power_ota_install()
-{
-    ota_install_cb("/oem/marssenger/power_upgrade.bin");
-}
+// void power_ota_install()
+// {
+//     ota_install_cb("/oem/marssenger/power_upgrade.bin");
+// }
 static void POSIXTimer_cb(union sigval val)
 {
     dzlog_warn("%s, sigval:%d", __func__, val.sival_int);

@@ -164,14 +164,18 @@ static ecb_attr_t g_event_state[] = {
         uart_cmd : 0x5b,
         uart_byte_len : 1,
     },
-    // {
-    //     uart_cmd : 0x5d,
-    //     uart_byte_len : 4,
-    // },
-    // {
-    //     uart_cmd : 0x5f,
-    //     uart_byte_len : 1,
-    // },
+    {
+        uart_cmd : 0x5d,
+        uart_byte_len : 4,
+    },
+    {
+        uart_cmd : 0x5f,
+        uart_byte_len : 1,
+    },
+    {
+        uart_cmd : 0x60,
+        uart_byte_len : 1,
+    },
     {
         uart_cmd : 0x80,
         uart_byte_len : 1,
@@ -694,29 +698,33 @@ static int ecb_parse_event_cmd(unsigned char *data)
     else
         dzlog_warn("%s,------------------right_order_time_remaining:%x", __func__, right_order_time_remaining);
 
-    // left_door_state = (data[8] >> 3) & 0x01;
-    // if (left_door_state)
-    // {
-    //     if (left_state == WORK_STATE_PREHEAT)
-    //     {
-    //         work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT_PAUSE);
-    //     }
-    //     else if (left_state == WORK_STATE_RUN)
-    //     {
-    //         work_state_operation(WORK_DIR_LEFT, WORK_STATE_PAUSE);
-    //     }
-    // }
-    // else
-    // {
-    //     if (left_state == WORK_STATE_PREHEAT_PAUSE)
-    //     {
-    //         work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT);
-    //     }
-    //     else if (left_state == WORK_STATE_PAUSE)
-    //     {
-    //         work_state_operation(WORK_DIR_LEFT, WORK_STATE_RUN);
-    //     }
-    // }
+    unsigned char door_state = (data[8] >> 3) & 0x01;
+    if (left_door_state != door_state)
+    {
+        left_door_state = door_state;
+        if (left_door_state)
+        {
+            if (left_state == WORK_STATE_PREHEAT)
+            {
+                work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT_PAUSE);
+            }
+            else if (left_state == WORK_STATE_RUN)
+            {
+                work_state_operation(WORK_DIR_LEFT, WORK_STATE_PAUSE);
+            }
+        }
+        else
+        {
+            if (left_state == WORK_STATE_PREHEAT_PAUSE)
+            {
+                work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT);
+            }
+            else if (left_state == WORK_STATE_PAUSE)
+            {
+                work_state_operation(WORK_DIR_LEFT, WORK_STATE_RUN);
+            }
+        }
+    }
     // right_door_state = (data[8] >> 4) & 0x01;
     hood_min_speed_control(left_state, left_mode, right_state, right_mode);
     return 0;
@@ -898,7 +906,7 @@ static void set_multiStageState(char dir)
     ecb_attr_t *ecb_attr;
     if (dir == WORK_DIR_LEFT)
     {
-        ecb_attr = get_event_state(EVENT_MultiStageState);
+        ecb_attr = get_event_state(EVENT_LMultiStageState);
         ecb_attr->value[0] = left_multistage_state.total_step;
         ecb_attr->value[1] = left_multistage_state.current_step;
         ecb_attr->change = 1;
@@ -1097,12 +1105,12 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         }
     }
     break;
-    case EVENT_SET_MultiMode:
-        ecb_attr = get_event_state(EVENT_SET_MultiMode);
+    case EVENT_SET_LMultiMode:
+        ecb_attr = get_event_state(EVENT_SET_LMultiMode);
         ecb_attr->value[0] = value[0];
         ecb_attr->change = 1;
         break;
-    case SET_MultiStageContent:
+    case SET_LMultiStageContent:
     {
         left_multistage_state.valid = 1;
         left_multistage_state.total_step = value[0];
@@ -1136,8 +1144,14 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         ret = index;
     }
     break;
-    case EVENT_SET_CookbookID:
-        ecb_attr = get_event_state(EVENT_SET_CookbookID);
+    case EVENT_SET_LCookbookID:
+        ecb_attr = get_event_state(EVENT_SET_LCookbookID);
+        memcpy(ecb_attr->value, value, ecb_attr->uart_byte_len);
+        ecb_attr->change = 1;
+        ret = 4;
+        break;
+    case EVENT_SET_RCookbookID:
+        ecb_attr = get_event_state(EVENT_SET_RCookbookID);
         memcpy(ecb_attr->value, value, ecb_attr->uart_byte_len);
         ecb_attr->change = 1;
         ret = 4;
