@@ -147,11 +147,11 @@ int ecb_uart_send_ota_msg(unsigned char *msg, const int msg_len, unsigned char r
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_OTA, msg, msg_len, resend, -1);
 }
-int ecb_uart_send_ack(int seq_id)
+static int ecb_uart_send_ack(int seq_id)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_ACK, NULL, 0, 0, seq_id);
 }
-int ecb_uart_send_nak(unsigned char error_code, int seq_id)
+static int ecb_uart_send_nak(unsigned char error_code, int seq_id)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0, seq_id);
 }

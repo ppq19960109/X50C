@@ -68,7 +68,7 @@ static int ecb_except_cb(void *arg)
 static int ecb_timeout_cb(void *arg)
 {
     ++heart_timeout;
-    if (heart_timeout == 6)
+    if (heart_timeout == 4)
     {
         ecb_parse_set_heart();
     }
@@ -99,11 +99,10 @@ void ecb_uart_init(void)
     ecb_parse_init();
 
     pthread_mutex_init(&lock, NULL);
-    register_select_uart_timeout_cb(ecb_timeout_cb);
 
     select_client_event.fd = fd;
     select_client_event.read_cb = ecb_recv_cb;
     select_client_event.except_cb = ecb_except_cb;
-
+    select_client_event.timeout_cb = ecb_timeout_cb;
     add_select_client_uart(&select_client_event);
 }

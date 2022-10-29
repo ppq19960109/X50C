@@ -78,6 +78,19 @@ void delete_select_client_event(struct Select_Server_Event *server_event, struct
     printf("%s,select_client_num:%d\n", __func__, --server_event->select_client_num);
 }
 
+int ergodic_select_client_timeout(struct Select_Server_Event *server_event)
+{
+    int i;
+    for (i = 0; i < SELECT_MAX_CLIENT; ++i)
+    {
+        if (server_event->select_client_event[i] != NULL)
+        {
+            if (server_event->select_client_event[i]->timeout_cb != NULL)
+                server_event->select_client_event[i]->timeout_cb(NULL);
+        }
+    }
+    return 0;
+}
 static void select_client_fd_check(struct Select_Server_Event *server_event, struct Select_Client_Event *client_event)
 {
     if (FD_ISSET(client_event->fd, &server_event->rfds))

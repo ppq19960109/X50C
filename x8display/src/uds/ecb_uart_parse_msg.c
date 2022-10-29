@@ -75,11 +75,11 @@ int ecb_uart_send_event_msg(unsigned char *msg, const int msg_len)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_EVENT, msg, msg_len, 0, -1);
 }
-int ecb_uart_send_ack(int seq_id)
+static int ecb_uart_send_ack(int seq_id)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_ACK, NULL, 0, 0, seq_id);
 }
-int ecb_uart_send_nak(unsigned char error_code, int seq_id)
+static int ecb_uart_send_nak(unsigned char error_code, int seq_id)
 {
     return ecb_uart_send_msg(ECB_UART_COMMAND_NAK, &error_code, 1, 0, seq_id);
 }
@@ -196,7 +196,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (crc16 != check_sum)
     {
         dzlog_error("data check error");
-        ecb_uart_send_nak(ECB_NAK_CHECKSUM, seq_id);
+        // ecb_uart_send_nak(ECB_NAK_CHECKSUM, seq_id);
         // return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------

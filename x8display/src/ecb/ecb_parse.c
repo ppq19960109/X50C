@@ -3,6 +3,7 @@
 #include "ecb_parse.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
+#include "ice_parse.h"
 
 static timer_t left_work_timer;
 static timer_t right_work_timer;
@@ -217,6 +218,72 @@ unsigned short crc16_XMODEM(unsigned char *ptr, int len)
     }
     return crc;
 }
+
+int right_ice_hood_speed(unsigned char speed)
+{
+    if (speed < hood_min_speed)
+        return -1;
+
+    ecb_set_state[16] = speed;
+    ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_HoodSpeed);
+    ecb_attr->value[0] = speed;
+    ecb_attr->change = 1;
+    return 0;
+}
+int right_ice_hood_light(unsigned char light)
+{
+    if (light)
+        ecb_set_state[8] |= 0x01;
+    else
+        ecb_set_state[8] &= ~0x01;
+
+    ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_HoodLight);
+    ecb_attr->value[0] = light;
+    ecb_attr->change = 1;
+    return 0;
+}
+int right_ice_time_left(unsigned short time)
+{
+    ecb_attr_t *ecb_attr;
+    ecb_attr = get_event_state(EVENT_RStOvSetTimerLeft);
+    ecb_attr->value[0] = time >> 8;
+    ecb_attr->value[1] = time;
+    ecb_attr->change = 1;
+    return 0;
+}
+static int right_ice_operation(unsigned char operation)
+{
+    if (operation == WORK_OPERATION_STOP)
+    {
+        if (g_ice_event_state.iceStOvState != REPORT_WORK_STATE_STOP)
+            ice_uart_send_set_msg(operation, 0, 0, 0);
+    }
+    else if (operation == WORK_OPERATION_PAUSE || operation == WORK_OPERATION_FINISH)
+    {
+        if (operation == WORK_OPERATION_FINISH)
+            operation = WORK_OPERATION_STOP;
+        ice_uart_send_set_msg(operation, 0, 0, 0);
+    }
+    else
+    {
+        unsigned short mode = ecb_set_state[11];
+        if (mode == RStOvMode_ICE)
+        {
+            g_ice_event_state.first_ack = 1;
+            unsigned short temp = (ecb_set_state[13] << 8) + ecb_set_state[12];
+            ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvSetTimer);
+            unsigned short time = (ecb_attr->value[0] << 8) + ecb_attr->value[1];
+            ice_uart_send_set_msg(operation, mode, temp, time);
+            return -1;
+        }
+        else
+        {
+            ice_uart_send_set_msg(WORK_OPERATION_STOP, 0, 0, 0);
+        }
+    }
+    return 0;
+}
+
 void system_poweroff()
 {
     if (left_work_time_remaining != 0 || left_order_time_remaining != 0)
@@ -242,6 +309,7 @@ void system_poweroff()
         ecb_attr->value[0] = hood_min_speed;
         ecb_attr->change = 1;
     }
+    right_ice_operation(WORK_OPERATION_STOP);
 }
 static void work_state_operation(unsigned char dir, unsigned char state)
 {
@@ -260,7 +328,8 @@ static void work_state_operation(unsigned char dir, unsigned char state)
     {
         if (state == WORK_STATE_NOWORK)
         {
-            ecb_set_state[11] = 0;
+            if (ecb_set_state[11] != RStOvMode_ICE)
+                ecb_set_state[11] = 0;
             ecb_set_state[17] &= 0x0f;
             // ecb_attr_t *ecb_attr = get_event_state(EVEN_SET_RMultiMode);
             // ecb_attr->value[0] = 0;
@@ -546,7 +615,7 @@ static int ecb_parse_event_cmd(unsigned char *data)
     }
 
     left_state = state = data[7] & 0x0f;
-    dzlog_warn("%s,------------------start left_work_time_remaining:%x", __func__, left_work_time_remaining);
+    // dzlog_warn("%s,------------------start left_work_time_remaining:%x", __func__, left_work_time_remaining);
     if (state == WORK_STATE_PREHEAT)
     {
         state = REPORT_WORK_STATE_PREHEAT;
@@ -612,6 +681,7 @@ static int ecb_parse_event_cmd(unsigned char *data)
     }
     else
         dzlog_warn("%s,------------------left_order_time_remaining:%x", __func__, left_order_time_remaining);
+
     set_temp = (data[14] << 8) + data[13];
     ecb_attr = get_event_state(EVENT_SET_RStOvSetTemp);
     if (ecb_attr->value[1] != data[13] || ecb_attr->value[0] != data[14])
@@ -627,10 +697,12 @@ static int ecb_parse_event_cmd(unsigned char *data)
         ecb_attr->value[1] = data[17];
         ecb_attr->value[0] = data[18];
         ecb_attr->change = 1;
+
+        ice_uart_send_set_real_temp(real_temp);
     }
 
     right_state = state = (data[7] & 0xf0) >> 4;
-    dzlog_warn("%s,------------------start right_work_time_remaining:%x", __func__, right_work_time_remaining);
+    // dzlog_warn("%s,------------------start right_work_time_remaining:%x", __func__, right_work_time_remaining);
     if (state == WORK_STATE_PREHEAT)
     {
         state = REPORT_WORK_STATE_PREHEAT;
@@ -678,53 +750,67 @@ static int ecb_parse_event_cmd(unsigned char *data)
             POSIXTimerSet(right_work_timer, 0, 0);
             right_work_time_remaining = 0;
         }
-        right_multistage_state.valid = 0;
+        if ((g_ice_event_state.iceStOvState == WORK_STATE_FINISH || g_ice_event_state.iceStOvState == WORK_STATE_NOWORK) && g_ice_event_state.first_ack == 0)
+            right_multistage_state.valid = 0;
     }
     else if (state == WORK_STATE_RESERVE)
     {
         state = REPORT_WORK_STATE_RESERVE;
     }
-    dzlog_warn("%s,---------------------end right_work_time_remaining:%x right_multistage_state.valid:%d", __func__, right_work_time_remaining, right_multistage_state.valid);
+    dzlog_warn("%s,---------------------end right_work_time_remaining:%x right_multistage_state.valid:%d current_step:%d total_step:%d", __func__, right_work_time_remaining, right_multistage_state.valid, right_multistage_state.current_step, right_multistage_state.total_step);
 
     if (right_order_time_remaining == 0)
     {
         ecb_attr = get_event_state(EVENT_RStOvState);
-        if (ecb_attr->value[0] != state)
+        if (state == REPORT_WORK_STATE_STOP)
         {
-            ecb_attr->value[0] = state;
-            ecb_attr->change = 1;
+            if (ecb_attr->value[0] != g_ice_event_state.iceStOvState)
+            {
+                ecb_attr->value[0] = g_ice_event_state.iceStOvState;
+                ecb_attr->change = 1;
+            }
+        }
+        else
+        {
+            if (ecb_attr->value[0] != state)
+            {
+                {
+                    ecb_attr->value[0] = state;
+                    ecb_attr->change = 1;
+                }
+            }
         }
     }
     else
         dzlog_warn("%s,------------------right_order_time_remaining:%x", __func__, right_order_time_remaining);
 
-    unsigned char door_state = (data[8] >> 3) & 0x01;
-    if (left_door_state != door_state)
-    {
-        left_door_state = door_state;
-        if (left_door_state)
-        {
-            if (left_state == WORK_STATE_PREHEAT)
-            {
-                work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT_PAUSE);
-            }
-            else if (left_state == WORK_STATE_RUN)
-            {
-                work_state_operation(WORK_DIR_LEFT, WORK_STATE_PAUSE);
-            }
-        }
-        else
-        {
-            if (left_state == WORK_STATE_PREHEAT_PAUSE)
-            {
-                work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT);
-            }
-            else if (left_state == WORK_STATE_PAUSE)
-            {
-                work_state_operation(WORK_DIR_LEFT, WORK_STATE_RUN);
-            }
-        }
-    }
+    // unsigned char door_state = (data[8] >> 3) & 0x01;
+    // if (left_door_state != door_state)
+    // {
+    //     left_door_state = door_state;
+    //     if (left_door_state)
+    //     {
+    //         if (left_state == WORK_STATE_PREHEAT)
+    //         {
+    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT_PAUSE);
+    //         }
+    //         else if (left_state == WORK_STATE_RUN)
+    //         {
+    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_PAUSE);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         if (left_state == WORK_STATE_PREHEAT_PAUSE)
+    //         {
+    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT);
+    //         }
+    //         else if (left_state == WORK_STATE_PAUSE)
+    //         {
+    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_RUN);
+    //         }
+    //     }
+    // }
     // right_door_state = (data[8] >> 4) & 0x01;
     hood_min_speed_control(left_state, left_mode, right_state, right_mode);
     return 0;
@@ -739,9 +825,9 @@ int ecb_parse_event_msg(unsigned char *data, unsigned int len)
     {
         return 0;
     }
-    unsigned short crc16_src = (data[25] << 8) + data[24];
-    unsigned short crc16 = crc16_XMODEM(&data[1], 23);
-    dzlog_warn("crc16:%d,%d", crc16_src, crc16);
+    // unsigned short crc16_src = (data[25] << 8) + data[24];
+    // unsigned short crc16 = crc16_XMODEM(&data[1], 23);
+    // dzlog_warn("crc16:%d,%d", crc16_src, crc16);
     ecb_parse_event_cmd(&data[index + 0]);
     ecb_parse_event_uds(0);
     return 0;
@@ -751,25 +837,25 @@ static int set_work_operation(unsigned char work_state, unsigned char operation)
 {
     switch (operation)
     {
-    case 0x00:
+    case WORK_OPERATION_RUN:
         if (work_state == WORK_STATE_NOWORK || work_state == WORK_STATE_PREHEAT_PAUSE || work_state == WORK_STATE_FINISH || work_state == WORK_STATE_ERROR)
             work_state = WORK_STATE_PREHEAT;
         else if (work_state == WORK_STATE_PAUSE)
             work_state = WORK_STATE_RUN;
         break;
-    case 0x01:
+    case WORK_OPERATION_PAUSE:
         if (work_state == WORK_STATE_PREHEAT)
             work_state = WORK_STATE_PREHEAT_PAUSE;
         else if (work_state == WORK_STATE_RUN)
             work_state = WORK_STATE_PAUSE;
         break;
-    case 0x02:
+    case WORK_OPERATION_STOP:
         work_state = WORK_STATE_NOWORK;
         break;
-    case 0x03:
+    case WORK_OPERATION_FINISH:
         work_state = WORK_STATE_NOWORK;
         break;
-    case 0x04:
+    case WORK_OPERATION_RUN_NOW:
         work_state = WORK_STATE_PREHEAT;
         break;
     }
@@ -923,7 +1009,25 @@ static void set_multiStageState(char dir)
         set_work_mode_time_temp(WORK_DIR_RIGHT, right_multistage_state.step[right_multistage_state.current_step - 1].mode, right_multistage_state.step[right_multistage_state.current_step - 1].temp, right_multistage_state.step[right_multistage_state.current_step - 1].time);
     }
 }
-
+int right_ice_state_finish()
+{
+    if (right_multistage_state.valid && right_multistage_state.current_step < right_multistage_state.total_step)
+    {
+        right_multistage_state.current_step += 1;
+        set_multiStageState(WORK_DIR_RIGHT);
+        if (right_ice_operation(WORK_OPERATION_RUN) == 0)
+        {
+            work_state_operation(WORK_DIR_RIGHT, WORK_STATE_PREHEAT);
+        }
+        else
+            work_state_operation(WORK_DIR_RIGHT, WORK_STATE_NOWORK);
+    }
+    else
+    {
+        right_multistage_state.valid = 0;
+    }
+    return 0;
+}
 static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value)
 {
     ecb_attr_t *ecb_attr;
@@ -945,6 +1049,10 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
             ecb_set_state[8] |= 0x01;
         else
             ecb_set_state[8] &= ~0x01;
+
+        ecb_attr = get_event_state(EVENT_SET_HoodLight);
+        ecb_attr->value[0] = *value;
+        ecb_attr->change = 1;
         break;
     case EVENT_SET_HoodSpeed:
         if (*value < hood_min_speed)
@@ -1061,8 +1169,11 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         unsigned char operation = *value;
         if (right_order_time_remaining == 0)
         {
-            work_state = set_work_operation(work_state, operation);
-            work_state_operation(WORK_DIR_RIGHT, work_state);
+            if (right_ice_operation(operation) == 0)
+            {
+                work_state = set_work_operation(work_state, operation);
+                work_state_operation(WORK_DIR_RIGHT, work_state);
+            }
         }
         else
         {
@@ -1220,7 +1331,7 @@ static void POSIXTimer_cb(union sigval val)
                 if (left_multistage_state.valid && left_multistage_state.current_step < left_multistage_state.total_step)
                 {
                     left_multistage_state.current_step += 1;
-                    set_multiStageState(0);
+                    set_multiStageState(WORK_DIR_LEFT);
                     work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT);
                 }
                 else
@@ -1275,8 +1386,11 @@ static void POSIXTimer_cb(union sigval val)
                 if (right_multistage_state.valid && right_multistage_state.current_step < right_multistage_state.total_step)
                 {
                     right_multistage_state.current_step += 1;
-                    set_multiStageState(0);
-                    work_state_operation(WORK_DIR_RIGHT, WORK_STATE_PREHEAT);
+                    set_multiStageState(WORK_DIR_RIGHT);
+                    if (right_ice_operation(WORK_OPERATION_RUN) == 0)
+                        work_state_operation(WORK_DIR_RIGHT, WORK_STATE_PREHEAT);
+                    else
+                        work_state_operation(WORK_DIR_RIGHT, WORK_STATE_NOWORK);
                 }
                 else
                 {

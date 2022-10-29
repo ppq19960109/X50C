@@ -5,10 +5,10 @@
 
 static struct Select_Server_Event select_server_event;
 
-int (*select_uart_timeout_cb)(void *arg);
-void register_select_uart_timeout_cb(int (*cb)(void *))
+static int select_uart_timeout_cb(void *arg)
 {
-    select_uart_timeout_cb = cb;
+    ergodic_select_client_timeout(&select_server_event);
+    return 0;
 }
 
 int add_select_client_uart(struct Select_Client_Event *select_client_event)
@@ -23,8 +23,7 @@ int add_select_client_uart(struct Select_Client_Event *select_client_event)
  **********************************************************************************/
 void *uart_task(void *arg)
 {
-    if (select_uart_timeout_cb != NULL)
-        select_server_event.timeout_cb = select_uart_timeout_cb;
+    select_server_event.timeout_cb = select_uart_timeout_cb;
     select_server_task(&select_server_event, 120);
 
     ecb_uart_deinit();

@@ -27,6 +27,7 @@ struct Select_Client_Event
     Select_cb read_cb;
     Select_cb write_cb;
     Select_cb except_cb;
+    Select_cb timeout_cb;
 };
 
 void select_server_init(struct Select_Server_Event *server_event);
@@ -35,4 +36,5 @@ void *select_server_task(struct Select_Server_Event *server_event, int time_out)
 
 int add_select_client_event(struct Select_Server_Event *server_event, struct Select_Client_Event *client_event);
 void delete_select_client_event(struct Select_Server_Event *server_event, struct Select_Client_Event *client_event);
+int ergodic_select_client_timeout(struct Select_Server_Event *server_event);
 #endif

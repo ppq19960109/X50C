@@ -226,11 +226,10 @@ void ecb_uart_init(void)
     dzlog_info("ecb_uart,fd:%d", fd);
     pthread_mutex_init(&lock, NULL);
 
-    register_select_uart_timeout_cb(ecb_timeout_cb);
-
     select_client_event.fd = fd;
     select_client_event.read_cb = ecb_recv_cb;
     select_client_event.except_cb = ecb_except_cb;
+    select_client_event.timeout_cb = ecb_timeout_cb;
 
     add_select_client_uart(&select_client_event);
     ecb_uart_msg_get(true);

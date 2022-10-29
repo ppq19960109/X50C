@@ -39,7 +39,14 @@ enum work_state
     WORK_STATE_RESERVE,
     WORK_STATE_ERROR,
 };
-
+enum work_operation
+{
+    WORK_OPERATION_RUN,
+    WORK_OPERATION_PAUSE,
+    WORK_OPERATION_STOP,
+    WORK_OPERATION_FINISH,
+    WORK_OPERATION_RUN_NOW,
+};
 enum report_work_state
 {
     REPORT_WORK_STATE_STOP,
@@ -104,4 +111,8 @@ int ecb_parse_set_heart();
 int ecb_parse_event_uds(unsigned char cmd);
 int ecb_parse_event_msg(unsigned char *data, unsigned int len);
 int ecb_parse_set_msg(const unsigned char *data, unsigned int len);
+int right_ice_time_left(unsigned short time);
+int right_ice_state_finish();
+int right_ice_hood_speed(unsigned char speed);
+int right_ice_hood_light(unsigned char light);
 #endif

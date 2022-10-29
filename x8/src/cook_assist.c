@@ -298,7 +298,6 @@ static int cook_assist_recv_cb(void *arg)
     int uart_read_len;
 
     uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));
-    cook_assist_link_recv(NULL, NULL);
     if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
         return -1;
     if (uart_read_len > 0)
@@ -329,7 +328,11 @@ static int cook_assist_except_cb(void *arg)
 {
     return 0;
 }
-
+static int cook_assist_timeout_cb(void *arg)
+{
+    cook_assist_link_recv(NULL, NULL);
+    return 0;
+}
 static int cook_assist_remind_cb(int index)
 {
     cJSON *root = cJSON_CreateObject();
@@ -380,6 +383,7 @@ void cook_assist_init()
     select_client_event.fd = fd;
     select_client_event.read_cb = cook_assist_recv_cb;
     select_client_event.except_cb = cook_assist_except_cb;
+    select_client_event.timeout_cb = cook_assist_timeout_cb;
 
     add_select_client_uart(&select_client_event);
 

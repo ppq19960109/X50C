@@ -1,10 +1,9 @@
 {
     "files.associations": {
-        "ecb_uart_parse_msg.h": "c",
-        "kv_linux.h": "c",
-        "ecb_parse.h": "c",
+        "ice_uart.h": "c",
+        "uart_task.h": "c",
         "ecb_uart.h": "c",
-        "uds_protocol.h": "c",
-        "main.h": "c"
+        "ecb_parse.h": "c",
+        "ice_parse.h": "c"
     }
 }
