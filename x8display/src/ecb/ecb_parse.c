@@ -266,7 +266,8 @@ static int right_ice_operation(unsigned char operation)
     }
     else
     {
-        unsigned short mode = ecb_set_state[11];
+        ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvMode);
+        unsigned short mode = ecb_attr->value[0];
         if (mode == RStOvMode_ICE)
         {
             g_ice_event_state.first_ack = 1;
@@ -278,6 +279,14 @@ static int right_ice_operation(unsigned char operation)
         }
         else
         {
+            if (right_multistage_state.valid && right_multistage_state.current_step < right_multistage_state.total_step)
+            {
+                if (right_multistage_state.step[right_multistage_state.current_step].mode == RStOvMode_ICE)
+                {
+                    ice_uart_send_set_msg(operation, 121, right_multistage_state.step[right_multistage_state.current_step].temp, 720);
+                    return 0;
+                }
+            }
             ice_uart_send_set_msg(WORK_OPERATION_STOP, 0, 0, 0);
         }
     }
@@ -286,17 +295,19 @@ static int right_ice_operation(unsigned char operation)
 
 void system_poweroff()
 {
-    if (left_work_time_remaining != 0 || left_order_time_remaining != 0)
+    if (left_work_time_remaining != 0 || left_order_time_remaining != 0 || left_multistage_state.valid != 0)
     {
         POSIXTimerSet(left_work_timer, 0, 0);
         left_work_time_remaining = 0;
         left_order_time_remaining = 0;
+        left_multistage_state.valid = 0;
     }
-    if (right_work_time_remaining != 0 || right_order_time_remaining != 0)
+    if (right_work_time_remaining != 0 || right_order_time_remaining != 0 || right_multistage_state.valid != 0)
     {
         POSIXTimerSet(right_work_timer, 0, 0);
         right_work_time_remaining = 0;
         right_order_time_remaining = 0;
+        right_multistage_state.valid = 0;
     }
     if (hood_min_speed != 0)
         hood_min_speed = 0;
@@ -309,6 +320,8 @@ void system_poweroff()
         ecb_attr->value[0] = hood_min_speed;
         ecb_attr->change = 1;
     }
+    if (ecb_set_state[8] != 0)
+        ecb_set_state[8] = 0;
     right_ice_operation(WORK_OPERATION_STOP);
 }
 static void work_state_operation(unsigned char dir, unsigned char state)
@@ -328,12 +341,8 @@ static void work_state_operation(unsigned char dir, unsigned char state)
     {
         if (state == WORK_STATE_NOWORK)
         {
-            if (ecb_set_state[11] != RStOvMode_ICE)
-                ecb_set_state[11] = 0;
+            ecb_set_state[11] = 0;
             ecb_set_state[17] &= 0x0f;
-            // ecb_attr_t *ecb_attr = get_event_state(EVEN_SET_RMultiMode);
-            // ecb_attr->value[0] = 0;
-            // ecb_attr->change = 1;
         }
         ecb_set_state[7] &= 0x0f;
         ecb_set_state[7] |= state << 4;
@@ -390,16 +399,30 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
     }
     if (right_state == WORK_STATE_PREHEAT || right_state == WORK_STATE_RUN)
     {
-        if ((right_mode >= 3 && right_mode <= 8) || (right_mode >= 15 && right_mode <= 16))
-            speed = 2;
-        else
-            speed = 1;
+        if (speed < 2)
+        {
+            if ((right_mode >= 3 && right_mode <= 8) || (right_mode >= 15 && right_mode <= 16))
+                speed = 2;
+            else
+                speed = 1;
+        }
         ecb_set_state[8] |= 1 << 3;
     }
     else
     {
         if (right_state == WORK_STATE_NOWORK || right_state == WORK_STATE_FINISH)
-            ecb_set_state[8] &= ~(1 << 3);
+        {
+            if (g_ice_event_state.iceStOvState == REPORT_WORK_STATE_STOP || g_ice_event_state.iceStOvState == REPORT_WORK_STATE_FINISH)
+                ecb_set_state[8] &= ~(1 << 3);
+        }
+    }
+    if (g_ice_event_state.iceStOvState == REPORT_WORK_STATE_PREHEAT || g_ice_event_state.iceStOvState == REPORT_WORK_STATE_RUN)
+    {
+        if (speed < 1)
+        {
+            speed = 1;
+        }
+        ecb_set_state[8] |= 1 << 3;
     }
     if (hood_min_speed != speed)
         hood_min_speed = speed;
@@ -593,8 +616,14 @@ static int ecb_parse_event_cmd(unsigned char *data)
     ecb_attr = get_event_state(EVENT_SET_RStOvMode);
     if (ecb_attr->value[0] != state)
     {
-        ecb_attr->value[0] = state;
-        ecb_attr->change = 1;
+        if (state == 0 && ecb_attr->value[0] == RStOvMode_ICE)
+        {
+        }
+        else
+        {
+            ecb_attr->value[0] = state;
+            ecb_attr->change = 1;
+        }
     }
 
     unsigned short set_temp = (data[12] << 8) + data[11];
@@ -915,6 +944,14 @@ static int set_work_mode(char dir, char mode)
             break;
         case 0x44:
             mode = 11;
+            break;
+        case 0x78:
+        {
+            ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvMode);
+            ecb_attr->value[0] = 0x78;
+            ecb_attr->change = 1;
+        }
+            return 0;
             break;
         default:
             break;
@@ -1416,8 +1453,8 @@ static void POSIXTimer_cb(union sigval val)
             {
                 POSIXTimerSet(right_work_timer, 0, 0);
                 right_order_time_remaining = 0;
-
-                work_state_operation(WORK_DIR_RIGHT, WORK_STATE_PREHEAT);
+                if (right_ice_operation(WORK_OPERATION_RUN) == 0)
+                    work_state_operation(WORK_DIR_RIGHT, WORK_STATE_PREHEAT);
             }
         }
     }

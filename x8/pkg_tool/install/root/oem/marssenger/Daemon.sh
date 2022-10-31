@@ -14,6 +14,7 @@ function check(){
 while true
 do
     sleep 30
+    check X8Displayapp
     check X8app
     check X8UI
 done
