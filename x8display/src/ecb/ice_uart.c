@@ -6,7 +6,7 @@
 #include "uart_task.h"
 #include "uds_protocol.h"
 
-static int ice_msg_get_count = 0;
+// static int ice_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
 static int fd = -1;
 static pthread_mutex_t lock;
@@ -26,9 +26,9 @@ int ice_uart_send(const unsigned char *in, int in_len)
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
     {
-        dzlog_warn("ice_uart_send-------------");
+        ssize_t nwrite = write(fd, in, in_len);
+        dzlog_warn("ice_uart_send-------------nwrite:%ld", nwrite);
         hdzlog_warn(in, in_len);
-        write(fd, in, in_len);
         pthread_mutex_unlock(&lock);
     }
     else
@@ -62,29 +62,29 @@ static int ice_except_cb(void *arg)
 {
     return 0;
 }
-static int ice_timeout_cb(void *arg)
-{
-    static int ice_msg_get_timeout = MSG_GET_SHORT_TIME;
+// static int ice_timeout_cb(void *arg)
+// {
+//     static int ice_msg_get_timeout = MSG_GET_SHORT_TIME;
 
-    int msg_get_status = ice_uart_msg_get(false);
+//     int msg_get_status = ice_uart_msg_get(false);
 
-    if (ice_msg_get_timeout == MSG_GET_SHORT_TIME && ECB_UART_CONNECTED == msg_get_status)
-    {
-        ice_msg_get_timeout = MSG_GET_LONG_TIME;
-    }
-    else if (ice_msg_get_timeout == MSG_GET_LONG_TIME && ECB_UART_DISCONNECT == msg_get_status)
-    {
-        ice_msg_get_timeout = MSG_GET_SHORT_TIME;
-    }
+//     if (ice_msg_get_timeout == MSG_GET_SHORT_TIME && ECB_UART_CONNECTED == msg_get_status)
+//     {
+//         ice_msg_get_timeout = MSG_GET_LONG_TIME;
+//     }
+//     else if (ice_msg_get_timeout == MSG_GET_LONG_TIME && ECB_UART_DISCONNECT == msg_get_status)
+//     {
+//         ice_msg_get_timeout = MSG_GET_SHORT_TIME;
+//     }
 
-    if (++ice_msg_get_count > ice_msg_get_timeout)
-    {
-        ice_msg_get_count = 0;
-        ice_uart_msg_get(true);
-        dzlog_warn("ice_uart_msg_get\n");
-    }
-    return 0;
-}
+//     if (++ice_msg_get_count > ice_msg_get_timeout)
+//     {
+//         ice_msg_get_count = 0;
+//         ice_uart_msg_get(true);
+//         dzlog_warn("ice_uart_msg_get\n");
+//     }
+//     return 0;
+// }
 void ice_uart_deinit(void)
 {
     close(fd);

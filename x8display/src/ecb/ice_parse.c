@@ -139,7 +139,7 @@ static int ice_parse_event_cmd(const unsigned char cmd, const unsigned char *val
         g_ice_event_state.iceStOvMode = value[0];
         break;
     case EVENT_IceStOvState:
-        if (g_ice_event_state.iceStOvState != value[0] && value[0] == REPORT_WORK_STATE_FINISH)
+        if (g_ice_event_state.iceStOvState != value[0] && value[0] == REPORT_WORK_STATE_FINISH && g_ice_event_state.iceStOvMode == RStOvMode_ICE)
         {
             right_ice_state_finish();
         }
@@ -160,7 +160,7 @@ static int ice_parse_event_cmd(const unsigned char cmd, const unsigned char *val
         break;
     case EVENT_IceStOvSetTimerLeft:
         g_ice_event_state.iceStOvSetTimerLeft = (value[0] << 8) + value[1];
-        if (g_ice_event_state.iceStOvState != REPORT_WORK_STATE_STOP)
+        if (g_ice_event_state.iceStOvState != REPORT_WORK_STATE_STOP && g_ice_event_state.iceStOvMode == RStOvMode_ICE)
             right_ice_time_left(g_ice_event_state.iceStOvSetTimerLeft);
         ret = 2;
         break;

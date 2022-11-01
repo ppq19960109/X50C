@@ -126,7 +126,7 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     {
         http_report_hex("SET:", send_msg, ECB_MSG_MIN_LEN + msg_len);
     }
-#ifdef DISPLAY_ENABLE
+#ifdef ICE_ENABLE
     int res = display_send(send_msg, ECB_MSG_MIN_LEN + msg_len);
     free(send_msg);
 #else

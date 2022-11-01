@@ -26,7 +26,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(LINKTOOL_PATH)/include/md5
 CFLAGS += -I$(ALI_PATH)/include
 
-CFLAGS += -Wall -DICE#-Werror
+CFLAGS += -Wall #-Werror
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
 endif
@@ -48,7 +48,12 @@ OBJ += $(SRC:%.c=%.o)
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+ifdef ICE
+TARGET := X8Iceapp
+CFLAGS += -DICE_ENABLE
+else
 TARGET := X8app
+endif
 .PHONY : all clean
 
 all: $(TARGET)

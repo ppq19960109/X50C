@@ -3,7 +3,6 @@ export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=90
 export TZ='Asia/Shanghai'
 export QT_QPA_FB_DRM=1
 
-DISPLAY_APP_NAME="X8Displayapp"
 SERVER_APP_NAME="X8app"
 UI_APP_NAME="X8UI"
 DAEMON_APP_NAME="Daemon.sh"
@@ -12,7 +11,6 @@ BASE_PATH="/oem/marssenger"
 start() {
     echo "Starting marssenger: "
     cd $(dirname $0)
-    ./$DISPLAY_APP_NAME &
     ./$SERVER_APP_NAME &
     ./$UI_APP_NAME &
     ./$DAEMON_APP_NAME &

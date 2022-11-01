@@ -324,7 +324,7 @@
             "valueType": 0,
             "funType": 0,
             "uartCmd": 96,
-            "uartByteLen": 1
+            "uartByteLen": 4
         },
         {
             "cloudKey": "RStOvSetTemp",

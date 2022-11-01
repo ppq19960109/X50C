@@ -14,6 +14,7 @@ typedef struct
     unsigned char mode;
     unsigned short temp;
     unsigned short time;
+    unsigned char custom;
 } multistage_step_t;
 typedef struct
 {
@@ -102,6 +103,7 @@ enum event_set_state_enum
     EVEN_SET_RMultiMode = 0X5f,
     EVENT_SET_RCookbookID = 0X60,
     EVENT_SET_LSteamGear = 0X80,
+    EVENT_SET_RIceSteamID = 0X81,
     EVENT_SET_DataReportReason = 0Xf6,
     SET_BuzControl = 0Xf7,
 };

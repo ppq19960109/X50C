@@ -22,7 +22,7 @@ static int main_quit(void)
     {
         running = 0;
         uds_protocol_deinit(); // uds相关释放
-#ifdef DISPLAY_ENABLE
+#ifdef ICE_ENABLE
         display_client_close();
 #else
         uart_task_deinit(); // ECB串口资源释放
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
     registerQuitCb(main_quit); //注册退出信号回调
     signalQuit();              //退出信号初始化
-#ifndef DISPLAY_ENABLE
+#ifndef ICE_ENABLE
     uart_task_init();
 #endif
     uds_protocol_init(); // uds相关初始化
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
     pthread_create(&uds_tid, NULL, uds_tcp_server_task, NULL); // UI uds通信线程启动
     pthread_detach(uds_tid);
-#ifdef DISPLAY_ENABLE
+#ifdef ICE_ENABLE
     display_client_task(NULL);
 #else
     uart_task(NULL);

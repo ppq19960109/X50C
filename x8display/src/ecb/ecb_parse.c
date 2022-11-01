@@ -175,10 +175,14 @@ static ecb_attr_t g_event_state[] = {
     },
     {
         uart_cmd : 0x60,
-        uart_byte_len : 1,
+        uart_byte_len : 4,
     },
     {
         uart_cmd : 0x80,
+        uart_byte_len : 1,
+    },
+    {
+        uart_cmd : 0x81,
         uart_byte_len : 1,
     },
     {
@@ -271,7 +275,7 @@ static int right_ice_operation(unsigned char operation)
         if (mode == RStOvMode_ICE)
         {
             g_ice_event_state.first_ack = 1;
-            unsigned short temp = (ecb_set_state[13] << 8) + ecb_set_state[12];
+            unsigned short temp = (ecb_set_state[15] << 8) + ecb_set_state[14];
             ecb_attr_t *ecb_attr = get_event_state(EVENT_SET_RStOvSetTimer);
             unsigned short time = (ecb_attr->value[0] << 8) + ecb_attr->value[1];
             ice_uart_send_set_msg(operation, mode, temp, time);
@@ -279,15 +283,16 @@ static int right_ice_operation(unsigned char operation)
         }
         else
         {
-            if (right_multistage_state.valid && right_multistage_state.current_step < right_multistage_state.total_step)
-            {
-                if (right_multistage_state.step[right_multistage_state.current_step].mode == RStOvMode_ICE)
-                {
-                    ice_uart_send_set_msg(operation, 121, right_multistage_state.step[right_multistage_state.current_step].temp, 720);
-                    return 0;
-                }
-            }
-            ice_uart_send_set_msg(WORK_OPERATION_STOP, 0, 0, 0);
+            ice_uart_send_set_msg(operation, 121, 10, 720);
+            // if (right_multistage_state.valid && right_multistage_state.current_step < right_multistage_state.total_step)
+            // {
+            //     if (right_multistage_state.step[right_multistage_state.current_step].mode == RStOvMode_ICE)
+            //     {
+            //         ice_uart_send_set_msg(operation, 121, right_multistage_state.step[right_multistage_state.current_step].temp, 720);
+            //         return 0;
+            //     }
+            // }
+            // ice_uart_send_set_msg(WORK_OPERATION_STOP, 0, 0, 0);
         }
     }
     return 0;
@@ -381,6 +386,36 @@ int ecb_parse_event_uds(unsigned char cmd)
     return 0;
 }
 
+static int door_state_control(char dir, char work_state, char pre_door_state, char current_door_state)
+{
+    if (pre_door_state != current_door_state)
+    {
+        pre_door_state = current_door_state;
+        if (pre_door_state)
+        {
+            if (work_state == WORK_STATE_PREHEAT)
+            {
+                work_state_operation(dir, WORK_STATE_PREHEAT_PAUSE);
+            }
+            else if (work_state == WORK_STATE_RUN)
+            {
+                work_state_operation(dir, WORK_STATE_PAUSE);
+            }
+        }
+        else
+        {
+            if (work_state == WORK_STATE_PREHEAT_PAUSE)
+            {
+                work_state_operation(dir, WORK_STATE_PREHEAT);
+            }
+            else if (work_state == WORK_STATE_PAUSE)
+            {
+                work_state_operation(dir, WORK_STATE_RUN);
+            }
+        }
+    }
+    return 0;
+}
 static int hood_min_speed_control(char left_state, char left_mode, char right_state, char right_mode)
 {
     unsigned char speed = 0;
@@ -435,7 +470,6 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
         ecb_attr->change = 1;
     }
     dzlog_warn("%s,hood_min_speed:%d,speed:%d", __func__, hood_min_speed, speed);
-
     return 0;
 }
 static int ecb_parse_event_cmd(unsigned char *data)
@@ -842,6 +876,10 @@ static int ecb_parse_event_cmd(unsigned char *data)
     // }
     // right_door_state = (data[8] >> 4) & 0x01;
     hood_min_speed_control(left_state, left_mode, right_state, right_mode);
+    unsigned char door_state = (data[8] >> 3) & 0x01;
+    door_state_control(WORK_DIR_LEFT, left_state, left_door_state, door_state);
+    door_state = (data[8] >> 4) & 0x01;
+    door_state_control(WORK_DIR_RIGHT, right_state, right_door_state, door_state);
     return 0;
 }
 int ecb_parse_event_msg(unsigned char *data, unsigned int len)
@@ -1034,6 +1072,10 @@ static void set_multiStageState(char dir)
         ecb_attr->value[1] = left_multistage_state.current_step;
         ecb_attr->change = 1;
 
+        ecb_attr = get_event_state(EVENT_SET_LSteamGear);
+        ecb_attr->value[0] = left_multistage_state.step[left_multistage_state.current_step - 1].custom;
+        ecb_attr->change = 1;
+
         set_work_mode_time_temp(WORK_DIR_LEFT, left_multistage_state.step[left_multistage_state.current_step - 1].mode, left_multistage_state.step[left_multistage_state.current_step - 1].temp, left_multistage_state.step[left_multistage_state.current_step - 1].time);
     }
     else
@@ -1041,6 +1083,10 @@ static void set_multiStageState(char dir)
         ecb_attr = get_event_state(EVENT_RMultiStageState);
         ecb_attr->value[0] = right_multistage_state.total_step;
         ecb_attr->value[1] = right_multistage_state.current_step;
+        ecb_attr->change = 1;
+
+        ecb_attr = get_event_state(EVENT_SET_RIceSteamID);
+        ecb_attr->value[0] = right_multistage_state.step[right_multistage_state.current_step - 1].custom;
         ecb_attr->change = 1;
 
         set_work_mode_time_temp(WORK_DIR_RIGHT, right_multistage_state.step[right_multistage_state.current_step - 1].mode, right_multistage_state.step[right_multistage_state.current_step - 1].temp, right_multistage_state.step[right_multistage_state.current_step - 1].time);
@@ -1236,8 +1282,11 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
                 break;
             case 0x04:
                 right_order_time_remaining = 0;
-                work_state = WORK_STATE_PREHEAT;
-                work_state_operation(WORK_DIR_RIGHT, work_state);
+                if (right_ice_operation(operation) == 0)
+                {
+                    work_state = WORK_STATE_PREHEAT;
+                    work_state_operation(WORK_DIR_RIGHT, work_state);
+                }
                 break;
             }
             if (operation != 0x04)
@@ -1269,6 +1318,7 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
             left_multistage_state.step[i].mode = value[index + 2];
             left_multistage_state.step[i].temp = (value[index + 3] << 8) + value[index + 4];
             left_multistage_state.step[i].time = (value[index + 5] << 8) + value[index + 6];
+            left_multistage_state.step[i].custom = value[index + 12];
             index += 13;
         }
         set_multiStageState(WORK_DIR_LEFT);
@@ -1286,6 +1336,7 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
             right_multistage_state.step[i].mode = value[index + 2];
             right_multistage_state.step[i].temp = (value[index + 3] << 8) + value[index + 4];
             right_multistage_state.step[i].time = (value[index + 5] << 8) + value[index + 6];
+            right_multistage_state.step[i].custom = value[index + 12];
             index += 13;
         }
         set_multiStageState(WORK_DIR_RIGHT);
@@ -1311,6 +1362,11 @@ static int ecb_parse_set_cmd(const unsigned char cmd, const unsigned char *value
         break;
     case EVENT_SET_LSteamGear:
         ecb_attr = get_event_state(EVENT_SET_LSteamGear);
+        ecb_attr->value[0] = value[0];
+        ecb_attr->change = 1;
+        break;
+    case EVENT_SET_RIceSteamID:
+        ecb_attr = get_event_state(EVENT_SET_RIceSteamID);
         ecb_attr->value[0] = value[0];
         ecb_attr->change = 1;
         break;
