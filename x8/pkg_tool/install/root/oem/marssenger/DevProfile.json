@@ -313,13 +313,6 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "RMultiMode",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 95,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "RCookbookID",
             "valueType": 0,
             "funType": 0,
