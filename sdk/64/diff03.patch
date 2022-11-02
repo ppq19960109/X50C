@@ -1,32 +1,3 @@
-From 3990fd9a34112596402fa11dfe3aa3200a842ffc Mon Sep 17 00:00:00 2001
-From: pangpengqiang <pangpengqiang@163.com>
-Date: Tue, 6 Sep 2022 12:42:07 +0800
-Subject: [PATCH 1/3] 20220906
-
-Change-Id: If7b7ff4c4362c96282fc4e3d2b7d971249e27c1f
----
- arch/arm64/boot/dts/rockchip/rk3308.dtsi      |    2 +-
- .../boot/dts/rockchip/rk3308b-evb-v10.dtsi    |   10 +-
- .../dts/rockchip/rk3308bs-evb-amic-v11.dts    |   30 +-
- .../dts/rockchip/rk3308bs-evb-ext-v10.dtsi    |  235 ++
- .../boot/dts/rockchip/rk3308bs-evb-v11.dtsi   |   24 +-
- drivers/gpu/drm/panel/panel-simple-0.c        | 2460 +++++++++++++++++
- drivers/gpu/drm/panel/panel-simple.c          |  147 +-
- drivers/gpu/drm/panel/panel_ssd2828.c         |  632 +++++
- drivers/input/touchscreen/Kconfig             |   11 +
- drivers/input/touchscreen/Makefile            |    1 +
- drivers/input/touchscreen/hy4635_ts.c         |  389 +++
- logo.bmp                                      |  Bin 170326 -> 256118 bytes
- logo_kernel.bmp                               |  Bin 19160 -> 256118 bytes
- 13 files changed, 3890 insertions(+), 51 deletions(-)
- create mode 100644 arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
- create mode 100644 drivers/gpu/drm/panel/panel-simple-0.c
- mode change 100644 => 100755 drivers/gpu/drm/panel/panel-simple.c
- create mode 100755 drivers/gpu/drm/panel/panel_ssd2828.c
- create mode 100755 drivers/input/touchscreen/hy4635_ts.c
- mode change 100644 => 100755 logo.bmp
- mode change 100644 => 100755 logo_kernel.bmp
-
 diff --git a/arch/arm64/boot/dts/rockchip/rk3308.dtsi b/arch/arm64/boot/dts/rockchip/rk3308.dtsi
 index 4b6058e30858..8693e4dac4f2 100644
 --- a/arch/arm64/boot/dts/rockchip/rk3308.dtsi
@@ -137,10 +108,10 @@ index 099c6de3e58f..d884a1232cbd 100644
  	reg = <0x3f>;
 diff --git a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
 new file mode 100644
-index 000000000000..84772c294373
+index 000000000000..c52ab3157a6d
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,250 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
@@ -367,6 +338,21 @@ index 000000000000..84772c294373
 +		//touchscreen-swapped-x-y;
 +		status = "okay";
 +    };
++	hy46xxx-i2c@38 {
++		compatible = "hycon,hy46xx";
++		reg = <0x38>;
++		irq-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_LOW>;
++
++		irq-flags = <2>;
++		hycon,max-id = <11>;
++		hycon,size-x = <1280>;
++		hycon,size-y = <400>;
++		hycon,swap-x2y = <0>;
++		hycon,x-reverse = <0>;
++		hycon,y-reverse = <0>;
++		status = "okay";
++	};
 +};
 +
 +&uart0 {
@@ -3908,11 +3894,112 @@ index 000000000000..5b73ef333de9
 +};
 +
 +
+diff --git a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
+index e10110cb7453..4ff8e89323d2 100644
+--- a/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
++++ b/drivers/gpu/drm/rockchip/rockchip_drm_drv.c
+@@ -474,13 +474,13 @@ static int setup_initial_state(struct drm_device *drm_dev,
+ 
+ 	funcs = connector->helper_private;
+ 	conn_state->best_encoder = funcs->best_encoder(connector);
+-	if (funcs->loader_protect)
+-		funcs->loader_protect(connector, true);
+-	connector->loader_protect = true;
+-	encoder_funcs = conn_state->best_encoder->helper_private;
+-	if (encoder_funcs->loader_protect)
+-		encoder_funcs->loader_protect(conn_state->best_encoder, true);
+-	conn_state->best_encoder->loader_protect = true;
++	// if (funcs->loader_protect)
++	// 	funcs->loader_protect(connector, true);
++	// connector->loader_protect = true;
++	// encoder_funcs = conn_state->best_encoder->helper_private;
++	// if (encoder_funcs->loader_protect)
++	// 	encoder_funcs->loader_protect(conn_state->best_encoder, true);
++	// conn_state->best_encoder->loader_protect = true;
+ 	num_modes = connector->funcs->fill_modes(connector, 4096, 4096);
+ 	if (!num_modes) {
+ 		dev_err(drm_dev->dev, "connector[%s] can't found any modes\n",
+@@ -503,10 +503,25 @@ static int setup_initial_state(struct drm_device *drm_dev,
+ 	}
+ 
+ 	if (!found) {
+-		ret = -EINVAL;
+-		goto error_conn;
++		// ret = -EINVAL;
++		// goto error_conn;
++		list_for_each_entry(mode, &connector->modes, head) {
++			if (mode->type & DRM_MODE_TYPE_PREFERRED) {
++				found = 1;
++				break;
++			}
++		}
+ 	}
+ 
++	if(!found){
++		mode = list_first_entry_or_null(&connector->modes,struct drm_display_mode,head);
++		if(!mode){
++			dev_err(drm_dev->dev,"failed to find available modes\n");
++			ret = -EINVAL;
++			goto error_conn;
++		}
++ 	}
++
+ 	set->mode = mode;
+ 	crtc_state = drm_atomic_get_crtc_state(state, crtc);
+ 	if (IS_ERR(crtc_state)) {
+@@ -517,7 +532,16 @@ static int setup_initial_state(struct drm_device *drm_dev,
+ 	drm_mode_copy(&crtc_state->adjusted_mode, mode);
+ 	if (!match || !is_crtc_enabled) {
+ 		set->mode_changed = true;
++		connector->loader_protect = false;
++		conn_state->best_encoder->loader_protect = false;
+ 	} else {
++		if (funcs->loader_protect)
++			funcs->loader_protect(connector, true);
++		encoder_funcs = conn_state->best_encoder->helper_private;
++		if (encoder_funcs->loader_protect)
++			encoder_funcs->loader_protect(conn_state->best_encoder,true);
++		conn_state->best_encoder->loader_protect = true;
++
+ 		ret = drm_atomic_set_crtc_for_connector(conn_state, crtc);
+ 		if (ret)
+ 			goto error_conn;
+@@ -582,13 +606,23 @@ error_crtc:
+ 	if (priv->crtc_funcs[pipe] && priv->crtc_funcs[pipe]->loader_protect)
+ 		priv->crtc_funcs[pipe]->loader_protect(crtc, false);
+ error_conn:
+-	if (funcs->loader_protect)
+-		funcs->loader_protect(connector, false);
+-	connector->loader_protect = false;
+-	if (encoder_funcs->loader_protect)
+-		encoder_funcs->loader_protect(conn_state->best_encoder, false);
+-	conn_state->best_encoder->loader_protect = false;
+-
++	// if (funcs->loader_protect)
++	// 	funcs->loader_protect(connector, false);
++	// connector->loader_protect = false;
++	// if (encoder_funcs->loader_protect)
++	// 	encoder_funcs->loader_protect(conn_state->best_encoder, false);
++	// conn_state->best_encoder->loader_protect = false;
++	printk("===lijc;%s,error_conn\n",__func__);
++	if (connector->loader_protect) {
++		if (funcs->loader_protect)
++			funcs->loader_protect(connector, false);
++		connector->loader_protect = false;
++	}
++	if (conn_state->best_encoder->loader_protect) {
++		if (encoder_funcs->loader_protect)
++			encoder_funcs->loader_protect(conn_state->best_encoder, false);
++		conn_state->best_encoder->loader_protect = false;
++	}
+ 	return ret;
+ }
+ 
 diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
-index 3c0a61d23709..cfe59658c08b 100644
+index 3c0a61d23709..c49b078fad25 100644
 --- a/drivers/input/touchscreen/Kconfig
 +++ b/drivers/input/touchscreen/Kconfig
-@@ -1165,4 +1165,15 @@ config TOUCHSCREEN_VTL_CT36X
+@@ -1165,4 +1165,22 @@ config TOUCHSCREEN_VTL_CT36X
  config TOUCHSCREEN_GT1X
  	tristate "GT1X touchscreens support"
  
@@ -3927,16 +4014,24 @@ index 3c0a61d23709..cfe59658c08b 100644
 +	  To compile this driver as a module, choose M here: the
 +	  module will be called hy4635_ts.
 +
++config TOUCHSCREEN_HY461X
++	tristate "hy461x touchscreens support"
++	depends on I2C
++	help
++		Say Y here if you have a Hycon HY461x touchscreen
++		if unsure, say N
++			
  endif
 diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
-index b66414e38283..f3fe344ddaeb 100644
+index b66414e38283..39d76242d3d3 100644
 --- a/drivers/input/touchscreen/Makefile
 +++ b/drivers/input/touchscreen/Makefile
-@@ -102,3 +102,4 @@ obj-$(CONFIG_TOUCHSCREEN_COLIBRI_VF50)	+= colibri-vf50-ts.o
+@@ -102,3 +102,5 @@ obj-$(CONFIG_TOUCHSCREEN_COLIBRI_VF50)	+= colibri-vf50-ts.o
  obj-$(CONFIG_TOUCHSCREEN_ROHM_BU21023)	+= rohm_bu21023.o
  obj-$(CONFIG_TOUCHSCREEN_VTL_CT36X)	+= vtl_ts/
  obj-$(CONFIG_TOUCHSCREEN_GT1X)		+= gt1x/
 +obj-$(CONFIG_TOUCHSCREEN_HY4635)	+= hy4635_ts.o
++obj-$(CONFIG_TOUCHSCREEN_HY461X)	+= hy46xx_ts.o
 \ No newline at end of file
 diff --git a/drivers/input/touchscreen/hy4635_ts.c b/drivers/input/touchscreen/hy4635_ts.c
 new file mode 100755
@@ -4333,714 +4428,944 @@ index 000000000000..e34ef6ea0e9f
 +MODULE_AUTHOR("Jiuchun Li<lijc@topband.com.cn>");
 +MODULE_DESCRIPTION("hy4346 TouchScreen driver");
 +MODULE_LICENSE("GPL v2");
+diff --git a/drivers/input/touchscreen/hy46xx_ts.c b/drivers/input/touchscreen/hy46xx_ts.c
+new file mode 100755
+index 000000000000..b603b4f0b80c
+--- /dev/null
++++ b/drivers/input/touchscreen/hy46xx_ts.c
+@@ -0,0 +1,772 @@
++/*
++ * HYCON HY46xx Touch Panel driver
++ *
++ * Copyright  (C)  2016 - 2018 Topband. Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be a reference
++ * to you, when you are integrating the Lontium's HY46xx IC into your system,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * Notes:
++ * 1. IIC address of HY46xx:
++ *   A) The I2C address of HY46xx is 0x70, and bit0 is the read-write mark bit.
++ *      If it is a Linux system, the I2C address of HY46xx is 0x38, and bit7 is 
++ *      the read and write flag bit.
++ * 2. The IIC rate should not exceed 100KHz. 
++ * 4. The front-end master control GPIO is required to reply to HY46xx. Before 
++ *    the register, the HY46xx is reset.
++ *    Use GPIO to lower HY46xx's reset foot 15ms, then pull up and maintain 500ms.
++ *
++ * Author: shenhaibo
++ * Version: 1.0.0
++ * Release Date: 2018/11/22
++ */
++
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/input/mt.h>
++
++#include "hy46xx_ts.h"
++
++extern void rk_send_power_key(int state);
++extern void rk_send_wakeup_key(void);
++#define SUPPORT_WAKE_UP  1
++
++static struct i2c_client *this_client;
++
++/*******************************************************
++    Function:
++    Write data to the i2c slave device.
++    Input:
++    client: i2c device.
++    addr: write start address.
++    pdata: data buffer
++    len: write bytes count
++    Output:
++    numbers of i2c_msgs to transfer:
++        0: succeed, otherwise: failed
++ *********************************************************/
++static int hy46xx_i2c_write(struct i2c_client *client,
++                            u8 addr, u8 *pdata, int datalen)
++{
++    int ret = 0;
++    u8 tmp_buf[128];
++    unsigned int bytelen = 0;
++
++    if(datalen > 125) {
++        printk("%s too big datalen = %d!\n", __func__, datalen);
++        return -1;
++    }
++
++    tmp_buf[0] = addr;
++    bytelen++;
++
++    if(datalen != 0 && pdata != NULL) {
++        memcpy(&tmp_buf[bytelen], pdata, datalen);
++        bytelen += datalen;
++    }
++
++    ret = i2c_master_send(client, tmp_buf, bytelen);
++    return ret;
++}
++
++/*******************************************************
++    Function:
++    Read data from the i2c slave device.
++    Input:
++    client: i2c device.
++    addr: read start address.
++    pdata: data buffer
++    len: read bytes count
++    Output:
++    numbers of i2c_msgs to transfer:
++        0: succeed, otherwise: failed
++ *********************************************************/
++static int hy46xx_i2c_read(struct i2c_client *client, u8 addr,
++                           u8 *pdata, unsigned int datalen)
++{
++    int ret = 0;
++
++    if(datalen > 126) {
++        printk("%s too big datalen = %d!\n", __func__, datalen);
++        return -1;
++    }
++
++    ret = hy46xx_i2c_write(client, addr, NULL, 0);
++
++    if(ret < 0) {
++        printk("%s set data address fail!\n", __func__);
++        return ret;
++    }
++
++    return i2c_master_recv(client, pdata, datalen);
++}
++
++/*******************************************************
++    Function:
++    Write 1byte data.
++    Input:
++    client: i2c device.
++    addr: read start address.
++    data: data buffer
++    Output:
++    numbers of i2c_msgs to transfer:
++        0: succeed, otherwise: failed
++ *********************************************************/
++int hy46xx_write(struct i2c_client *client, u8 addr, u8 data)
++{
++    int ret = -1;
++
++    ret = hy46xx_i2c_write(client, addr, &data, 1);
++
++    return ret;
++}
++
++/*******************************************************
++    Function:
++    Read 1byte data.
++    Input:
++    client: i2c device.
++    addr: read start address.
++    Output:
++    read byte.
++ *********************************************************/
++u8 hy46xx_read(struct i2c_client *client, u8 addr)
++{
++    int ret = -1;
++    u8 data = 0;
++
++    ret = hy46xx_i2c_read(client, addr, &data, 1);
++
++    return data;
++}
++
++static int hy46xx_read_touchdata(struct hy46xx_ts_data *ts)
++{
++    struct ts_event *event = &ts->event;
++    u8 buf[POINT_READ_BUF] = { 0 };
++    int ret = -1;
++    int i = 0;
++    u8 pointid = HY_MAX_ID;
++    u16 old_x, old_y;
++
++    ret = hy46xx_i2c_read(ts->client, 0x00, buf, POINT_READ_BUF);
++
++    if(ret < 0) {
++        dev_err(&ts->client->dev, "%s read touchdata failed.\n",
++                __func__);
++        return ret;
++    }
++
++    memset(event, 0, sizeof(struct ts_event));
++
++    event->touch_point = 0;
++
++    for(i = 0; i < CFG_MAX_TOUCH_POINTS; i++) {
++        pointid = (buf[HY_TOUCH_ID_POS + HY_TOUCH_STEP * i]) >> 4;
++
++        if(pointid >= HY_MAX_ID)
++            break;
++        else
++            event->touch_point++;
++
++        event->au16_x[i] =
++            (s16)(buf[HY_TOUCH_X_H_POS + HY_TOUCH_STEP * i] & 0x0F) <<
++            8 | (s16) buf[HY_TOUCH_X_L_POS + HY_TOUCH_STEP * i];
++        event->au16_y[i] =
++            (s16)(buf[HY_TOUCH_Y_H_POS + HY_TOUCH_STEP * i] & 0x0F) <<
++            8 | (s16) buf[HY_TOUCH_Y_L_POS + HY_TOUCH_STEP * i];
++        event->au8_touch_event[i] =
++            buf[HY_TOUCH_EVENT_POS + HY_TOUCH_STEP * i] >> 6;
++        event->au8_finger_id[i] =
++            (buf[HY_TOUCH_ID_POS + HY_TOUCH_STEP * i]) >> 4;
++
++        if (ts->pdata->swap_x2y)
++			HY46XX_SWAP(event->au16_x[i], event->au16_y[i]);
++
++        old_x = event->au16_x[i];
++        old_y = event->au16_y[i];
++        if (ts->pdata->x_reverse)
++            event->au16_x[i] = ts->pdata->x_max - event->au16_x[i];
++
++        if (ts->pdata->y_reverse)
++            event->au16_y[i] = ts->pdata->y_max - event->au16_y[i];
++
++#if HY46XX_DEBUG
++        dev_info(&ts->client->dev, "%s, id=%d event=%d x=%d y=%d\n", __func__,
++                 event->au8_finger_id[i], event->au8_touch_event[i],
++                 event->au16_x[i], event->au16_y[i]);
++#endif
++    }
++
++    event->pressure = HY_PRESS;
++
++    return 0;
++}
++
++static void hy46xx_report_value(struct hy46xx_ts_data *data)
++{
++    struct ts_event *event = &data->event;
++    int i;
++    int uppoint = 0;
++
++    /*protocol B*/
++    for(i = 0; i < event->touch_point; i++) {
++        input_mt_slot(data->input_dev, event->au8_finger_id[i]);
++        
++        if(event->au8_touch_event[i]== 0 || event->au8_touch_event[i] == 2) {
++            input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER,
++                                       true);
++            input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
++                             event->pressure);
++            input_report_abs(data->input_dev, ABS_MT_POSITION_X,
++                             event->au16_x[i]);
++            input_report_abs(data->input_dev, ABS_MT_POSITION_Y,
++                             event->au16_y[i]);
++#if HY46XX_DEBUG
++            dev_info(&data->client->dev, "%s, X = %d , Y = %d , ID = %d\n", __func__,
++                     event->au16_x[i],event->au16_y[i],event->au8_finger_id[i]);
++#endif
++        } else {
++            uppoint++;
++            input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER,
++                                       false);
++        }
++    }
++
++    if(event->touch_point == uppoint)
++        input_report_key(data->input_dev, BTN_TOUCH, 0);
++    else
++        input_report_key(data->input_dev, BTN_TOUCH, event->touch_point > 0);
++
++    input_sync(data->input_dev);
++}
++static void hy46xx_wakeup(struct hy46xx_ts_data *ts) {
++    dev_info(&ts->client->dev, "%s, wake up\n", __func__);
++    
++    input_report_key(ts->input_dev, KEY_POWER, 1);
++    input_sync(ts->input_dev);
++    input_report_key(ts->input_dev, KEY_POWER, 0);
++    input_sync(ts->input_dev);
++}
++
++static irqreturn_t hy46xx_irq_handler(int irq, void *dev_id)
++{
++    int ret = 0;
++    struct hy46xx_ts_data *ts = dev_id;
++
++#if SUPPORT_WAKE_UP
++        dev_info(&ts->client->dev,"hy46xx_irq_handler in");
++    
++        if (ts->system_suspend) {
++            dev_info(&ts->client->dev,"hy46xx_irq_handler rk_send_wakeup_key\n");
++         //   pm_stay_awake(&ts->client->dev);
++    
++            hy46xx_wakeup(ts);
++            msleep(100);
++    
++          //  pm_relax(&ts->client->dev);
++    
++            return IRQ_HANDLED;
++            
++        }
++#endif
++
++    disable_irq_nosync(ts->client->irq);
++
++    ret = hy46xx_read_touchdata(ts);
++
++    if(ret == 0)
++        hy46xx_report_value(ts);
++
++    enable_irq(ts->client->irq);
++
++    return IRQ_HANDLED;
++}
++
++void hy46xx_reset_guitar(struct i2c_client *client, s32 ms)
++{
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(client);
++
++    dev_info(&client->dev, "Guitar reset");
++
++    if(!gpio_is_valid(ts->pdata->rst_gpio)) {
++        dev_warn(&client->dev, "reset failed no valid reset gpio");
++        return;
++    }
++
++    gpio_direction_output(ts->pdata->rst_gpio, 0);
++    msleep(15);
++
++    gpio_direction_output(ts->pdata->rst_gpio, 1);
++    msleep(500);
++}
++
++static int hy46xx_i2c_test(struct i2c_client *client)
++{
++    u8 retry = 0;
++    u8 version = 0, rate = 0, thgroup = 0;
++    int ret = -EAGAIN;
++
++    while(retry++ < 3) {
++        version = hy46xx_read(client, HY46XX_REG_FW_VER);
++        dev_info(&client->dev, "hy46xx read chip versionxx: 0x%x\n", version);
++
++        rate = hy46xx_read(client, HY46XX_REG_POINT_RATE);
++        dev_info(&client->dev, "hy46xx read chip ratexx: 0x%x\n", rate);
++
++        thgroup = hy46xx_read(client, HY46XX_REG_THGROUP);
++        dev_info(&client->dev, "hy46xx read chip thgroupxx: 0x%x\n", thgroup);
++
++        if(version == 0) {
++            dev_err(&client->dev, "hy46xx i2c test failed time %d\n", retry);
++            continue;
++        }
++
++        ret = 0;
++        break;
++    }
++
++    return ret;
++}
++
++static int hy46xx_parse_dt(struct device *dev,
++                           struct hy46xx_platform_data *pdata)
++{
++    int ret;
++    struct device_node *np = dev->of_node;
++
++    ret = of_property_read_u32(np, "hycon,max-id",
++                               &pdata->max_id);
++
++    if(ret || pdata->max_id > HY_MAX_ID) {
++        dev_info(dev, "Unset max_id, use default\n");
++        pdata->max_id = HY_MAX_ID;
++    }
++
++    ret = of_property_read_u32(np, "hycon,size-x",
++                               &pdata->x_max);
++
++    if(ret) {
++        dev_info(dev, "Unset size-x, use default\n");
++        pdata->x_max = HY46XX_SIZE_X;
++    }
++
++    ret = of_property_read_u32(np, "hycon,size-y",
++                               &pdata->y_max);
++
++    if(ret) {
++        dev_info(dev, "Unset size-y, use default\n");
++        pdata->y_max = HY46XX_SIZE_Y;
++    }
++
++    ret = of_property_read_u32(np, "hycon,irq-flags",
++                               &pdata->irqflags);
++
++    if(ret) {
++        dev_info(dev,
++                 "Failed get int-trigger-type from dts,set default\n");
++        pdata->irqflags = HY46XX_DEFAULT_INT_TRIGGER;
++    }
++
++    of_property_read_u32(np, "hycon,swap-x2y", &pdata->swap_x2y);
++
++    of_property_read_u32(np, "hycon,x-reverse", &pdata->x_reverse);
++
++    of_property_read_u32(np, "hycon,y-reverse", &pdata->y_reverse);
++
++    pdata->irq_gpio = of_get_named_gpio(np, "irq-gpios", 0);
++
++    if(!gpio_is_valid(pdata->irq_gpio))
++        dev_err(dev, "No valid irq gpio");
++
++    pdata->rst_gpio = of_get_named_gpio(np, "reset-gpios", 0);
++
++    if(!gpio_is_valid(pdata->rst_gpio))
++        dev_err(dev, "No valid reset gpio");
++
++    return 0;
++}
++
++static int hy46xx_request_io_port(struct hy46xx_ts_data *ts)
++{
++    int ret = 0;
++
++    if(gpio_is_valid(ts->pdata->irq_gpio)) {
++        ret = gpio_request(ts->pdata->irq_gpio, "hy46xx_ts_int");
++
++        if(ret < 0) {
++            dev_err(&ts->client->dev,
++                    "Failed to request GPIO:%d, ERRNO:%d\n",
++                    (s32)ts->pdata->irq_gpio, ret);
++            return -ENODEV;
++        }
++
++        gpio_direction_input(ts->pdata->irq_gpio);
++        dev_info(&ts->client->dev, "Success request irq-gpio\n");
++    }
++
++    if(gpio_is_valid(ts->pdata->rst_gpio)) {
++        ret = gpio_request(ts->pdata->rst_gpio, "hy46xx_ts_rst");
++
++        if(ret < 0) {
++            dev_err(&ts->client->dev,
++                    "Failed to request GPIO:%d, ERRNO:%d\n",
++                    (s32)ts->pdata->rst_gpio, ret);
++
++            if(gpio_is_valid(ts->pdata->irq_gpio))
++                gpio_free(ts->pdata->irq_gpio);
++
++            return -ENODEV;
++        }
++
++        gpio_direction_input(ts->pdata->rst_gpio);
++        dev_info(&ts->client->dev,  "Success request rst-gpio\n");
++    }
++
++    return 0;
++}
++
++static int hy46xx_request_irq(struct hy46xx_ts_data *ts)
++{
++    int ret = -1;
++
++    if(gpio_is_valid(ts->pdata->irq_gpio) || ts->client->irq > 0) {
++        if(gpio_is_valid(ts->pdata->irq_gpio))
++            ts->client->irq = gpio_to_irq(ts->pdata->irq_gpio);
++
++        dev_info(&ts->client->dev, "INT num %d, trigger type:%d\n",
++                 ts->client->irq, ts->pdata->irqflags);
++        ret = request_threaded_irq(ts->client->irq, NULL,
++                                   hy46xx_irq_handler,
++                                   ts->pdata->irqflags | IRQF_ONESHOT,
++                                   ts->client->name,
++                                   ts);
++
++        if(ret < 0) {
++            dev_err(&ts->client->dev,
++                    "Failed to request irq %d\n", ts->client->irq);
++            return ret;
++        }
++#if SUPPORT_WAKE_UP
++        enable_irq_wake(ts->client->irq);
++        dev_info(&ts->client->dev, "hy46xx enable_irq_wake(ts->client->irq)\n");
++#endif
++    }
++
++    return ret;
++}
++
++static s8 hy46xx_request_input_dev(struct hy46xx_ts_data *ts)
++{
++    s8 ret = -1;
++
++    ts->input_dev = input_allocate_device();
++
++    if(ts->input_dev == NULL) {
++        dev_err(&ts->client->dev, "Failed to allocate input device\n");
++        return -ENOMEM;
++    }
++
++    if(ts->pdata->swap_x2y)
++        HY46XX_SWAP(ts->pdata->x_max, ts->pdata->y_max);
++
++    __set_bit(EV_ABS, ts->input_dev->evbit);
++    __set_bit(EV_KEY, ts->input_dev->evbit);
++    __set_bit(BTN_TOUCH, ts->input_dev->keybit);
++
++    input_mt_init_slots(ts->input_dev, CFG_MAX_TOUCH_POINTS, INPUT_MT_DIRECT);
++    input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR,
++                         0, PRESS_MAX, 0, 0);
++    input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
++                         0, ts->pdata->x_max, 0, 0);
++    input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
++                         0, ts->pdata->y_max, 0, 0);
++    input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
++
++    ts->input_dev->name = HY46XX_NAME;
++
++    ret = input_register_device(ts->input_dev);
++
++    if(ret) {
++        dev_err(&ts->client->dev, "Register %s input device failed\n",
++                ts->input_dev->name);
++        input_free_device(ts->input_dev);
++        return -ENODEV;
++    }
++
++    return 0;
++}
++//#ifdef CONFIG_HAS_EARLYSUSPEND
++
++static void hy46xx_ts_suspend(void)
++{
++
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(this_client);
++
++    dev_info(&ts->client->dev, "hy46xx suspend.\n");
++	 ts->system_suspend = true;
++#if SUPPORT_WAKE_UP
++   enable_irq_wake(ts->client->irq);
++
++   // enable_irq_wake(ts->pdata->irq_gpio);
++
++#endif
++}
++
++static void hy46xx_ts_resume(void)
++{
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(this_client);
++    dev_info(&ts->client->dev, "hy46xx resume.\n");
++    
++    #if SUPPORT_WAKE_UP
++
++    if(ts->system_suspend)
++    {
++        ts->system_suspend = false;
++     disable_irq_wake(ts->client->irq);
++
++     //  disable_irq_wake(ts->pdata->irq_gpio);
++    }
++    #endif
++}
++//#endif
++#ifdef CONFIG_FB
++static int fb_notifier_callback(struct notifier_block *self,
++		unsigned long event, void *data) {
++	struct fb_event *ev_data = data;
++
++	int *blank;
++
++
++	if (ev_data && ev_data->data && event == FB_EVENT_BLANK) {
++		blank = ev_data->data;
++		if (*blank == FB_BLANK_POWERDOWN) {
++			hy46xx_ts_suspend();
++		}
++		else if (*blank == FB_BLANK_UNBLANK || *blank == FB_BLANK_NORMAL) {
++			hy46xx_ts_resume();
++		}
++	}
++
++	return 0;
++}
++#endif
++
++static int register_resume_suspend(struct hy46xx_ts_data *ts) {
++	int ret = 0;
++#ifdef CONFIG_FB
++	ts->fb_notif.notifier_call = fb_notifier_callback;
++	
++	ret = fb_register_client(&ts->fb_notif);
++	
++	if (ret) {
++		 dev_err(&ts->client->dev, "Unable to register fb_notifier: %d\n", ret);
++	}
++
++#endif
++
++	return ret;
++}
++
++static int hy46xx_ts_probe(struct i2c_client *client,
++                           const struct i2c_device_id *id)
++{
++    struct hy46xx_platform_data *pdata;
++    struct hy46xx_ts_data *hy46xx_ts;
++    int ret = 0;
++
++    if(!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++        dev_err(&client->dev, "Failed check I2C functionality.");
++        return -ENODEV;
++    }
++    #if SUPPORT_WAKE_UP
++        device_init_wakeup(&client->dev, true);
++
++    #endif
++
++    hy46xx_ts = devm_kzalloc(&client->dev, sizeof(*hy46xx_ts), GFP_KERNEL);
++
++    if(NULL == hy46xx_ts) {
++        dev_err(&client->dev, "Failed alloc ts memory.");
++        return -ENOMEM;
++    }
++
++    pdata = devm_kzalloc(&client->dev, sizeof(*pdata), GFP_KERNEL);
++
++    if(NULL == pdata) {
++        dev_err(&client->dev, "Failed alloc pdata memory.\n");
++        devm_kfree(&client->dev, hy46xx_ts);
++        return -ENOMEM;
++    }
++
++#ifdef CONFIG_OF    /* device tree support */
++
++    if(client->dev.of_node) {
++        ret = hy46xx_parse_dt(&client->dev, pdata);
++
++        if(ret) {
++            dev_err(&client->dev, "Failed parse dts.\n");
++            goto exit_free_client_data;
++        }
++    }
++
++#else
++    pdata->x_max = HY46XX_SIZE_X;
++    pdata->y_max = HY46XX_SIZE_Y;
++    pdata->rst_gpio = HY46XX_RESET_PIN;
++    pdata->irq_gpio = HY46XX_IRQ_PIN;
++    pdata->swap_x2y = 0;
++    pdata->x_reverse = 0;
++    pdata->y_reverse = 0;
++#endif
++
++    this_client = client;
++    hy46xx_ts->client = client;
++    hy46xx_ts->pdata = pdata;
++
++    i2c_set_clientdata(client, hy46xx_ts);
++ //   device_init_wakeup(&client->dev, true);
++
++    ret = hy46xx_request_io_port(hy46xx_ts);
++
++    if(ret < 0) {
++        dev_err(&client->dev, "Failed request IO port.\n");
++        goto exit_free_client_data;
++    }
++
++    hy46xx_reset_guitar(client, 20);
++
++    ret = hy46xx_i2c_test(client);
++
++    if(ret) {
++        dev_err(&client->dev, "Failed communicate with IC use I2C.\n");
++        goto exit_free_io_port;
++    }
++
++    dev_info(&client->dev, "I2C Addr is %x.\n", client->addr);
++
++    ret = hy46xx_request_input_dev(hy46xx_ts);
++
++    if(ret < 0) {
++        dev_err(&client->dev, "Failed request input device.\n");
++        goto exit_free_io_port;
++    }
++
++    ret = hy46xx_request_irq(hy46xx_ts);
++
++    if(ret < 0) {
++        dev_err(&client->dev, "Failed request irq.\n");
++        goto exit_unreg_input_dev;
++    }
++    register_resume_suspend(hy46xx_ts);
++
++    dev_info(&client->dev, "hy46xx probe complete.\n");
++    return 0;
++
++exit_unreg_input_dev:
++    input_unregister_device(hy46xx_ts->input_dev);
++
++exit_free_io_port:
++
++    if(gpio_is_valid(pdata->rst_gpio))
++        gpio_free(pdata->rst_gpio);
++
++    if(gpio_is_valid(pdata->irq_gpio))
++        gpio_free(pdata->irq_gpio);
++
++exit_free_client_data:
++    devm_kfree(&client->dev, hy46xx_ts);
++    i2c_set_clientdata(client, NULL);
++
++    return ret;
++}
++
++
++static int hy46xx_drv_remove(struct i2c_client *client)
++{
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(client);
++
++    if(ts->client->irq)
++        free_irq(client->irq, ts);
++
++    if(gpio_is_valid(ts->pdata->rst_gpio))
++        gpio_free(ts->pdata->rst_gpio);
++
++    if(gpio_is_valid(ts->pdata->irq_gpio))
++        gpio_free(ts->pdata->irq_gpio);
++
++
++    i2c_set_clientdata(client, NULL);
++    input_unregister_device(ts->input_dev);
++
++    devm_kfree(&client->dev, ts->pdata);
++    devm_kfree(&client->dev, ts);
++
++    dev_info(&client->dev, "hy46xx ts driver removed");
++
++    return 0;
++}
++
++
++#ifdef CONFIG_OF
++static const struct of_device_id hy46xx_match_table[] = {
++    {.compatible = "hycon,hy46xx",},
++    { },
++};
++#endif
++
++static const struct i2c_device_id hy46xx_ts_id[] = {
++    {HY46XX_NAME, 0},
++    {}
++};
++
++MODULE_DEVICE_TABLE(i2c, hy46xx_ts_id);
++
++static struct i2c_driver hy46xx_ts_driver = {
++    .probe = hy46xx_ts_probe,
++    .remove = hy46xx_drv_remove,
++    .id_table = hy46xx_ts_id,
++#ifdef CONFIG_HAS_EARLYSUSPEND
++    .suspend = hy46xx_ts_suspend,
++    .resume = hy46xx_ts_resume,
++#endif
++    .driver = {
++        .name = HY46XX_NAME,
++        .owner = THIS_MODULE,
++#ifdef CONFIG_OF
++        .of_match_table = hy46xx_match_table,
++#endif
++    },
++};
++
++static int __init hy46xx_ts_init(void)
++{
++    s32 ret;
++
++    pr_info("hy46xx touchscreen driver installing....\n");
++    ret = i2c_add_driver(&hy46xx_ts_driver);
++
++    return ret;
++}
++
++static void __exit hy46xx_ts_exit(void)
++{
++    pr_info("hy46xx touchscreen driver exited.\n");
++    i2c_del_driver(&hy46xx_ts_driver);
++}
++
++module_init(hy46xx_ts_init);
++module_exit(hy46xx_ts_exit);
++
++MODULE_AUTHOR("shenhb");
++MODULE_DESCRIPTION("HYCON hy46xx TouchScreen driver");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/input/touchscreen/hy46xx_ts.h b/drivers/input/touchscreen/hy46xx_ts.h
+new file mode 100755
+index 000000000000..d5fe495a22cf
+--- /dev/null
++++ b/drivers/input/touchscreen/hy46xx_ts.h
+@@ -0,0 +1,147 @@
++/*
++ * HYCON HY46xx Touch Panel driver
++ *
++ * Copyright  (C)  2016 - 2018 Topband. Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be a reference
++ * to you, when you are integrating the Lontium's HY46xx IC into your system,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * Notes:
++ * 1. IIC address of HY46xx:
++ *   A) The I2C address of HY46xx is 0x70, and bit0 is the read-write mark bit.
++ *      If it is a Linux system, the I2C address of HY46xx is 0x38, and bit7 is 
++ *      the read and write flag bit.
++ * 2. The IIC rate should not exceed 100KHz. 
++ * 3. The front-end master control GPIO is required to reply to HY46xx. Before 
++ *    the register, the HY46xx is reset.
++ *    Use GPIO to lower HY46xx's reset foot 15ms, then pull up and maintain 500ms.
++ *
++ * Author: shenhaibo
++ * Version: 1.0.0
++ * Release Date: 2018/11/22
++ */
++
++#ifndef __LINUX_HY46XX_TS_H__
++#define __LINUX_HY46XX_TS_H__
++
++#include <linux/kernel.h>
++#include <linux/hrtimer.h>
++#include <linux/i2c.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/delay.h>
++#include <linux/i2c.h>
++#include <linux/proc_fs.h>
++#include <linux/string.h>
++#include <linux/uaccess.h>
++#include <linux/vmalloc.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/gpio.h>
++#include <linux/regulator/consumer.h>
++#include <linux/major.h>
++#include <linux/kdev_t.h>
++#ifdef CONFIG_OF
++#include <linux/of_gpio.h>
++#endif
++#ifdef CONFIG_FB
++#include <linux/notifier.h>
++#include <linux/fb.h>
++#endif
++#ifdef CONFIG_HAS_EARLYSUSPEND
++#include <linux/earlysuspend.h>
++#endif
++#include <linux/usb.h>
++#include <linux/power_supply.h>
++
++#define HY46XX_DEBUG 1
++
++/* -- dirver configure -- */
++#define CFG_MAX_TOUCH_POINTS    5
++
++#define PRESS_MAX   0xFF
++#define HY_PRESS    0x08
++
++#define HY46XX_NAME "hy46xx_ts"
++#define HY46XX_DRIVER_VERSION  "1.0.0"
++
++#define HY46XX_ADDR_LENGTH      1
++#define I2C_MAX_TRANSFER_SIZE   255
++#define RETRY_MAX_TIMES		    3
++
++#define ANDROID_INPUT_PROTOCOL_B
++
++#define HY46XX_SIZE_X           1280
++#define HY46XX_SIZE_Y           800
++#define HY46XX_RESET_PIN        3
++#define HY46XX_RESET_PIN_NAME   "hy46xx-reset"
++#define HY46XX_IRQ_PIN          4
++#define HY46XX_IRQ_PIN_NAME     "hy46xx-irq"
++#define HY46XX_DEFAULT_INT_TRIGGER	 2 /* 1 rising, 2 falling */
++
++#define HY_MAX_ID               0x0F
++#define HY_TOUCH_STEP           6
++#define HY_TOUCH_X_H_POS        3
++#define HY_TOUCH_X_L_POS        4
++#define HY_TOUCH_Y_H_POS        5
++#define HY_TOUCH_Y_L_POS        6
++#define HY_TOUCH_EVENT_POS      3
++#define HY_TOUCH_ID_POS         5
++
++#define POINT_READ_BUF  (3 + HY_TOUCH_STEP * CFG_MAX_TOUCH_POINTS)
++
++/*register address*/
++#define HY46XX_REG_FW_VER       0xA6
++#define HY46XX_REG_POINT_RATE   0x88
++#define HY46XX_REG_THGROUP      0x80
++
++#define HY46XX_SWAP(x, y) \
++do {\
++	typeof(x) z = x;\
++	x = y;\
++	y = z;\
++} while (0)
++
++struct ts_event {
++    u16 au16_x[CFG_MAX_TOUCH_POINTS];   /*x coordinate */
++    u16 au16_y[CFG_MAX_TOUCH_POINTS];   /*y coordinate */
++    u8 au8_touch_event[CFG_MAX_TOUCH_POINTS];   /*touch event:
++                    0 -- down; 1-- contact; 2 -- contact */
++    u8 au8_finger_id[CFG_MAX_TOUCH_POINTS]; /*touch ID */
++    u16 pressure;
++    u8 touch_point;
++};
++
++/* The platform data for the HYCON hy46xx touchscreen driver */
++struct hy46xx_platform_data {
++    u32 max_id;
++    u32 x_max;
++    u32 y_max;
++    u32 irqflags; /*default:IRQF_TRIGGER_FALLING*/
++    int irq_gpio;
++    int rst_gpio;
++    u32 swap_x2y;
++    u32 x_reverse;
++    u32 y_reverse;
++};
++
++struct hy46xx_ts_data {
++    struct i2c_client *client;
++    struct input_dev *input_dev;
++    struct ts_event event;
++    struct hy46xx_platform_data *pdata;
++    #if defined(CONFIG_FB)
++	struct notifier_block fb_notif;
++	#endif
++    bool system_suspend;
++};
++
++#endif
 diff --git a/logo.bmp b/logo.bmp
 old mode 100644
 new mode 100755
-index 13a761f90b804a412f3e5349713f4c0b0879cc48..288bc415f936cf4070660cb1945291bedab186fd
-GIT binary patch
-literal 256118
-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
-PKmY_l00cl_fx!O(zOx-4
-
-literal 170326
-zcmeHQ3z#KEb*`0RjJhG;FiXDc0E#RstLV%fGBek>3(6`{L4$#yey%7O$qUg48e<~i
-zDXt(IU`1T_A;cIJV{{cC;GN!?J1VRT3M&C-?(o|CKm<iLi6;3zQ`Oy7U0rqRRP~)Z
-zGrK#dVW+FByUscF*Qs+(oqpUCUVr-aPh(;m?P2U_zQ2keK5ZFe%h>P4^+#-Y8awz|
-zEdIwU#ff-(`ZJ!%mM>q<4mx-RTd`sVJLK7iv%?QRoE`k^BiO)mSF(d%u$mq6{1>r9
-zk66hLTe*rIw(1ym@C#qY4m+mIo;$Xh9d*=E?0KtR!j3uS7`F1of529btY%04;qmN6
-ztB+&H9(yb+zic&Ivt|uDa`jsFlCcxm(Z{W2!)s1p#~$}O_Pkg85qs&{6WQR&Z(?Jw
-zIhnoewQpcUC$D2KfBh+J%^$C0$G-7&R({hNY|W`}VXNPEHaq@J?`4B$p39DZ_xst}
-zwQJc)C!NGjJMA>KZrwWe>UX`L{mEbdBRl)-v)MW4oWssL?>zRQ4}FLYopTj?`8gM}
-z)$hNQt@+?b*wGh!ojvPsA7%%A=n>Zc;YV2Mf=5{Sf;-sS53FY=eDF$k>R(;RPC4)6
-z?3EXMhn@D}FR)`jwviow;kE4Lmw$mBzy4dS_hSwAjE^_i0oSzH0iSu49eP=Vl|I^F
-zD>gmK26)|}*S6VV8y{soH$KLCzW5khe$(Tu=jJCE`_2>Wceg#ko;ChUw&I4Lu@ztZ
-zIUD%r$Jn7?{yFRW<`ZnicYnd2dvlW=zU^`L?C<@O9dX?bw(7G#V5>IY!;ZaZ7aQKR
-zgRR-HgB^86gT45wCR@pQ9eG`w9l7aeY}G%t*s2X}e*L4Y{HX`o7_UEW%g@-+-`K%k
-zddpAPi^lI~V_*C+8@+iaTeIzlti0`hw&vEKvdXvbWh=Q1&;Rn{Y!%<Hy6NX^<=38I
-ztG>biedibKh1FlORs7%B)}OIaE^p<lkF(?WxdSGiWXtY+iY=e`C0ow-2mbgecF<jW
-z*uhgzvK4nc#hx?yBs+BHQ*6agczM?zc66=IUcl>);&rQPPqI}zo?_3xdk<U1|CJ{n
-zW<!&Yu@f)6ik*DvmF$(5eTuzm{RZ}$3%|r(b<M5p)z{y`*4{YI-g)iK?EFuBp1tC8
-zlkB9=-N#P+#`oD<zHlFV<yRhOCw}V}>~&v%g1wo`_O@Gp!A|EgzjgdccK(;{WPi?O
-zerNO~dpDQ)16;lj-}WnZ*=3ipE3UYLZP>7ZZQQt#-FV}T?53M;V%xTDW4GLL3%l~B
-zAF#`BeUx1~^(%G>m-XX!?qOH`cn{n7qhGOWxy&1X`k!pez5mH>s7<pQc0SH-xaYsv
-zjrac-`|`|xv#-wnntknoU$gJlpJLy9=-2Gl-M?YqZvTeWYBhHI?YFaCyLPd9z0M|^
-zzhU3!^*?&-f7o45{4cxbSO3Rm_WU2)y?Zx%?6Jq#o;`cmZ-4vSWRlWfLVyq;1PB2_
-zfDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;
-z1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{j
-zLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQf
-zAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y
-z0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX
-z5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A
-z2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr{jLVysMR|NXz
-zl{yh81d1UrQtWcNnh=;*1fqGRPQ(d;VhGfVT~1dM0`rPMeO{>(aYBF)AO!YZ1Sa-f
-z(MfVbfDj-A2mwNX5Fi8y0YZQfAOr{jLVyq;1PB2_fDj-A2mwNX5Fi8y0YZQfAOr}3
-z1wvq`m2J(mDE4uAXn}+vHiSTmKyMq_Dg+ZDu)qjRA^JGEz_JiKLSQ?hk4=Jy5LjRY
-zDu_O|OA9Ovv0L&8lrVi9Uh?n|01J&k6H&;qg%*bREqMg60Fo9oOI|$|9Dq^8KGK3_
-z!G~kXGb|(eNDG=JuO15y0Gbh}0CK^{W63j|K@4QH<k2Aj78-$ZL?7u>Cks6q#BT)A
-zM_SO3ek?QsgNQ!Tf@YydgZQx)qL8$pAq81z1Zs#rZeM6&h~JV&0LzHef@aC9$ASYe
-zfY`^zf=fdTmpTGyMw}iwTk7hu@cnNf29n-cSorZ+>Kqs35uctO#{cL4;zIIQ)Toju
-z<0B#3)3*O3fIU*twU2*KWiK+iOIZHBoHc9m_aFIx$<}B#^4n}<cD6CI{}0=K(8K=G
-ziK$wx7L5$(o#{vXbxXf+F69Y?Np`B=%>sLHI3plSRW~7Vrmr+OQi&#O(=+v%ndzz8
-z#CT<Ru%CXp2}iBlXSG|^Gb5VwlY<ED5e+FM9%h6yzN1c>L)k?ErCBE()?bdMUAo<z
-z9v?1gz__XGOJ{m|`}+G!@z&qhyVrEDXEryGt*Vj?d&H;0qdIZn0sOzXq*@gm5|<9-
-zgqn5|%?qDv1RM;)bb5v&Z1I*5YSl)HO~PJoY^xKsnffdb9A@j&lTl@;zZaH(^^cAq
-z+bH&9W+P}*PPJloyQfsHPBn5j;99N5^h9N_A0Eas%3>68AVXNo(VRa{k+HO{B|BdQ
-zMpRX0VVf*9>Ql8y_%|2k;80+<ffTd0izIrNJ!_tp;1?}Q6S<MGT4@!tRhJ+}-%4YX
-zu!gs0s$i}R%k~NZOqI&`VXw-kqUSjFj!q%{ZPmsA?W$`S0L3Vi#w?*a)CR&nD1e(z
-zQ1@X3NS0JJr=ww@SEj7-u@)>i>9yNsuq|UApbUzTOl5068jXy@X*pXR67gKY$P}!L
-zlG5xX&>c@toDoX^e!3N^c=!kz>rqaDc}G1=-0q8^k3qEU2Xo*TTbs#rMCOsi*1c~`
-zRiN=VhcV2;Ir5!h(WjJg+~m#JP(f`Jq#EO}Q%k51PK87ujY-qsVc9j#6gKUQVUGo-
-z{m!uK3-$!{tdZ!JZ;)(YRSoX{tjX;fk6507xs>+Vv73$bxv6B#6+(uu?a0#<5)g0>
-zlMcB()vYMk1MOhgg{Mu?7;^Lr3~k7>3AV5~$uY}*cgmykxmN8~q=zP+K|($;hCA#?
-z!%h@?^FqW&<x<4=;!0e%fu=x}0lQ$D-vl%N2AW#mw9S*XK4UOgY%!!$Yvk=m+N1tr
-zfHn0Y_h}Y9<Q_fYBCC|baM9kjqRbC?I)<dtu&g2XHF;ft0s|4L4D*igd4)aVqmK?=
-z#{FA}$KmuXWfC0;H%6R-8W;(|7%sNw?6m1{JA!L_wq*CH3lMAs0U)iMCj<n0+f;hy
-zX^lO9i2E?Ze*%GbJSjwAHpzNGDT`NT{gS$%?R|zJVW*JMS{92QOIk}&#2raMCru53
-zR)&5u+ok3Atdnbo_~I}i+>o;-;8IA|dTIweY2GP7I9Y}Jzx=oY?z)v2X%Ws$6f;0j
-ze`MXP6}U=q8S@y1goI_?czb;2N!ID!giLgBj@y(}rMNF0j(EGBy8c1j_ck-YWGSEv
-za?W%tTsw8zH~~O7DP-(x-9YE38DN`IeT-Fc9GAk)1vnEa0nLKP7o@Z@$0pl*=By!u
-zY?bbd*;a#=JZxz}U1!!YrqoD`P%j>SXuOg>1oU4{!Z3(sxAOaDIcA6V&v3gru+c0{
-zUX!6Nr2$8ukP0Q07u$POw>2seTLi2A%{H+3@EH`Pp-7R!qimxsa;W+=ml1EbYe_JH
-zPJg2ZET9W=wJ^uY7sa5VJp`9`Db~2dPP9F}6jB8V@!Z0FXbi0xo=6b@ET<NwBC8!V
-zmmscjotf(?q{~jKZS|NF;Aq^fpfkyUVndhrY>WY+ze!jQ<y_6mY;688g|tRT4U;cL
-znrjJVQ)L9q@OZ}Td&sdvA%o&TIoDN3gThWJm0?|>e#=XX>=U!bMGEQyO1U1>LdHDr
-z+1NBnEj}qbjcK``N_<89LMaljnv+G15--G_*2yP#ZwDF|*$Zz{-pRs!B4?bH%t${q
-zQfi(g?F!`{&2)N~rkV`TJTbf039J}9<ciyt<p2oKu_y%?*9S}@?Od#IZkK6H7B#eS
-z0nZ$y@nL)=q>qsz)+MK=^{NfVy-?JkH%iJz{8Y#y8EnHQfGvVqqo!9OTWwNN$1{B#
-zdbezPk}n`LtmYtMa}{fUp&{(Io2`Mc(jifBw-Rjicln_}S55k^r60A<w)EK`g$A-t
-zS`%5!-@z@(>X5zZO#(u%5V9(S2%AuTlJS#O&b+7!Rv8O;(naP;d`~p^rIJ?&$LX|?
-z`8=W=*<_DPo88ZZ`=yy)biF6VEVhU8h#|31yRFH^yIII08Iz!pE+gGjW6(XE#NfCT
-zGFy}Nx}CZbSB17t6;hXm79uX3%hu(>Kz?0rLkCOO2ykSC*GRT*-Jj7rtWO8Y$JI%_
-zUAwKXhCspdmuE+j<dg34R9e=~S5odeKs|i4<oP;B-{oLc0Ev!oLMiit-J2|Jp>!1~
-zX@0MKg@JW^=xCEt&|Ezj>Z+N=Shq$_mtC!wGRecVOAjE6gtmFZ%DDy%XS+2~85tfP
-zscc8$R5@`AEv<AYpmLK>JI8}KQHq%7;RZofi%_~0oW!!u@-91+t0x;ytAvlQ>=tj<
-z1I=trVL}`O1S(o*iOU#zy*!x(wjqyM$yWBG7y;pGYczB50~N=JDo5k8XPF3vN)^|G
-zRcQd}^5+^8C7S=yMXgmpQQVP&y9++>B8M7MGsR7di@~I-zHpci1F6kjDKDN8NF~qW
-zr?7xCZKiiO=I3912s5B<%c>xrD)Q(yNRi{godkf8`vBQ&a+x!w4MhvwT7l+U*BTAG
-zq=+J<jVpr`LHBQA_f87-NedWK$^9xKSd?Wy@dcY9jl~TGM>K9&zNa6G57crdz<=s8
-z@%N4NL!it(0cev&0Ezp)gqQ+~U+?WLz#pyRVH2b^*0h&{CH8nkqlpWqRkhg#vPQ)X
-zIH^yFMCvfLS5q+H-h>iEHB$I^!$-AlP)$ICrIrjxh^fSg3o{erql2Yh{-Wt%xe`sd
-z-)!K6n{SyMMLfa^NagE+c98+(FW?Uj@b_Q2aMkTKCrsQg06n$`RYMP77;8fW8YbPM
-z7~Y{(uT4bN%JA^e&`^1JtQt+Y<%SSV>g<=3d=?{aC!?Ye6QP(}w$Ag0Q5$|YVwr8Q
-zR4?pPihEXQP1~=9_6$4TLgdLUXo~VhY`|2^r(PgimPwVB>J{A#30>+Rt-(Fx41n>{
-z(;u2DCPm1<DBf~h`K4fN&jadgQ&XW;pR5epql?I`7+Qsld|C=iN~GM2_{W^Bh?#*o
-z1zkdIJ*UZOPXc)zxG2;K@^ZuZqU=x&7+aBTh3-{2bCVi7!%&6k<FrGY1|!H!)}dP^
-zDxB6pQ$^@TU?#JsRnQE`O|XPgeS2AJq}Zr}1J#UWzNB28BmjY*Zz7Ho4X`!CzEaj0
-zgCp2MhDTl=@3nlF6i@7}&_?Q`KMB!Np{7nymU}ADn75v0uVY&wGtm$~q)GY!rW7c@
-z9|APG2}Fbd)Ec22!sdZQl3x$ne_i!@+uYNbrd(qri@oFEJU3Y<$F}T2jcYNp5QHUL
-zEmW3*`W8d_a!$4p`yNSC?xnx>+DBu#t`kkm&}+A?en1f<Z}(nGCAkE69xah3TjlnB
-z_L`^#+^FfxH8KvAn}sCT1h6L|Z;&(Ig8|AIGw-p*hM327+Kfm9hfIXkn#WJ@Jx=S&
-zv_gwa5;puVzShg7l2x0yP%*fuk@w6cEnLqN)Q<-2S=JZ{0wph%<u(0-66tcl<vuIL
-z)3lWo%|Ke-MHgE$PsVyBxyo{<u#{HqP{86Z;b3J4{IH3JVhR?q8iwzR1@`G<WOXa8
-zSeA&c{;Dt=ih0yk`mGWd<+#3NS+WMY3dlHUCG}8`VudP#XlX~-s;ySAUgd3$nI=!O
-za$3W*h(}5C!C`(eG`SPMXcP6;^nmVP!%G#-oQh9Nl7@Vu6p0=|gna&5shQPVW6r37
-zGzUg?QWRpFZjk~jN=2qxj)^?T9_mpHs`8v;A7s4+HS=xtmSw#aPpE*JD$QL&U~2Xg
-zB8}BqliUGAWD<eqh1Hg?v~0g-T_r2Phugf*YPp?*F%{ITMMct+XJ((R;}LY!WWU^d
-zbCz=kU`8*a07W#GSZRe%wb8Dkb4{BR#-vXq%>|Gy@!<ME3u&o*m~Vm;R2jUv61=MI
-z+&&t<L=7c22Xna!7%{!p`1oP2JN^S`D&dYYzf{mAfyx88(NGQpYKvxkG;Qc=04W54
-z3@!krx$^bKIWY}8>jIEYs~n!vGeGinXb4kd@h8&|nCO7Tf+(vxbJ67Po_$8MGKwC<
-zUxTvaO|7L}v|Myf2u-W(rp9E>HB1%;X&XrA!N3dP0af|aaj`6s(bi|Sk`B}gI5aIN
-z(Rumu;ih0(TcfGeHO!BNCMP5pBPKA04Lx+sKh#k=Fp|=kd(0DX*(4xlv-lX*WvwM7
-zFAx`lJiyAZ2a>HcUjqfZ_(|u~hbEv#9=0+`PxCU$1PAD15{gzYLB#aR0uxRXS`;1m
-zKPy$EH-i!ox->@F6O6(EQc45WWv!**gc4~@Z)(VeAEGlsp<%|TU?8imE?&@b2zhZm
-z0fm){(pu+NE@~z2)^HVLYDDm2SR4(&;Tkf`JUC3MQ$kPbADw-uE^A>nm}$}U)hV3w
-zMA*&0$Y_swJpg`Rl}SG1h8hh1O%53rW-U}H|6+w&V7u3F=m;sYdI2;KzRvRVkxoP}
-z8$m{nl%@uH6L;BTYD^oW6T)>_yE5;D5_vHrp*3|BgM5w}&6J35osk35f6(iY&G)^8
-zHvCR*LajH)SH<s$X-AYB7BDQ1&dDJToY4vRsGMwWjsYx^R-1Pal8oBxujFd2lA?Ro
-z^7dK)2|9MCx3ky)6_|@qvRl5w<40A)u)@rUOC$42WmA)3A<!}7F<EI2kp33OF=#TI
-zQe$=)S+W<lk7(A03x!QTEDfQ5-xHKq#YWJm`06khks)cOPZ2AVH7Zh?a762nL(u4A
-zu}Xf9%Y+-E;h1v6Fm@C`I(iy&KrF6h6JU|DTBN5jf*5w7o=My_eFL=zTV-bAxk~N;
-zU-IXBGkc55tF<dooKep_=#qMz4&wTZ^yieMnpaa@z`_>DV4>4;mRqj1Od=l=^c6PW
-zp4oyaI2w@Yo*qIIa{zJ_+<S<kg=S>5_su<vKuASn+;-c(^_C-XBE-%6E4B1N95&{`
-z3;>ct#GJW0+(IPgM3ISJ*nFc-m&=C{#Qc(O1VDLZYy@KFs{}(*6HV*UD9_w8+Xo)E
-zq*u*^_Ly%ZNo*t|r1?drzCQ6Y39wQp0VE<a`hl^+3mQ;Yw2{CT!kAxDYeSBV0dhh;
-z!XWdV3kn4-EPQ>{x?QMf{TPDBd?T?+DbHAS0hvmLU1HE=&dY(Md&E#pnOA4WxMj7+
-z84T_+a@tFvc3U*jrbocgjMNRNP1;j~%>*U9HI;mRRJANzke_8w#YR)JoVa_C3`3}9
-zb>5HX<SU#K?<@lue;my*ETF+jgtVNLgM_N~WkHY#6787okHMh8j=Pjh-hxl)7z-;z
-z?a7T}cMm3W-N7Om&ey$4H1ttji6wiB4mooB5yM3N>?ANc$at7p4xn|e3N>;<K6ikE
-z-to`_Ptabt2PG#Tc;E@p5?GaSQ6vz*l8r=ba(cEI#2{<KOD(;_=uG85;HM-q3+7@&
-zSp#rNrvhlX43i#sT)cA$Bln1zVr$40HQ)ZAstk6DSE5a2C@va<LBSjxHb_syASv4V
-zhzcy*i$(3S1N#TcmGP*COniC0+DD?R$>tN#3903mrFlUqqN@!lQ??I^c2u{tLM`V6
-zGJ@zsfCbIB=^-@svZ&o_(PhB(F_-;=0(@Ita>TI%WI9Tj`QBy_=BaXKpl>(|vZ{iw
-z_?BI|dDaY0qhT%7)U3q}q?KxwV!(Tk_0}LXi{j&G;D%{YLGz7dGo?5VDbRl9qyQbZ
-z(@20l)+^DmkwOFdh(EI_8>&UEWZ4(;Bf6q>OIkDUOA9%jmwfo%9t>%c@ZdLxwnh&u
-zmSs;n*t-~EHdl9*pg_4wRI5^nVbwv^BGQ?F-o_ety#-nh3xI6<81`~ZYnja)cwH16
-zOf_>YLuXvBG&jc!z)9VJ!N;k_qm1A!3_nBS^w7l!qv=v&P+%)$f#k4rzMPglnYE_*
-zumM_dTI*j>JfIS^wi@fS2<T&2OMPXc*q6dWNvV+Dn?a!dKvt$CMX-CQ*EC@bmyL6K
-zh>cDQEjQtWC#ptB#x*CHI51MM4q0YwDe!14F9JBZ71EYWcm+BSGWmfZ4GVL!h7rs@
-zXf@Q9IDtLRcmN;Wb9{<GEyjIrR{Qy0xC5#dx&5d~=q$qi7Y(y#U26~}Q&xa%7a)se
-zB5}3Idt-0~5@j+JDTSh`Je@`y%FJ7RRci>Xp(uJ@e@o~ntL$TC8?-*y=P7fIjyUJu
-z4E2k+C9&|ZD)P2QqJ(#N0(1znt-eRYKus3owivW#)~?R$Bh${Pq8d6~8gCi78K5Y~
-zg?z-2(Dj9N2?c56Oj&^NF3(aNNo@wFVD55bQ8VBgP&Jad*3g0Hr@&=@@U;;{*r=O@
-zT${(ywj#;ivqwFDPLSrL43C)i*WeBAV94SccTC{$xot=g6ZQGLq`OW#6VzO`_TFh|
-z&x~eEr#`n?P>-Dj^u0Bqh6q8?XK8bz4jtsO|B_MuZ40|uGYT4T|3ubE&rU|w>iC2|
-zxX<Mu8Thrqwibx=DkC6!2k*mzxL9B)OWdn<#a%RPyCw-ZtxQ5PMH3JRH72U%!GWRC
-zag?yaDX91L2u_D+-SC7w4OE(>yOBmt7JV@@|CrX81V^?3_AWnR;#}xhMLj7)C^pho
-z90RSXXw17rEPH~4oP?l;2lcg?nJoh@k55YY%fK~E`ExQm4%BMElV_LB8<SPkOnU5m
-zt2e-B0xR5*kBPTx<Jd3@bqx!uWM2dK<~#r`s&-MVugzLiaY|dNB2Qh}QYkN&Qz^Gs
-z)G4?J6YPfGRFtJ#@(jD#%zdmL%!R+F2{vp_RY%Jua8i1|3RCfYmPc^Ze=S~O95!DX
-z6JzB8L$cn%;jwZ4ac&+|cMUcT7ilA;pzveznq$d&(yWb-mIn@0EqS4DXk@&QGIB|b
-z)j~=xY&8TgAO#73P{>)Uso?R88eX2FO8SI;E=JO8)u*;sD`TT0BO}8jBV+tS@>9b5
-zd;APvll2G8JOJWs7^MWReQT!1x2fdcw2EzbPy1X==1{Lfo>ULu&lszLvp-kdYRuHO
-zN8{D;?X{U8Cu<68%)eBQFdy2GQd@g}h$Q4t%g?aOP0@klY<>sm3D91z;+^s=J({B5
-z0d8|jb8snCVGc+a$0&1>P;6&hRrJsnRLuaLRCZa|trNX1UbfPuDPDNiRMO1kN}I`D
-zRbGMa<r3TVV^e5j_+&P9i#iI69*;(Sad14L0<3#WMYa+k$Iok7LO3h9B?~vQPAbNU
-zNQtKkpo_>>Jz<8+V1pd?DaQFin8nHzD&IN~ZEc|zroc!?<f+VM2dsW&BXG}0yazmy
-zRVMu(3~)>~QggH{+r8hE%)|^X0nQT4RYciv&)pB{(%CSjoP3rcAtIC7nRsa_FmqSR
-z8U`#?b-|rwEvB8Lj@P(w9wVFfKjeGF_5&8+uZ=nTWuD-XN!V>&vmtV9Bp>6!0S%yb
-zizXmkK{y(xGy|1sMp6ox^U$-CN#jtY^xWrASHhuONIOT8yf2`2&_I+1B_JGZYLhPo
-zJD`=u%P4ZzT|q1(3tJb^0A`t$Fh`m(K}#-g&GGVBhLo%w7sXJ6eE=lMMX!BfECDiE
-zmGN!p-Z}Yf9wqs1f+!seG4Iym)%qBC))9Y+&*eGw&f=gOr~dxZz`!8??YH4!a4a*w
-z8gMhr;^eAuXj80GKFg5M)VyOl=lQNDSh2F@aNK(Cb4{i+l`z9Wb{+;O@&}NaiuHpF
-z(L7-Qt<jEc9G5O+667U7j%KB;=h%5un^}~Oy+Vg@gHCB_O*MY15SHBn9?D%-35Pi6
-zT{-Jg*s>n#Ok8KFBd6JU6e;`{XdN>C`h*IwR=`g(^>#W5IcqSsQ^K_(kMQbBQ4rCx
-z+Wc#+>~;*e0MC&QJILM|P-5f?VTQ%X`1B5gzqIF+$Y|~l*qoI3i8`c?JnZi@OcT!E
-zr_DNKA)2K}%xT*W<r8ZP+$Q(4fzgSuVKhG1?zNBF&*k_K!bVIxH;u%OF;HPk<XW{_
-ztyC)f;gM+jM4|T#V_9qsLLT7Jq=$-8I==R<zZy6y23Z~@`SJ|84wM5t10-een@2hM
-zxO>CLC<zaSMz?#t&UmgH0scC>x7MAYp#?4N^8@L*H<5#;;{&xG(0G?RvS)QP`d}lS
-zB#(KH5C2^R`P-sW`n~|?1%JU}D8g+WfG~e>)su>sVzE-WGT~Ip8T%KQ{r)<8RKU07
-z10*-ATEN%Fl<cyA2PY=U4v&p_ney(BirTYgZlx}}klXiFCW}%PD^AbaEEjh1%LCGJ
-zuFvufM;=}V#{OH_d35{A)u=X;GvTe7i7I3gh8nrc494+cX3)HsLd~_hdWbgqM?$06
-zdC`g=r3#G&tPT|0dQ~>_?1!q8`2kTR-~t~jPf)03h7;Z%lNIxEPM*GzsDOYRJlv>e
-zI+Nkj)6bs}5&>3abO=&Kd1Y^ZX|OyzTH%3Mw0)94(J?(!=N}|d%9q`k4e$vtx}ui<
-zg0|%7+jrzP-JGE_O+<#?Kzr7l$nK^h<kYF2f#GU2QJbp!Z9tp5M4vm#GQ%l{L0m^-
-z7@An7jSE;A=fU{YOhX%g4Zc>Z)o3(kXZacz*M%%Aqk2ErLQiiW&rOy}gPAT5ab2x<
-z@adfP?BqCxgDGlPvs)URT2W7znC!*zP&9*&?(8J6V1+1wb^QZ_an5&SWR!1XV`E~+
-zA2}Nt9xj)M1_uX4Rzq0?O>V82WgsPsp4xQ0&1ip<8dcwz(vp3$9kdt2&ok3JH!c2@
-zO8xzPz4|)>o-DC%%?h#Xu&$?%+tZOsHJXeqDW6IjNJg>Ms82^DnMQ}P>|&<VkVhSc
-z_}TuEXd19(&DrT_cp>oi1a;8saAEj%<0{XM*<zlf8v<!G`bq;sv4T#DZDL~k_9)^}
-zLV2)1a58GN;^LIjoB1jfz^gPg%qL&OJ2hS%D+m8Nz1gSY$DXhS3pt82E8N1lYL162
-zDok&0Zr~Y-E+}b-6J<d`^F1n`-Kkhmu~KIEdVY~7OP2xhXX)ptl8fu>LeWA3A<_T2
-z1hAnZxUciv9a-GT;ugEJGoF!{qc&zQbaf`(LbdYT1&$U<4v>%M{*k@f0;%jHmAEsQ
-zvpPom1`M9CWs!X%o_{dY_4@|mE-B~tmZ6nOc8Rgb^}Z+kismi4+a1q+(C#u@WNN-#
-z@Z2oqJ`>w`!j{USj*=&UT-@lk+sG8X;afyO_Z_4>d9TG?m3fx`;*pU3XY+(kMbyu{
-zcHdD)_!|vbf9Bz?ToDbzZN?%CSEM5W*UsB5!$y%CmjQy#>m|OtSN<`Yc@+g9?g=0l
-zS2#f4xm0<w37L&3SXx{cR~V7KI)L;%fV8;LZDFWA4e)G2K`oS**A{n0>gh6Y+7m!7
-zZj9!!-oQI#Ko0|}o_Xj?UjF&duYSo9zZ=+~+n0GJpVY7d``Ph@cnG4qIC#Qn_`T)s
-zihxkVt#|j*qldiif{ma0)Z4DT_LJ9Lx8-xMJsc5f-cET|Zw2&FT-utc?vvq+@A3WK
-zdBZ=1uqS}*Qlx(5-=F=?vo~(qw0YBJv2ECJ-Dg&XNY~wKdievv{P9ouFD)d8{I9I%
-zswV&AvsIRPNn8?NSFcrvON%>hog>rZnRknuEAZU4=t?wk$XCufYyJ9-TpzhcCfk+`
-z8~)*WonzWz%bwmI@qhYH9EhXzudF{%R3+E+i1LAHg}QEERYVDzCxBesyK<iUNBU<c
-zWPgh8U$yQnm#^oWP)Kedxk_#o+dqB!Uy4$q>$`z~=P~SV4EY?y!~@9o+#l-u;+rqK
-zJl4le>y>?s74rJ4KR5@uscEMOc-F9881haf6YV_Kd#=&M0e}AH%egux3Mm|R;<00e
-z+<ML5J!>waQ`?RZ==B7U1)g*7h(F%QW4*IC0dX>}vw!{OkMK>Xr102M9eEHLYvd<B
-zbAYQM)z2FOo|kAAH-Pk5?>Rn4^{=N0brkxj6f&`pu{v(qdi96r4Rs>yLcn8!7B_(G
-zsn5n+W0t=L+iW!X#uFQHZbPIuvd^@;dWY2?d&;G;K1u_bIqcLxZvDhRW9{kOydcoa
-zH~y+=pZJsf6@~byx36z+%pW8v4<X}R7Bs!5p7D`bA%%UEA>?MwKyKZ7{WS;A3*<zU
-z5U>#V*FV0LZ?T0;^-(Ob#U=vCEwRtO`X8-kR6z*L2Lj7azvyDFj<!O^Iq_tPy>-hq
-z3!fLCkIoX!y&i#+-*Cw#!a&LxQY^9KHFhrPbM;sE`i_u*`vU?8{>|x^Bnl}!wiZHe
-z<nB64Ltej?az6XRaPRefc;Oq)=jzBUq`js|B1oQt6lut-U%J<Kg#_FW5ctCD&*usm
-zd+gXi>Per}K*llTHRQ1OgVEmmyYT+g&W{x`)5v6zt=-3tvykMl_x`cm4<!7Z_q;dJ
-zM{PxuBq7tJk62|31G#0(Vm&avAD~QK2t{DUd){+iW+3AjQmkpj8aqirCRs?XkJld(
-zN|UZ51Ug0FpmS4wyhu3gI4OQv8bZeUn5?ixUi{N5JLN&`2!T)pp7Fl-ou?T{l@%8j
-zG7ce=M{_rC-g4d1p)~0_LZDLwxIV@Td5OsSNDC=FcKm2=Y9Y5=^MX!!P&+~(6oD1*
-zemB?0#6t4hhFTU<+@*<Q$oRhD=FQjreke`4ju7Y+f#qBu-*?`7PkXOOLS_~+4Iwvf
-zQm=P?cJuFb%7fYw0>KEJ`^IzM_b2c9*!h1dZX3pHnmC4(E<1U<i<`*LZay%WCS6Df
-zbc(<qz2e+A{_Sl$Zu`dhf67hd#o|$)_&!aN^x^8r?_-M)a>Iq4a-epEKsW-&9QVc#
-z+<o`XojY&acKYeD!%j3(7|4&RG~}kuSKSy+lddELIz?dlD_?Qj{de54W5<r2w|*_w
-z$m~%_p7h~4AK|h$Z@P|d&vXhgwJU<a3CG`c@7;Iav2*8+ojY&2;?#>|*5`7*rjhn>
-z^QKQ;ScE2BO9*s|z;lng`~F>b-^CU3_8mKK|K>$!T%1q(B=-$J`QlFLQ#(SS5CVVo
-z!-wwOwd<}sxsBu+`MquLc!#Z!@4TT9NxGO2=oo>+zVpbv_uRuxq;T4|@4VxdE8l)`
-zvc^ubkm9!CTVK>Md1^=q6hq)OyB@yp-g{$><WZz>+84h)pY(a_mx@uOs|kTQAn=2S
-z9=wlh<Sr3L-m!DX?RS3f>t~)Rvyhjs-?;A2=JI~`90a4LOA>(<KYHZB2kyI{You`6
-zJdETk?MsD1@^7B;MfO=|J$p&QLY-bL1fFx>?uQ<DAa>e(VI#uGyKa-u=B__$-BF7r
-z7x7)92psm4-P}ZSjl4%V?K^oGdDqQp47u)I&sn0NP`4Kkfv11}k=+l+8X1R?ckbNv
-ztuwg8zWiNp`3t%+vv|X@ggL+ZKOWxwP#i}7l$*$1yFPyAr60NM?eAK<gdw4>FD3#{
-zzv;n;cRw62weNZ0q3@n?@tJQw^CbE-?qUwf66d}A4}Sd6gAeil@4Ms5Q%=43FaMCf
-pvbV%FV$r*Q@C#4;^0)u}-_BX{vgcFWxagxn0uTa(z*0ou{{fZ;3yS~%
-
+index 13a761f90b80..8538599936a1
+Binary files a/logo.bmp and b/logo.bmp differ
 diff --git a/logo_kernel.bmp b/logo_kernel.bmp
 old mode 100644
 new mode 100755
-index 271721846e8dfa18b23384f3837e68ab25785459..288bc415f936cf4070660cb1945291bedab186fd
-GIT binary patch
-literal 256118
-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
-PKmY_l00cl_fx!O(zOx-4
-
-literal 19160
-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
-
--- 
-2.17.1
-
+index 271721846e8d..f4b9219fb7fc
+Binary files a/logo_kernel.bmp and b/logo_kernel.bmp differ

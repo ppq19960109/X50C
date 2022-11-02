@@ -1,0 +1,1005 @@
+From a9ec04b364cd9884da503d202779299cf1e8cba4 Mon Sep 17 00:00:00 2001
+From: pangpengqiang <pangpengqiang@163.com>
+Date: Wed, 2 Nov 2022 15:45:17 +0800
+Subject: [PATCH 3/3] add hy46xx_ts
+
+Change-Id: I4b30fd539a8c0a38fdb5de35f3986d8dc4bc00ca
+---
+ .../dts/rockchip/rk3308bs-evb-ext-v10.dtsi    |  15 +
+ drivers/input/touchscreen/Kconfig             |   7 +
+ drivers/input/touchscreen/Makefile            |   3 +-
+ drivers/input/touchscreen/hy46xx_ts.c         | 772 ++++++++++++++++++
+ drivers/input/touchscreen/hy46xx_ts.h         | 147 ++++
+ 5 files changed, 943 insertions(+), 1 deletion(-)
+ create mode 100755 drivers/input/touchscreen/hy46xx_ts.c
+ create mode 100755 drivers/input/touchscreen/hy46xx_ts.h
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
+index 84772c294373..c52ab3157a6d 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3308bs-evb-ext-v10.dtsi
+@@ -224,6 +224,21 @@
+ 		//touchscreen-swapped-x-y;
+ 		status = "okay";
+     };
++	hy46xxx-i2c@38 {
++		compatible = "hycon,hy46xx";
++		reg = <0x38>;
++		irq-gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_LOW>;
++
++		irq-flags = <2>;
++		hycon,max-id = <11>;
++		hycon,size-x = <1280>;
++		hycon,size-y = <400>;
++		hycon,swap-x2y = <0>;
++		hycon,x-reverse = <0>;
++		hycon,y-reverse = <0>;
++		status = "okay";
++	};
+ };
+ 
+ &uart0 {
+diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
+index cfe59658c08b..c49b078fad25 100644
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -1176,4 +1176,11 @@ config TOUCHSCREEN_HY4635
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called hy4635_ts.
+ 
++config TOUCHSCREEN_HY461X
++	tristate "hy461x touchscreens support"
++	depends on I2C
++	help
++		Say Y here if you have a Hycon HY461x touchscreen
++		if unsure, say N
++			
+ endif
+diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
+index f3fe344ddaeb..39d76242d3d3 100644
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -102,4 +102,5 @@ obj-$(CONFIG_TOUCHSCREEN_COLIBRI_VF50)	+= colibri-vf50-ts.o
+ obj-$(CONFIG_TOUCHSCREEN_ROHM_BU21023)	+= rohm_bu21023.o
+ obj-$(CONFIG_TOUCHSCREEN_VTL_CT36X)	+= vtl_ts/
+ obj-$(CONFIG_TOUCHSCREEN_GT1X)		+= gt1x/
+-obj-$(CONFIG_TOUCHSCREEN_HY4635)	+= hy4635_ts.o
+\ No newline at end of file
++obj-$(CONFIG_TOUCHSCREEN_HY4635)	+= hy4635_ts.o
++obj-$(CONFIG_TOUCHSCREEN_HY461X)	+= hy46xx_ts.o
+\ No newline at end of file
+diff --git a/drivers/input/touchscreen/hy46xx_ts.c b/drivers/input/touchscreen/hy46xx_ts.c
+new file mode 100755
+index 000000000000..b603b4f0b80c
+--- /dev/null
++++ b/drivers/input/touchscreen/hy46xx_ts.c
+@@ -0,0 +1,772 @@
++/*
++ * HYCON HY46xx Touch Panel driver
++ *
++ * Copyright  (C)  2016 - 2018 Topband. Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be a reference
++ * to you, when you are integrating the Lontium's HY46xx IC into your system,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * Notes:
++ * 1. IIC address of HY46xx:
++ *   A) The I2C address of HY46xx is 0x70, and bit0 is the read-write mark bit.
++ *      If it is a Linux system, the I2C address of HY46xx is 0x38, and bit7 is 
++ *      the read and write flag bit.
++ * 2. The IIC rate should not exceed 100KHz. 
++ * 4. The front-end master control GPIO is required to reply to HY46xx. Before 
++ *    the register, the HY46xx is reset.
++ *    Use GPIO to lower HY46xx's reset foot 15ms, then pull up and maintain 500ms.
++ *
++ * Author: shenhaibo
++ * Version: 1.0.0
++ * Release Date: 2018/11/22
++ */
++
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/input/mt.h>
++
++#include "hy46xx_ts.h"
++
++extern void rk_send_power_key(int state);
++extern void rk_send_wakeup_key(void);
++#define SUPPORT_WAKE_UP  1
++
++static struct i2c_client *this_client;
++
++/*******************************************************
++    Function:
++    Write data to the i2c slave device.
++    Input:
++    client: i2c device.
++    addr: write start address.
++    pdata: data buffer
++    len: write bytes count
++    Output:
++    numbers of i2c_msgs to transfer:
++        0: succeed, otherwise: failed
++ *********************************************************/
++static int hy46xx_i2c_write(struct i2c_client *client,
++                            u8 addr, u8 *pdata, int datalen)
++{
++    int ret = 0;
++    u8 tmp_buf[128];
++    unsigned int bytelen = 0;
++
++    if(datalen > 125) {
++        printk("%s too big datalen = %d!\n", __func__, datalen);
++        return -1;
++    }
++
++    tmp_buf[0] = addr;
++    bytelen++;
++
++    if(datalen != 0 && pdata != NULL) {
++        memcpy(&tmp_buf[bytelen], pdata, datalen);
++        bytelen += datalen;
++    }
++
++    ret = i2c_master_send(client, tmp_buf, bytelen);
++    return ret;
++}
++
++/*******************************************************
++    Function:
++    Read data from the i2c slave device.
++    Input:
++    client: i2c device.
++    addr: read start address.
++    pdata: data buffer
++    len: read bytes count
++    Output:
++    numbers of i2c_msgs to transfer:
++        0: succeed, otherwise: failed
++ *********************************************************/
++static int hy46xx_i2c_read(struct i2c_client *client, u8 addr,
++                           u8 *pdata, unsigned int datalen)
++{
++    int ret = 0;
++
++    if(datalen > 126) {
++        printk("%s too big datalen = %d!\n", __func__, datalen);
++        return -1;
++    }
++
++    ret = hy46xx_i2c_write(client, addr, NULL, 0);
++
++    if(ret < 0) {
++        printk("%s set data address fail!\n", __func__);
++        return ret;
++    }
++
++    return i2c_master_recv(client, pdata, datalen);
++}
++
++/*******************************************************
++    Function:
++    Write 1byte data.
++    Input:
++    client: i2c device.
++    addr: read start address.
++    data: data buffer
++    Output:
++    numbers of i2c_msgs to transfer:
++        0: succeed, otherwise: failed
++ *********************************************************/
++int hy46xx_write(struct i2c_client *client, u8 addr, u8 data)
++{
++    int ret = -1;
++
++    ret = hy46xx_i2c_write(client, addr, &data, 1);
++
++    return ret;
++}
++
++/*******************************************************
++    Function:
++    Read 1byte data.
++    Input:
++    client: i2c device.
++    addr: read start address.
++    Output:
++    read byte.
++ *********************************************************/
++u8 hy46xx_read(struct i2c_client *client, u8 addr)
++{
++    int ret = -1;
++    u8 data = 0;
++
++    ret = hy46xx_i2c_read(client, addr, &data, 1);
++
++    return data;
++}
++
++static int hy46xx_read_touchdata(struct hy46xx_ts_data *ts)
++{
++    struct ts_event *event = &ts->event;
++    u8 buf[POINT_READ_BUF] = { 0 };
++    int ret = -1;
++    int i = 0;
++    u8 pointid = HY_MAX_ID;
++    u16 old_x, old_y;
++
++    ret = hy46xx_i2c_read(ts->client, 0x00, buf, POINT_READ_BUF);
++
++    if(ret < 0) {
++        dev_err(&ts->client->dev, "%s read touchdata failed.\n",
++                __func__);
++        return ret;
++    }
++
++    memset(event, 0, sizeof(struct ts_event));
++
++    event->touch_point = 0;
++
++    for(i = 0; i < CFG_MAX_TOUCH_POINTS; i++) {
++        pointid = (buf[HY_TOUCH_ID_POS + HY_TOUCH_STEP * i]) >> 4;
++
++        if(pointid >= HY_MAX_ID)
++            break;
++        else
++            event->touch_point++;
++
++        event->au16_x[i] =
++            (s16)(buf[HY_TOUCH_X_H_POS + HY_TOUCH_STEP * i] & 0x0F) <<
++            8 | (s16) buf[HY_TOUCH_X_L_POS + HY_TOUCH_STEP * i];
++        event->au16_y[i] =
++            (s16)(buf[HY_TOUCH_Y_H_POS + HY_TOUCH_STEP * i] & 0x0F) <<
++            8 | (s16) buf[HY_TOUCH_Y_L_POS + HY_TOUCH_STEP * i];
++        event->au8_touch_event[i] =
++            buf[HY_TOUCH_EVENT_POS + HY_TOUCH_STEP * i] >> 6;
++        event->au8_finger_id[i] =
++            (buf[HY_TOUCH_ID_POS + HY_TOUCH_STEP * i]) >> 4;
++
++        if (ts->pdata->swap_x2y)
++			HY46XX_SWAP(event->au16_x[i], event->au16_y[i]);
++
++        old_x = event->au16_x[i];
++        old_y = event->au16_y[i];
++        if (ts->pdata->x_reverse)
++            event->au16_x[i] = ts->pdata->x_max - event->au16_x[i];
++
++        if (ts->pdata->y_reverse)
++            event->au16_y[i] = ts->pdata->y_max - event->au16_y[i];
++
++#if HY46XX_DEBUG
++        dev_info(&ts->client->dev, "%s, id=%d event=%d x=%d y=%d\n", __func__,
++                 event->au8_finger_id[i], event->au8_touch_event[i],
++                 event->au16_x[i], event->au16_y[i]);
++#endif
++    }
++
++    event->pressure = HY_PRESS;
++
++    return 0;
++}
++
++static void hy46xx_report_value(struct hy46xx_ts_data *data)
++{
++    struct ts_event *event = &data->event;
++    int i;
++    int uppoint = 0;
++
++    /*protocol B*/
++    for(i = 0; i < event->touch_point; i++) {
++        input_mt_slot(data->input_dev, event->au8_finger_id[i]);
++        
++        if(event->au8_touch_event[i]== 0 || event->au8_touch_event[i] == 2) {
++            input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER,
++                                       true);
++            input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR,
++                             event->pressure);
++            input_report_abs(data->input_dev, ABS_MT_POSITION_X,
++                             event->au16_x[i]);
++            input_report_abs(data->input_dev, ABS_MT_POSITION_Y,
++                             event->au16_y[i]);
++#if HY46XX_DEBUG
++            dev_info(&data->client->dev, "%s, X = %d , Y = %d , ID = %d\n", __func__,
++                     event->au16_x[i],event->au16_y[i],event->au8_finger_id[i]);
++#endif
++        } else {
++            uppoint++;
++            input_mt_report_slot_state(data->input_dev, MT_TOOL_FINGER,
++                                       false);
++        }
++    }
++
++    if(event->touch_point == uppoint)
++        input_report_key(data->input_dev, BTN_TOUCH, 0);
++    else
++        input_report_key(data->input_dev, BTN_TOUCH, event->touch_point > 0);
++
++    input_sync(data->input_dev);
++}
++static void hy46xx_wakeup(struct hy46xx_ts_data *ts) {
++    dev_info(&ts->client->dev, "%s, wake up\n", __func__);
++    
++    input_report_key(ts->input_dev, KEY_POWER, 1);
++    input_sync(ts->input_dev);
++    input_report_key(ts->input_dev, KEY_POWER, 0);
++    input_sync(ts->input_dev);
++}
++
++static irqreturn_t hy46xx_irq_handler(int irq, void *dev_id)
++{
++    int ret = 0;
++    struct hy46xx_ts_data *ts = dev_id;
++
++#if SUPPORT_WAKE_UP
++        dev_info(&ts->client->dev,"hy46xx_irq_handler in");
++    
++        if (ts->system_suspend) {
++            dev_info(&ts->client->dev,"hy46xx_irq_handler rk_send_wakeup_key\n");
++         //   pm_stay_awake(&ts->client->dev);
++    
++            hy46xx_wakeup(ts);
++            msleep(100);
++    
++          //  pm_relax(&ts->client->dev);
++    
++            return IRQ_HANDLED;
++            
++        }
++#endif
++
++    disable_irq_nosync(ts->client->irq);
++
++    ret = hy46xx_read_touchdata(ts);
++
++    if(ret == 0)
++        hy46xx_report_value(ts);
++
++    enable_irq(ts->client->irq);
++
++    return IRQ_HANDLED;
++}
++
++void hy46xx_reset_guitar(struct i2c_client *client, s32 ms)
++{
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(client);
++
++    dev_info(&client->dev, "Guitar reset");
++
++    if(!gpio_is_valid(ts->pdata->rst_gpio)) {
++        dev_warn(&client->dev, "reset failed no valid reset gpio");
++        return;
++    }
++
++    gpio_direction_output(ts->pdata->rst_gpio, 0);
++    msleep(15);
++
++    gpio_direction_output(ts->pdata->rst_gpio, 1);
++    msleep(500);
++}
++
++static int hy46xx_i2c_test(struct i2c_client *client)
++{
++    u8 retry = 0;
++    u8 version = 0, rate = 0, thgroup = 0;
++    int ret = -EAGAIN;
++
++    while(retry++ < 3) {
++        version = hy46xx_read(client, HY46XX_REG_FW_VER);
++        dev_info(&client->dev, "hy46xx read chip versionxx: 0x%x\n", version);
++
++        rate = hy46xx_read(client, HY46XX_REG_POINT_RATE);
++        dev_info(&client->dev, "hy46xx read chip ratexx: 0x%x\n", rate);
++
++        thgroup = hy46xx_read(client, HY46XX_REG_THGROUP);
++        dev_info(&client->dev, "hy46xx read chip thgroupxx: 0x%x\n", thgroup);
++
++        if(version == 0) {
++            dev_err(&client->dev, "hy46xx i2c test failed time %d\n", retry);
++            continue;
++        }
++
++        ret = 0;
++        break;
++    }
++
++    return ret;
++}
++
++static int hy46xx_parse_dt(struct device *dev,
++                           struct hy46xx_platform_data *pdata)
++{
++    int ret;
++    struct device_node *np = dev->of_node;
++
++    ret = of_property_read_u32(np, "hycon,max-id",
++                               &pdata->max_id);
++
++    if(ret || pdata->max_id > HY_MAX_ID) {
++        dev_info(dev, "Unset max_id, use default\n");
++        pdata->max_id = HY_MAX_ID;
++    }
++
++    ret = of_property_read_u32(np, "hycon,size-x",
++                               &pdata->x_max);
++
++    if(ret) {
++        dev_info(dev, "Unset size-x, use default\n");
++        pdata->x_max = HY46XX_SIZE_X;
++    }
++
++    ret = of_property_read_u32(np, "hycon,size-y",
++                               &pdata->y_max);
++
++    if(ret) {
++        dev_info(dev, "Unset size-y, use default\n");
++        pdata->y_max = HY46XX_SIZE_Y;
++    }
++
++    ret = of_property_read_u32(np, "hycon,irq-flags",
++                               &pdata->irqflags);
++
++    if(ret) {
++        dev_info(dev,
++                 "Failed get int-trigger-type from dts,set default\n");
++        pdata->irqflags = HY46XX_DEFAULT_INT_TRIGGER;
++    }
++
++    of_property_read_u32(np, "hycon,swap-x2y", &pdata->swap_x2y);
++
++    of_property_read_u32(np, "hycon,x-reverse", &pdata->x_reverse);
++
++    of_property_read_u32(np, "hycon,y-reverse", &pdata->y_reverse);
++
++    pdata->irq_gpio = of_get_named_gpio(np, "irq-gpios", 0);
++
++    if(!gpio_is_valid(pdata->irq_gpio))
++        dev_err(dev, "No valid irq gpio");
++
++    pdata->rst_gpio = of_get_named_gpio(np, "reset-gpios", 0);
++
++    if(!gpio_is_valid(pdata->rst_gpio))
++        dev_err(dev, "No valid reset gpio");
++
++    return 0;
++}
++
++static int hy46xx_request_io_port(struct hy46xx_ts_data *ts)
++{
++    int ret = 0;
++
++    if(gpio_is_valid(ts->pdata->irq_gpio)) {
++        ret = gpio_request(ts->pdata->irq_gpio, "hy46xx_ts_int");
++
++        if(ret < 0) {
++            dev_err(&ts->client->dev,
++                    "Failed to request GPIO:%d, ERRNO:%d\n",
++                    (s32)ts->pdata->irq_gpio, ret);
++            return -ENODEV;
++        }
++
++        gpio_direction_input(ts->pdata->irq_gpio);
++        dev_info(&ts->client->dev, "Success request irq-gpio\n");
++    }
++
++    if(gpio_is_valid(ts->pdata->rst_gpio)) {
++        ret = gpio_request(ts->pdata->rst_gpio, "hy46xx_ts_rst");
++
++        if(ret < 0) {
++            dev_err(&ts->client->dev,
++                    "Failed to request GPIO:%d, ERRNO:%d\n",
++                    (s32)ts->pdata->rst_gpio, ret);
++
++            if(gpio_is_valid(ts->pdata->irq_gpio))
++                gpio_free(ts->pdata->irq_gpio);
++
++            return -ENODEV;
++        }
++
++        gpio_direction_input(ts->pdata->rst_gpio);
++        dev_info(&ts->client->dev,  "Success request rst-gpio\n");
++    }
++
++    return 0;
++}
++
++static int hy46xx_request_irq(struct hy46xx_ts_data *ts)
++{
++    int ret = -1;
++
++    if(gpio_is_valid(ts->pdata->irq_gpio) || ts->client->irq > 0) {
++        if(gpio_is_valid(ts->pdata->irq_gpio))
++            ts->client->irq = gpio_to_irq(ts->pdata->irq_gpio);
++
++        dev_info(&ts->client->dev, "INT num %d, trigger type:%d\n",
++                 ts->client->irq, ts->pdata->irqflags);
++        ret = request_threaded_irq(ts->client->irq, NULL,
++                                   hy46xx_irq_handler,
++                                   ts->pdata->irqflags | IRQF_ONESHOT,
++                                   ts->client->name,
++                                   ts);
++
++        if(ret < 0) {
++            dev_err(&ts->client->dev,
++                    "Failed to request irq %d\n", ts->client->irq);
++            return ret;
++        }
++#if SUPPORT_WAKE_UP
++        enable_irq_wake(ts->client->irq);
++        dev_info(&ts->client->dev, "hy46xx enable_irq_wake(ts->client->irq)\n");
++#endif
++    }
++
++    return ret;
++}
++
++static s8 hy46xx_request_input_dev(struct hy46xx_ts_data *ts)
++{
++    s8 ret = -1;
++
++    ts->input_dev = input_allocate_device();
++
++    if(ts->input_dev == NULL) {
++        dev_err(&ts->client->dev, "Failed to allocate input device\n");
++        return -ENOMEM;
++    }
++
++    if(ts->pdata->swap_x2y)
++        HY46XX_SWAP(ts->pdata->x_max, ts->pdata->y_max);
++
++    __set_bit(EV_ABS, ts->input_dev->evbit);
++    __set_bit(EV_KEY, ts->input_dev->evbit);
++    __set_bit(BTN_TOUCH, ts->input_dev->keybit);
++
++    input_mt_init_slots(ts->input_dev, CFG_MAX_TOUCH_POINTS, INPUT_MT_DIRECT);
++    input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR,
++                         0, PRESS_MAX, 0, 0);
++    input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
++                         0, ts->pdata->x_max, 0, 0);
++    input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
++                         0, ts->pdata->y_max, 0, 0);
++    input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
++
++    ts->input_dev->name = HY46XX_NAME;
++
++    ret = input_register_device(ts->input_dev);
++
++    if(ret) {
++        dev_err(&ts->client->dev, "Register %s input device failed\n",
++                ts->input_dev->name);
++        input_free_device(ts->input_dev);
++        return -ENODEV;
++    }
++
++    return 0;
++}
++//#ifdef CONFIG_HAS_EARLYSUSPEND
++
++static void hy46xx_ts_suspend(void)
++{
++
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(this_client);
++
++    dev_info(&ts->client->dev, "hy46xx suspend.\n");
++	 ts->system_suspend = true;
++#if SUPPORT_WAKE_UP
++   enable_irq_wake(ts->client->irq);
++
++   // enable_irq_wake(ts->pdata->irq_gpio);
++
++#endif
++}
++
++static void hy46xx_ts_resume(void)
++{
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(this_client);
++    dev_info(&ts->client->dev, "hy46xx resume.\n");
++    
++    #if SUPPORT_WAKE_UP
++
++    if(ts->system_suspend)
++    {
++        ts->system_suspend = false;
++     disable_irq_wake(ts->client->irq);
++
++     //  disable_irq_wake(ts->pdata->irq_gpio);
++    }
++    #endif
++}
++//#endif
++#ifdef CONFIG_FB
++static int fb_notifier_callback(struct notifier_block *self,
++		unsigned long event, void *data) {
++	struct fb_event *ev_data = data;
++
++	int *blank;
++
++
++	if (ev_data && ev_data->data && event == FB_EVENT_BLANK) {
++		blank = ev_data->data;
++		if (*blank == FB_BLANK_POWERDOWN) {
++			hy46xx_ts_suspend();
++		}
++		else if (*blank == FB_BLANK_UNBLANK || *blank == FB_BLANK_NORMAL) {
++			hy46xx_ts_resume();
++		}
++	}
++
++	return 0;
++}
++#endif
++
++static int register_resume_suspend(struct hy46xx_ts_data *ts) {
++	int ret = 0;
++#ifdef CONFIG_FB
++	ts->fb_notif.notifier_call = fb_notifier_callback;
++	
++	ret = fb_register_client(&ts->fb_notif);
++	
++	if (ret) {
++		 dev_err(&ts->client->dev, "Unable to register fb_notifier: %d\n", ret);
++	}
++
++#endif
++
++	return ret;
++}
++
++static int hy46xx_ts_probe(struct i2c_client *client,
++                           const struct i2c_device_id *id)
++{
++    struct hy46xx_platform_data *pdata;
++    struct hy46xx_ts_data *hy46xx_ts;
++    int ret = 0;
++
++    if(!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
++        dev_err(&client->dev, "Failed check I2C functionality.");
++        return -ENODEV;
++    }
++    #if SUPPORT_WAKE_UP
++        device_init_wakeup(&client->dev, true);
++
++    #endif
++
++    hy46xx_ts = devm_kzalloc(&client->dev, sizeof(*hy46xx_ts), GFP_KERNEL);
++
++    if(NULL == hy46xx_ts) {
++        dev_err(&client->dev, "Failed alloc ts memory.");
++        return -ENOMEM;
++    }
++
++    pdata = devm_kzalloc(&client->dev, sizeof(*pdata), GFP_KERNEL);
++
++    if(NULL == pdata) {
++        dev_err(&client->dev, "Failed alloc pdata memory.\n");
++        devm_kfree(&client->dev, hy46xx_ts);
++        return -ENOMEM;
++    }
++
++#ifdef CONFIG_OF    /* device tree support */
++
++    if(client->dev.of_node) {
++        ret = hy46xx_parse_dt(&client->dev, pdata);
++
++        if(ret) {
++            dev_err(&client->dev, "Failed parse dts.\n");
++            goto exit_free_client_data;
++        }
++    }
++
++#else
++    pdata->x_max = HY46XX_SIZE_X;
++    pdata->y_max = HY46XX_SIZE_Y;
++    pdata->rst_gpio = HY46XX_RESET_PIN;
++    pdata->irq_gpio = HY46XX_IRQ_PIN;
++    pdata->swap_x2y = 0;
++    pdata->x_reverse = 0;
++    pdata->y_reverse = 0;
++#endif
++
++    this_client = client;
++    hy46xx_ts->client = client;
++    hy46xx_ts->pdata = pdata;
++
++    i2c_set_clientdata(client, hy46xx_ts);
++ //   device_init_wakeup(&client->dev, true);
++
++    ret = hy46xx_request_io_port(hy46xx_ts);
++
++    if(ret < 0) {
++        dev_err(&client->dev, "Failed request IO port.\n");
++        goto exit_free_client_data;
++    }
++
++    hy46xx_reset_guitar(client, 20);
++
++    ret = hy46xx_i2c_test(client);
++
++    if(ret) {
++        dev_err(&client->dev, "Failed communicate with IC use I2C.\n");
++        goto exit_free_io_port;
++    }
++
++    dev_info(&client->dev, "I2C Addr is %x.\n", client->addr);
++
++    ret = hy46xx_request_input_dev(hy46xx_ts);
++
++    if(ret < 0) {
++        dev_err(&client->dev, "Failed request input device.\n");
++        goto exit_free_io_port;
++    }
++
++    ret = hy46xx_request_irq(hy46xx_ts);
++
++    if(ret < 0) {
++        dev_err(&client->dev, "Failed request irq.\n");
++        goto exit_unreg_input_dev;
++    }
++    register_resume_suspend(hy46xx_ts);
++
++    dev_info(&client->dev, "hy46xx probe complete.\n");
++    return 0;
++
++exit_unreg_input_dev:
++    input_unregister_device(hy46xx_ts->input_dev);
++
++exit_free_io_port:
++
++    if(gpio_is_valid(pdata->rst_gpio))
++        gpio_free(pdata->rst_gpio);
++
++    if(gpio_is_valid(pdata->irq_gpio))
++        gpio_free(pdata->irq_gpio);
++
++exit_free_client_data:
++    devm_kfree(&client->dev, hy46xx_ts);
++    i2c_set_clientdata(client, NULL);
++
++    return ret;
++}
++
++
++static int hy46xx_drv_remove(struct i2c_client *client)
++{
++    struct hy46xx_ts_data *ts = i2c_get_clientdata(client);
++
++    if(ts->client->irq)
++        free_irq(client->irq, ts);
++
++    if(gpio_is_valid(ts->pdata->rst_gpio))
++        gpio_free(ts->pdata->rst_gpio);
++
++    if(gpio_is_valid(ts->pdata->irq_gpio))
++        gpio_free(ts->pdata->irq_gpio);
++
++
++    i2c_set_clientdata(client, NULL);
++    input_unregister_device(ts->input_dev);
++
++    devm_kfree(&client->dev, ts->pdata);
++    devm_kfree(&client->dev, ts);
++
++    dev_info(&client->dev, "hy46xx ts driver removed");
++
++    return 0;
++}
++
++
++#ifdef CONFIG_OF
++static const struct of_device_id hy46xx_match_table[] = {
++    {.compatible = "hycon,hy46xx",},
++    { },
++};
++#endif
++
++static const struct i2c_device_id hy46xx_ts_id[] = {
++    {HY46XX_NAME, 0},
++    {}
++};
++
++MODULE_DEVICE_TABLE(i2c, hy46xx_ts_id);
++
++static struct i2c_driver hy46xx_ts_driver = {
++    .probe = hy46xx_ts_probe,
++    .remove = hy46xx_drv_remove,
++    .id_table = hy46xx_ts_id,
++#ifdef CONFIG_HAS_EARLYSUSPEND
++    .suspend = hy46xx_ts_suspend,
++    .resume = hy46xx_ts_resume,
++#endif
++    .driver = {
++        .name = HY46XX_NAME,
++        .owner = THIS_MODULE,
++#ifdef CONFIG_OF
++        .of_match_table = hy46xx_match_table,
++#endif
++    },
++};
++
++static int __init hy46xx_ts_init(void)
++{
++    s32 ret;
++
++    pr_info("hy46xx touchscreen driver installing....\n");
++    ret = i2c_add_driver(&hy46xx_ts_driver);
++
++    return ret;
++}
++
++static void __exit hy46xx_ts_exit(void)
++{
++    pr_info("hy46xx touchscreen driver exited.\n");
++    i2c_del_driver(&hy46xx_ts_driver);
++}
++
++module_init(hy46xx_ts_init);
++module_exit(hy46xx_ts_exit);
++
++MODULE_AUTHOR("shenhb");
++MODULE_DESCRIPTION("HYCON hy46xx TouchScreen driver");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/input/touchscreen/hy46xx_ts.h b/drivers/input/touchscreen/hy46xx_ts.h
+new file mode 100755
+index 000000000000..d5fe495a22cf
+--- /dev/null
++++ b/drivers/input/touchscreen/hy46xx_ts.h
+@@ -0,0 +1,147 @@
++/*
++ * HYCON HY46xx Touch Panel driver
++ *
++ * Copyright  (C)  2016 - 2018 Topband. Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be a reference
++ * to you, when you are integrating the Lontium's HY46xx IC into your system,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * Notes:
++ * 1. IIC address of HY46xx:
++ *   A) The I2C address of HY46xx is 0x70, and bit0 is the read-write mark bit.
++ *      If it is a Linux system, the I2C address of HY46xx is 0x38, and bit7 is 
++ *      the read and write flag bit.
++ * 2. The IIC rate should not exceed 100KHz. 
++ * 3. The front-end master control GPIO is required to reply to HY46xx. Before 
++ *    the register, the HY46xx is reset.
++ *    Use GPIO to lower HY46xx's reset foot 15ms, then pull up and maintain 500ms.
++ *
++ * Author: shenhaibo
++ * Version: 1.0.0
++ * Release Date: 2018/11/22
++ */
++
++#ifndef __LINUX_HY46XX_TS_H__
++#define __LINUX_HY46XX_TS_H__
++
++#include <linux/kernel.h>
++#include <linux/hrtimer.h>
++#include <linux/i2c.h>
++#include <linux/input.h>
++#include <linux/module.h>
++#include <linux/delay.h>
++#include <linux/i2c.h>
++#include <linux/proc_fs.h>
++#include <linux/string.h>
++#include <linux/uaccess.h>
++#include <linux/vmalloc.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/gpio.h>
++#include <linux/regulator/consumer.h>
++#include <linux/major.h>
++#include <linux/kdev_t.h>
++#ifdef CONFIG_OF
++#include <linux/of_gpio.h>
++#endif
++#ifdef CONFIG_FB
++#include <linux/notifier.h>
++#include <linux/fb.h>
++#endif
++#ifdef CONFIG_HAS_EARLYSUSPEND
++#include <linux/earlysuspend.h>
++#endif
++#include <linux/usb.h>
++#include <linux/power_supply.h>
++
++#define HY46XX_DEBUG 1
++
++/* -- dirver configure -- */
++#define CFG_MAX_TOUCH_POINTS    5
++
++#define PRESS_MAX   0xFF
++#define HY_PRESS    0x08
++
++#define HY46XX_NAME "hy46xx_ts"
++#define HY46XX_DRIVER_VERSION  "1.0.0"
++
++#define HY46XX_ADDR_LENGTH      1
++#define I2C_MAX_TRANSFER_SIZE   255
++#define RETRY_MAX_TIMES		    3
++
++#define ANDROID_INPUT_PROTOCOL_B
++
++#define HY46XX_SIZE_X           1280
++#define HY46XX_SIZE_Y           800
++#define HY46XX_RESET_PIN        3
++#define HY46XX_RESET_PIN_NAME   "hy46xx-reset"
++#define HY46XX_IRQ_PIN          4
++#define HY46XX_IRQ_PIN_NAME     "hy46xx-irq"
++#define HY46XX_DEFAULT_INT_TRIGGER	 2 /* 1 rising, 2 falling */
++
++#define HY_MAX_ID               0x0F
++#define HY_TOUCH_STEP           6
++#define HY_TOUCH_X_H_POS        3
++#define HY_TOUCH_X_L_POS        4
++#define HY_TOUCH_Y_H_POS        5
++#define HY_TOUCH_Y_L_POS        6
++#define HY_TOUCH_EVENT_POS      3
++#define HY_TOUCH_ID_POS         5
++
++#define POINT_READ_BUF  (3 + HY_TOUCH_STEP * CFG_MAX_TOUCH_POINTS)
++
++/*register address*/
++#define HY46XX_REG_FW_VER       0xA6
++#define HY46XX_REG_POINT_RATE   0x88
++#define HY46XX_REG_THGROUP      0x80
++
++#define HY46XX_SWAP(x, y) \
++do {\
++	typeof(x) z = x;\
++	x = y;\
++	y = z;\
++} while (0)
++
++struct ts_event {
++    u16 au16_x[CFG_MAX_TOUCH_POINTS];   /*x coordinate */
++    u16 au16_y[CFG_MAX_TOUCH_POINTS];   /*y coordinate */
++    u8 au8_touch_event[CFG_MAX_TOUCH_POINTS];   /*touch event:
++                    0 -- down; 1-- contact; 2 -- contact */
++    u8 au8_finger_id[CFG_MAX_TOUCH_POINTS]; /*touch ID */
++    u16 pressure;
++    u8 touch_point;
++};
++
++/* The platform data for the HYCON hy46xx touchscreen driver */
++struct hy46xx_platform_data {
++    u32 max_id;
++    u32 x_max;
++    u32 y_max;
++    u32 irqflags; /*default:IRQF_TRIGGER_FALLING*/
++    int irq_gpio;
++    int rst_gpio;
++    u32 swap_x2y;
++    u32 x_reverse;
++    u32 y_reverse;
++};
++
++struct hy46xx_ts_data {
++    struct i2c_client *client;
++    struct input_dev *input_dev;
++    struct ts_event event;
++    struct hy46xx_platform_data *pdata;
++    #if defined(CONFIG_FB)
++	struct notifier_block fb_notif;
++	#endif
++    bool system_suspend;
++};
++
++#endif
+-- 
+2.17.1
+
