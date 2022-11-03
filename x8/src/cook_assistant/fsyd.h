@@ -57,7 +57,7 @@ extern "C"
         PAN_FIRE_HIGH_TEMP = 2300,
         SHAKE_PERMIT_TEMP = 1100,
 #ifdef BOIL_ENABLE
-        BOIL_LOW_TEMP = 700,
+        BOIL_LOW_TEMP = 830,
         BOIL_HIGH_TEMP = 1050,
 #endif
     };
@@ -74,7 +74,7 @@ extern "C"
         SHAKE_EXIT_TICK = INPUT_DATA_HZ * 20,
         TEMP_CONTROL_LOCK_TICK = INPUT_DATA_HZ * 5,
 #ifdef BOIL_ENABLE
-        BOIL_START_TICK = INPUT_DATA_HZ * 20,
+        BOIL_START_TICK = INPUT_DATA_HZ * 30,
 #endif
     };
 
@@ -124,6 +124,7 @@ extern "C"
         unsigned short state_jump_diff;
 
 #ifdef BOIL_ENABLE
+        unsigned char boil_gengle_state;
         unsigned short boil_start_tick;
 #endif
         ring_buffer_t ring_buffer;
