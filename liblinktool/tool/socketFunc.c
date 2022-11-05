@@ -121,7 +121,8 @@ ssize_t Recv(int fd, void *ptr, size_t nbytes, int flag)
 again:
     if ((n = recv(fd, ptr, nbytes, flag)) == -1)
     {
-        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+        // printf("recv errno:%d\n", errno);
+        if (errno == EINTR)//errno == EAGAIN || errno == EWOULDBLOCK ||
             goto again;
         else
             return -1;
@@ -178,15 +179,15 @@ again:
 
 ssize_t Readn(int fd, void *vptr, size_t n)
 {
-    size_t nleft; //usigned int 剩余未读取的字节数
+    size_t nleft; // usigned int 剩余未读取的字节数
     char *ptr;
 
     ptr = (char *)vptr;
-    nleft = n; //n 未读取字节数
+    nleft = n; // n 未读取字节数
 
     while (nleft > 0)
     {
-        ssize_t nread = read(fd, ptr, nleft); //int 实际读到的字节数
+        ssize_t nread = read(fd, ptr, nleft); // int 实际读到的字节数
         if (nread < 0)
         {
             if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) //被中断，一个都没有读
@@ -200,7 +201,7 @@ ssize_t Readn(int fd, void *vptr, size_t n)
          fd 要读取的文件、vptr当前读指针位置、以及要读取的字节
          返回实际读取的字节
          */
-        nleft -= nread; //nleft = nleft - nread 还要读多少个字节
+        nleft -= nread; // nleft = nleft - nread 还要读多少个字节
         ptr += nread;   //已经写到的缓存位置
     }
     return n - nleft;

@@ -446,13 +446,6 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "PermitSteamStartStatus",
-            "valueType": 0,
-            "funType": 2,
-            "uartCmd": 248,
-            "uartByteLen": 1
-        },
-        {
             "cloudKey": "LCookbookName",
             "valueType": 2,
             "funType": 0,

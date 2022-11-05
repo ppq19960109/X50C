@@ -48,6 +48,7 @@ int tcpClientConnect2(int *fd, void *addr, int domain)
     {
         addrlen = sizeof(struct sockaddr_in);
     }
+
     if (Connect(cfd, addr, addrlen) != 0)
     {
         close(cfd);

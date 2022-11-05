@@ -27,6 +27,7 @@ typedef struct
     int isServer;
 } ThreadTcp;
 
+int thread2ManualHander(void *arg);
 int thread2ClientOpen(ThreadTcp *threadTcp);
 int thread2ClientClose(ThreadTcp *threadTcp);
 int thread2ClientSend(ThreadTcp *threadTcp, void *send, unsigned int len);

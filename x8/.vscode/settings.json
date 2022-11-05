@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "main.h": "c",
+        "un.h": "c",
+        "reboot.h": "c"
+    }
+}

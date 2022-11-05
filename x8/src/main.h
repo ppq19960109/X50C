@@ -20,7 +20,7 @@
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
-
+#include <sys/un.h>
 #include "zlog.h"
 
 #include "cJSON.h"

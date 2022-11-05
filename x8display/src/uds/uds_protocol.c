@@ -2,7 +2,7 @@
 
 #include "uds_protocol.h"
 #include "uds_tcp_server.h"
-#include "ecb_uart_parse_msg.h"
+#include "uds_parse_msg.h"
 
 static pthread_mutex_t mutex;
 
@@ -26,13 +26,13 @@ static int uds_recv_cb(char *data, unsigned int uart_read_len) // uds接受回�
         memcpy(&uart_read_buf[uart_read_buf_index], data, uart_read_len);
         uart_read_buf_index += uart_read_len;
         hdzlog_info(uart_read_buf, uart_read_buf_index);
-        uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
+        uart_parse_msg(uart_read_buf, &uart_read_buf_index, uds_uart_parse_msg);
     }
     else
     {
         uart_read_buf_index += uart_read_len;
         hdzlog_info(data, uart_read_buf_index);
-        uart_parse_msg((unsigned char *)data, &uart_read_buf_index, ecb_uart_parse_msg);
+        uart_parse_msg((unsigned char *)data, &uart_read_buf_index, uds_uart_parse_msg);
     }
     dzlog_warn("after uart_read_buf_index:%d", uart_read_buf_index);
     if (uart_read_buf_index > 0)

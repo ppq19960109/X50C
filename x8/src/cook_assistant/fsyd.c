@@ -1327,7 +1327,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     {
         // if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE)
         // {
-        unsigned char slow_rise = diff0 < -10 && diff0 > slow_rise_value;
+        unsigned char slow_rise = diff0 <= -10 && diff0 > slow_rise_value;
         slow_rise += diff1 <= 0;
         slow_rise += diff2 <= 0;
         // slow_rise += diff3 <= 0;

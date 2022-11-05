@@ -3,7 +3,7 @@
 #include "ice_uart.h"
 #include "ice_parse.h"
 #include "ecb_parse.h"
-#include "ecb_uart_parse_msg.h"
+#include "uds_parse_msg.h"
 #include "uds_protocol.h"
 
 ice_event_state_t g_ice_event_state;

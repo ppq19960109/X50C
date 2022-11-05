@@ -45,8 +45,47 @@ static void *threadHander(void *arg)
     } while (threadTcp->status && threadTcp->isServer == 0);
     threadTcp->status = 0;
     threadTcp->tid = 0;
+    // pthread_exit(0);
+    return NULL;
+}
 
-    pthread_exit(0);
+int thread2ManualHander(void *arg)
+{
+    int ret;
+    ThreadTcp *threadTcp = ((ThreadTcp *)arg);
+
+    if (threadTcp->fd < 0 && threadTcp->status && threadTcp->isServer == 0)
+    {
+        if (tcpClientConnect2(&threadTcp->fd, threadTcp->addr, threadTcp->domain) < 0)
+            return -1;
+        setNonBlock(threadTcp->fd);
+        if (threadTcp->connect_cb != NULL)
+            threadTcp->connect_cb();
+    }
+
+    if (threadTcp->status)
+    {
+        ret = Recv(threadTcp->fd, threadTcp->recv_buf, sizeof(threadTcp->recv_buf), 0);
+        if (ret < 0)
+        {
+            // printf("thread client Recv ret:%d,error:%d,%s\n", ret, errno, strerror(errno));
+        }
+        else if (ret == 0)
+        {
+            printf("thread client disconnect ret:%d,error:%d,%s\n", ret, errno, strerror(errno));
+            threadTcp->fd = -1;
+            if (threadTcp->disconnect_cb != NULL)
+                threadTcp->disconnect_cb();
+        }
+        else
+        {
+            threadTcp->recv_len = ret;
+            threadTcp->recv_buf[threadTcp->recv_len] = '\0';
+            if (threadTcp->recv_cb != NULL)
+                threadTcp->recv_cb(threadTcp->recv_buf, threadTcp->recv_len);
+        }
+    }
+    return 0;
 }
 
 int thread2ClientOpen(ThreadTcp *threadTcp)

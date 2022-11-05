@@ -94,9 +94,10 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         return -1;
     }
 
-    char *json = cJSON_PrintUnformatted(root);
-    dzlog_debug("recv from UI-------------------------- json:%s", json);
-    cJSON_free(json);
+    // char *json = cJSON_PrintUnformatted(root);
+    // dzlog_debug("recv from UI-------------------------- json:%s", json);
+    // cJSON_free(json);
+    dzlog_debug("recv from UI--------------------------:%.*s", value_len, value);
 
     cJSON *Type = cJSON_GetObjectItem(root, TYPE);
     if (Type == NULL)

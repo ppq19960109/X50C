@@ -2,7 +2,7 @@
 
 #include "ecb_parse.h"
 #include "ecb_uart.h"
-#include "ecb_uart_parse_msg.h"
+#include "uds_parse_msg.h"
 #include "ice_parse.h"
 
 static timer_t left_work_timer;
@@ -16,6 +16,8 @@ multistage_state_t right_multistage_state;
 
 static unsigned char left_door_state = 0;
 static unsigned char right_door_state = 0;
+static unsigned char water_tank_waterState = 0;
+static unsigned char water_tank_locationState = 0;
 static unsigned char hood_min_speed = 0;
 
 static unsigned char ecb_set_state[26];
@@ -382,7 +384,41 @@ int ecb_parse_event_uds(unsigned char cmd)
         }
     }
     if (index > 0)
-        ecb_uart_send_event_msg(event_buf, index);
+        uds_uart_send_event_msg(event_buf, index);
+    return 0;
+}
+
+static int auto_change_work_state(char dir, char work_state, char target_state)
+{
+    if (target_state)
+    {
+        if (work_state == WORK_STATE_PREHEAT)
+        {
+            work_state_operation(dir, WORK_STATE_PREHEAT_PAUSE);
+        }
+        else if (work_state == WORK_STATE_RUN)
+        {
+            work_state_operation(dir, WORK_STATE_PAUSE);
+        }
+    }
+    else
+    {
+        if (work_state == WORK_STATE_PREHEAT_PAUSE)
+        {
+            work_state_operation(dir, WORK_STATE_PREHEAT);
+        }
+        else if (work_state == WORK_STATE_PAUSE)
+        {
+            work_state_operation(dir, WORK_STATE_RUN);
+        }
+    }
+    return 0;
+}
+
+static int steaming_roast_judgment(char mode)
+{
+    if ((mode >= 3 && mode <= 8) || (mode >= 15 && mode <= 16))
+        return 1;
     return 0;
 }
 
@@ -391,28 +427,19 @@ static int door_state_control(char dir, char work_state, char pre_door_state, ch
     if (pre_door_state != current_door_state)
     {
         pre_door_state = current_door_state;
-        if (pre_door_state)
-        {
-            if (work_state == WORK_STATE_PREHEAT)
-            {
-                work_state_operation(dir, WORK_STATE_PREHEAT_PAUSE);
-            }
-            else if (work_state == WORK_STATE_RUN)
-            {
-                work_state_operation(dir, WORK_STATE_PAUSE);
-            }
-        }
-        else
-        {
-            if (work_state == WORK_STATE_PREHEAT_PAUSE)
-            {
-                work_state_operation(dir, WORK_STATE_PREHEAT);
-            }
-            else if (work_state == WORK_STATE_PAUSE)
-            {
-                work_state_operation(dir, WORK_STATE_RUN);
-            }
-        }
+        auto_change_work_state(dir, work_state, current_door_state);
+    }
+    return 0;
+}
+static int water_tank_state_control(char left_state, char left_mode, char right_state, char right_mode, char pre_state, char current_state)
+{
+    if (pre_state != current_state)
+    {
+        pre_state = current_state;
+        if (steaming_roast_judgment(left_mode) == 0)
+            auto_change_work_state(WORK_DIR_LEFT, left_state, current_state);
+        if (steaming_roast_judgment(right_mode) == 0)
+            auto_change_work_state(WORK_DIR_RIGHT, right_state, current_state);
     }
     return 0;
 }
@@ -421,7 +448,7 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
     unsigned char speed = 0;
     if (left_state == WORK_STATE_PREHEAT || left_state == WORK_STATE_RUN)
     {
-        if ((left_mode >= 3 && left_mode <= 8) || (left_mode >= 15 && left_mode <= 16))
+        if (steaming_roast_judgment(left_mode))
             speed = 2;
         else
             speed = 1;
@@ -436,7 +463,7 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
     {
         if (speed < 2)
         {
-            if ((right_mode >= 3 && right_mode <= 8) || (right_mode >= 15 && right_mode <= 16))
+            if (steaming_roast_judgment(right_mode))
                 speed = 2;
             else
                 speed = 1;
@@ -847,39 +874,16 @@ static int ecb_parse_event_cmd(unsigned char *data)
     else
         dzlog_warn("%s,------------------right_order_time_remaining:%x", __func__, right_order_time_remaining);
 
-    // unsigned char door_state = (data[8] >> 3) & 0x01;
-    // if (left_door_state != door_state)
-    // {
-    //     left_door_state = door_state;
-    //     if (left_door_state)
-    //     {
-    //         if (left_state == WORK_STATE_PREHEAT)
-    //         {
-    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT_PAUSE);
-    //         }
-    //         else if (left_state == WORK_STATE_RUN)
-    //         {
-    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_PAUSE);
-    //         }
-    //     }
-    //     else
-    //     {
-    //         if (left_state == WORK_STATE_PREHEAT_PAUSE)
-    //         {
-    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_PREHEAT);
-    //         }
-    //         else if (left_state == WORK_STATE_PAUSE)
-    //         {
-    //             work_state_operation(WORK_DIR_LEFT, WORK_STATE_RUN);
-    //         }
-    //     }
-    // }
-    // right_door_state = (data[8] >> 4) & 0x01;
     hood_min_speed_control(left_state, left_mode, right_state, right_mode);
-    unsigned char door_state = (data[8] >> 3) & 0x01;
-    door_state_control(WORK_DIR_LEFT, left_state, left_door_state, door_state);
-    door_state = (data[8] >> 4) & 0x01;
-    door_state_control(WORK_DIR_RIGHT, right_state, right_door_state, door_state);
+    state = (data[8] >> 3) & 0x01;
+    door_state_control(WORK_DIR_LEFT, left_state, left_door_state, state);
+    state = (data[8] >> 4) & 0x01;
+    door_state_control(WORK_DIR_RIGHT, right_state, right_door_state, state);
+
+    state = (data[8] >> 0) & 0x01;
+    water_tank_state_control(left_state, left_mode, right_state, right_mode, water_tank_locationState, state);
+    state = (data[8] >> 0) & 0x02;
+    water_tank_state_control(left_state, left_mode, right_state, right_mode, water_tank_waterState, state);
     return 0;
 }
 int ecb_parse_event_msg(unsigned char *data, unsigned int len)
