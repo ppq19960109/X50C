@@ -75,7 +75,11 @@ int get_link_connected_state(void)
 /* 日志回调函数, SDK的日志会从这里输出 */
 int32_t demo_state_logcb(int32_t code, char *message)
 {
-    printf("%d,%.*s", code, 2048, message);
+    if (STATE_MQTT_LOG_HEXDUMP != code && STATE_HTTP_LOG_RECV_CONTENT != code)
+    {
+        printf("%d,%.*s", code, 1024, message);
+        // printf("%s", message);
+    }
     return 0;
 }
 

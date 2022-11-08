@@ -1,4 +1,4 @@
-CROSS_COMPILE = arm-rockchip-linux-gnueabihf-
+CROSS_COMPILE = /home/ppq/x8sdk/RK3308/buildroot/output/rockchip_rk3308_32_debug/host/bin/arm-rockchip-linux-gnueabihf-
 CC = @echo "GCC $@"; $(CROSS_COMPILE)gcc
 CXX = @echo "G++ $@"; $(CROSS_COMPILE)g++
 RM = rm -rf
