@@ -226,7 +226,7 @@ int ice_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     unsigned char command = in[index + msg_index];
     msg_index += 1;
     int data_len = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    if (data_len > 1024)
+    if (data_len > 256)
     {
         *end = index + 1;
         dzlog_error("input data len error");
@@ -237,18 +237,9 @@ int ice_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     msg_index += data_len;
     if (index + msg_index + 2 + 2 > in_len)
     {
-        if (in[in_len - 1] == 0x6e && in[in_len - 2] == 0x6e)
-        {
-            *end = index + 1;
-            dzlog_error("input data len error2");
-            return ECB_UART_READ_LEN_ERR;
-        }
-        else
-        {
-            *end = index;
-            dzlog_error("input data len too small");
-            return ECB_UART_READ_LEN_SMALL;
-        }
+        *end = index;
+        dzlog_error("input data len too small");
+        return ECB_UART_READ_LEN_SMALL;
     }
     else if (in[index + msg_index + 2] != 0x6e || in[index + msg_index + 2 + 1] != 0x6e)
     {
