@@ -13,7 +13,7 @@
 #include "gesture_uart.h"
 #include "POSIXTimer.h"
 #include "quad_burn.h"
-
+#include "pangu_uart.h"
 static timer_t cook_name_timer;
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
@@ -663,6 +663,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
 int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
+    pangu_recv_set(root);
     unsigned char uart_buf[256];
     int uart_buf_len = 0;
 

@@ -131,6 +131,7 @@
         "rk_wifi.h": "c",
         "stdint.h": "c",
         "kv_linux.h": "c",
-        "ecb_uart.h": "c"
+        "ecb_uart.h": "c",
+        "quad_burn.h": "c"
     }
 }
