@@ -12,5 +12,5 @@ typedef struct
 void pangu_uart_init(void);
 void pangu_uart_deinit(void);
 int pangu_recv_set(void *data);
-
+int pangu_state_event(unsigned char cmd);
 #endif

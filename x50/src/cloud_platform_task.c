@@ -657,6 +657,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
         get_attr_report_value(resp, attr);
     }
     uds_report_reset();
+    pangu_state_event(1);
     return 0;
 }
 

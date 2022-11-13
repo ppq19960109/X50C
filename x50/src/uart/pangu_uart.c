@@ -12,6 +12,97 @@ static int fd = -1;
 static pthread_mutex_t lock;
 static struct Select_Client_Event select_client_event;
 
+static pangu_attr_t g_pangu_attr = {
+    {
+        key : "Weigh",
+        value_len : 2,
+    },
+    {
+        key : "WaterInletValve",
+        value_len : 1,
+    },
+    {
+        key : "Exhaust",
+        value_len : 1,
+    },
+    {
+        key : "IndicatorLight",
+        value_len : 1,
+    },
+    {
+        key : "PressurePot",
+        value_len : 1,
+    },
+    {
+        key : "PushRod",
+        value_len : 1,
+    },
+    {
+        key : "HeatDissipation",
+        value_len : 1,
+    },
+    {
+        key : "HeatingMethod",
+        value_len : 1,
+    },
+    {
+        key : "HeatingTemp",
+        value_len : 1,
+    },
+    {
+        key : "MotorDirection",
+        value_len : 1,
+    },
+    {
+        key : "MotorSpeed",
+        value_len : 2,
+    },
+    {
+        key : "PotLidLock",
+        value_len : 1,
+    },
+    {
+        key : "HeatingGear",
+        value_len : 1,
+    },
+};
+static int g_pangu_attr_len = sizeof(g_pangu_attr) / sizeof(g_pangu_attr[0]);
+static pangu_attr_t *get_pangu_attr(const char *key)
+{
+    for (int i = 0; i < g_pangu_attr_len; ++i)
+    {
+        if (strcmp(key, g_pangu_attr[i].key) == 0)
+        {
+            return &g_pangu_attr[i];
+        }
+    }
+    return NULL;
+}
+static int cal_value_int(const char *value, const char value_len)
+{
+    int num = 0;
+    for (int i = 0; i < value_len; ++i)
+    {
+        num = (num << 8) + value[i];
+    }
+    return num;
+}
+int pangu_state_event(unsigned char cmd)
+{
+    cJSON *resp = cJSON_CreateObject();
+    for (int i = 0; i < g_pangu_attr_len; ++i)
+    {
+        pangu_attr_t *attr = &g_pangu_attr[i];
+        if (0 < attr->change || cmd > 0)
+        {
+            cJSON_AddNumberToObject(resp, attr->key, cal_value_int(attr->value, attr->value_len));
+            attr->change = 0;
+        }
+    }
+    send_event_uds(resp, NULL);
+    return 0;
+}
+
 static unsigned short crc16_modbus(unsigned char *ptr, int len)
 {
     unsigned int i;
@@ -90,18 +181,88 @@ int pangu_send_msg(const unsigned char command, unsigned char *msg, const int ms
 }
 static int pangu_payload_parse(const unsigned char cmd, const unsigned char *payload, const int len)
 {
+    pangu_attr_t *attr;
+    unsigned short state;
     if (cmd == 0x10)
     {
+        state = (payload[0] << 8) + payload[1];
+        attr = get_pangu_attr("MotorDirection");
+        attr->value[0] = (state >> 14) & 0x01;
+        attr->change = 1;
+
+        state = payload[2];
+        attr = get_pangu_attr("PotLidLock");
+        attr->value[0] = (state >> 7) & 0x01;
+        attr->change = 1;
+        attr = get_pangu_attr("HeatingGear");
+        attr->value[0] = state & 0x7f;
+        attr->change = 1;
+
+        state = (payload[3] << 8) + payload[4];
+        attr = get_pangu_attr("MotorSpeed");
+        attr->value[0] = state >> 8;
+        attr->value[1] = state;
+        attr->change = 1;
+
+        state = payload[13];
+        attr = get_pangu_attr("HeatingTemp");
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[14];
+        attr = get_pangu_attr("HeatingMethod");
+        attr->value[0] = state;
+        attr->change = 1;
     }
     else if (cmd == 0x08)
     {
+        if (payload[0] != 0)
+            return -1;
+        unsigned short cmd_id = (payload[1] << 8) + payload[2];
     }
     else if (cmd == 0x0a)
     {
+        state = (payload[0] << 8) + payload[1];
+        attr = &g_pangu_attr[0];
+        attr->value[0] = state >> 8;
+        attr->value[1] = state;
+        attr->change = 1;
+
+        state = payload[2];
+        attr = &g_pangu_attr[1];
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[3];
+        attr = &g_pangu_attr[2];
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[4];
+        attr = &g_pangu_attr[3];
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[5];
+        attr = &g_pangu_attr[4];
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[6];
+        attr = &g_pangu_attr[5];
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[76];
+        attr = &g_pangu_attr[6];
+        attr->value[0] = state;
+        attr->change = 1;
     }
     else
     {
+        return -1;
     }
+    return 0;
 }
 static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
 {
@@ -197,13 +358,64 @@ static int pangu_recv_cb(void *arg)
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, pangu_uart_parse_msg);
         dzlog_warn("pangu uart_read_buf_index:%d", uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
+        pangu_state_event(0);
     }
     return 0;
 }
 
 int pangu_recv_set(void *data)
 {
+    static unsigned char uart_buf[256];
+    unsigned short uart_buf_len = 0;
+    uart_buf[uart_buf_len++] = 0x00;
+    uart_buf[uart_buf_len++] = 0x01;
+    uart_buf[uart_buf_len++] = 0xb2;
+    uart_buf[uart_buf_len++] = 0x07;
     cJSON *root = data;
+    if (cJSON_HasObjectItem(root, "HeatingMethod") && cJSON_HasObjectItem(root, "HeatingTemp"))
+    {
+        uart_buf[uart_buf_len++] = 0x04;
+        uart_buf[uart_buf_len++] = 0x01;
+        cJSON *item = cJSON_GetObjectItem(root, "HeatingMethod");
+        pangu_send_msg(0x73, uart_buf, uart_buf_len);
+    }
+    uart_buf_len = 4;
+    if (cJSON_HasObjectItem(root, "PotLidLock"))
+    {
+        uart_buf[uart_buf_len++] = 0x04;
+        uart_buf[uart_buf_len++] = 0x02;
+        pangu_send_msg(0x73, uart_buf, uart_buf_len);
+    }
+    uart_buf_len = 4;
+    if (cJSON_HasObjectItem(root, "HeatingGear") && cJSON_HasObjectItem(root, "HeatingTemp"))
+    {
+        uart_buf[uart_buf_len++] = 0x04;
+        uart_buf[uart_buf_len++] = 0x03;
+        pangu_send_msg(0x73, uart_buf, uart_buf_len);
+    }
+    if (cJSON_HasObjectItem(root, "HeatingTime"))
+    {
+
+    }
+    uart_buf_len = 7;
+    uart_buf[0] = 0;
+    pangu_attr_t *attr;
+    for (int i = 1; i < 7; ++i)
+    {
+        attr = &g_pangu_attr[i];
+        if (cJSON_HasObjectItem(root, attr->key))
+        {
+            cJSON *item = cJSON_GetObjectItem(root, attr->key));
+            uart_buf[i] = item->valueint;
+            uart_buf[0] |= 1 << (6 - i);
+        }
+        else
+        {
+            uart_buf[i] = 0;
+        }
+    }
+    if (uart_buf[0] > 0)
+        pangu_send_msg(0x1a, uart_buf, uart_buf_len);
     return 0;
 }
 void pangu_uart_deinit(void)
@@ -232,7 +444,6 @@ void pangu_uart_init(void)
     pthread_mutex_init(&lock, NULL);
 
     g_pangu_timer = POSIXTimerCreate(0, POSIXTimer_cb);
-    POSIXTimerSet(g_pangu_timer, 1 * 60 * 60, 60);
 
     select_client_event.fd = fd;
     select_client_event.read_cb = pangu_recv_cb;
