@@ -5,6 +5,7 @@
 #include "ecb_uart_parse_msg.h"
 #include "cloud_platform_task.h"
 #include "uds_protocol.h"
+#include "pangu_uart.h"
 
 static timer_t g_pangu_timer;
 
@@ -12,7 +13,7 @@ static int fd = -1;
 static pthread_mutex_t lock;
 static struct Select_Client_Event select_client_event;
 
-static pangu_attr_t g_pangu_attr = {
+static pangu_attr_t g_pangu_attr[] = {
     {
         key : "Weigh",
         value_len : 2,
@@ -103,7 +104,7 @@ int pangu_state_event(unsigned char cmd)
     return 0;
 }
 
-static unsigned short crc16_modbus(unsigned char *ptr, int len)
+static unsigned short crc16_modbus(const unsigned char *ptr, int len)
 {
     unsigned int i;
     unsigned short crc = 0xFFFF;
@@ -296,7 +297,7 @@ static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *
     unsigned short cmd_len;
     unsigned char cmd;
     unsigned char device_type;
-    unsigned char *payload;
+    const unsigned char *payload;
     unsigned short payload_len;
     unsigned short verify;
 
@@ -306,7 +307,7 @@ static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *
     cmd_index += 1;
     device_type = in[index + cmd_index];
     cmd_index += 1;
-    payload == in[index + cmd_index];
+    payload = &in[index + cmd_index];
     payload_len = cmd_len - 8;
     cmd_index += payload_len;
     if (index + cmd_index + 3 > in_len)
@@ -405,7 +406,7 @@ int pangu_recv_set(void *data)
         attr = &g_pangu_attr[i];
         if (cJSON_HasObjectItem(root, attr->key))
         {
-            cJSON *item = cJSON_GetObjectItem(root, attr->key));
+            cJSON *item = cJSON_GetObjectItem(root, attr->key);
             uart_buf[i] = item->valueint;
             uart_buf[0] |= 1 << (6 - i);
         }

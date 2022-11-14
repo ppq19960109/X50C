@@ -132,6 +132,7 @@
         "stdint.h": "c",
         "kv_linux.h": "c",
         "ecb_uart.h": "c",
-        "quad_burn.h": "c"
+        "quad_burn.h": "c",
+        "pangu_uart.h": "c"
     }
 }
