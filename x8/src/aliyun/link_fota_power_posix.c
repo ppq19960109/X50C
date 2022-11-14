@@ -386,5 +386,6 @@ int link_fota_power_query_firmware(void)
     {
         set_ota_power_state(OTA_NO_FIRMWARE, NULL);
     }
+    printf("%s res:%d\n", __func__, res);
     return res;
 }

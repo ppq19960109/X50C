@@ -118,6 +118,7 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         wifi_resp_get(Data, resp);
         cloud_resp_get(Data, resp);
         ota_resp_get(Data, resp);
+        ota_power_resp_get(Data, resp);
         device_resp_get(Data, resp);
     }
     else if (strcmp(TYPE_SET, Type->valuestring) == 0) //解析SET命令
@@ -125,6 +126,7 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         wifi_resp_set(Data, resp);
         cloud_resp_set(Data, resp);
         ota_resp_set(Data, resp);
+        ota_power_resp_set(Data, resp);
         device_resp_set(Data, resp);
     }
     else if (strcmp(TYPE_GETALL, Type->valuestring) == 0) //解析GETALL命令
@@ -132,6 +134,7 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         wifi_resp_getall(Data, resp);
         cloud_resp_getall(Data, resp);
         ota_resp_getall(Data, resp);
+        ota_power_resp_getall(Data, resp);
         device_resp_getall(Data, resp);
     }
     else //解析HEART命令
