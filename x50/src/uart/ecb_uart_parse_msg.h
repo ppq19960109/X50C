@@ -112,5 +112,5 @@ void send_error_to_cloud(int error_code);
 
 int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end);
 void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned char *, const int, int *));
-
+int ecb_uart_event_msg(unsigned char *msg, const int msg_len);
 #endif

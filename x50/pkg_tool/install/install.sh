@@ -20,6 +20,7 @@ cp -af root/* /
 #delete files
 rm -rf *
 rm -f /oem/marssenger/recipe.db
+# sed -i 's/reboot=false/reboot=true/' /userdata/.config/Marssenger/X50BCZ.conf
 sync
 echo "Successfully installed"
 

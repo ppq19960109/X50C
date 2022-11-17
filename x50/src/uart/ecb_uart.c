@@ -60,7 +60,7 @@ unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy)
 {
-    dzlog_warn("uart send to ecb--------------------------");
+    // dzlog_warn("uart send to ecb--------------------------");
     if (fd < 0)
     {
         dzlog_error("ecb_uart_send fd error\n");
@@ -70,7 +70,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, uns
     {
         return -1;
     }
-    hdzlog_info(in, in_len);
+    // hdzlog_info(in, in_len);
 
     int res = 0;
     if (pthread_mutex_lock(&lock) == 0)
@@ -154,6 +154,11 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     send_msg[index++] = crc16 & 0xff;
     send_msg[index++] = 0x6e;
     send_msg[index++] = 0x6e;
+    if (ECB_UART_COMMAND_ACK != command)
+    {
+        dzlog_warn("uart send to ecb--------------------------");
+        hdzlog_info(send_msg, ECB_MSG_MIN_LEN + msg_len);
+    }
     int res = ecb_uart_send(send_msg, ECB_MSG_MIN_LEN + msg_len, resend, 0);
     if (resend == 0)
     {
@@ -172,11 +177,11 @@ static int ecb_recv_cb(void *arg)
     if (uart_read_len > 0)
     {
         uart_read_buf_index += uart_read_len;
-        dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
-        hdzlog_info(uart_read_buf, uart_read_buf_index);
-        uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        // dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
+        uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
+        // dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        //  hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;
 }
