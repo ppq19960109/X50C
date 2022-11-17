@@ -181,7 +181,7 @@ static int ecb_recv_cb(void *arg)
         // hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
         // dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
-        //  hdzlog_info(uart_read_buf, uart_read_buf_index);
+        // hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
     return 0;
 }
