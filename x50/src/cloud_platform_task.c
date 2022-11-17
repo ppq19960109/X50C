@@ -559,6 +559,28 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                         get_attr_report_value(root, ptr);
                     }
                 }
+                else if (strcmp("LStOvSetTemp", (*attr).cloud_key) == 0 || strcmp("LStOvRealTemp", (*attr).cloud_key) == 0 || strcmp("LStOvSetTimerLeft", (*attr).cloud_key) == 0 || strcmp("RStOvSetTimerLeft", (*attr).cloud_key) == 0 || strcmp("LStOvOrderTimer", (*attr).cloud_key) == 0 || strcmp("LStOvOrderTimerLeft", (*attr).cloud_key) == 0 || strcmp("RStOvOrderTimer", (*attr).cloud_key) == 0 || strcmp("RStOvOrderTimerLeft", (*attr).cloud_key) == 0)
+                {
+                    static unsigned char powerState[6] = {0xe2, 0x00, 0x32, 0x00, 0x32, 0x01};
+                    unsigned short val = 0;
+                    for (int k = 0; k < attr->uart_byte_len; ++k)
+                    {
+                        val = (val << 8) + attr->value[k];
+                    }
+                    if (val == 0xe2)
+                    {
+                        unsigned char index = 2;
+                        cloud_attr_t *ptr = get_attr_ptr("HoodLight");
+                        if (ptr != NULL)
+                        {
+                            if (ptr->value[0] > 0)
+                            {
+                                index = 6;
+                            }
+                        }
+                        ecb_uart_event_msg(powerState, index);
+                    }
+                }
                 i += (*attr).uart_byte_len;
                 break;
             }
