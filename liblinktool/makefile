@@ -23,6 +23,7 @@ BASE64_PATH:=base64
 SIGNAL_PATH:=signal
 TIMER_PATH:=timer
 MD5_PATH:=md5
+BMP_PATH:=bmp
 
 CFLAGS += $(addprefix -I , $(SRC_DIRS))
 CFLAGS += $(addprefix -I , $(TCP_DIRS))
@@ -32,6 +33,7 @@ CFLAGS += -I$(BASE64_PATH)
 CFLAGS += -I$(SIGNAL_PATH)
 CFLAGS += -I$(TIMER_PATH)
 CFLAGS += -I$(MD5_PATH)
+CFLAGS += -I$(BMP_PATH)
 CFLAGS += -Wall
 ifdef DEBUG
 CFLAGS += -g -DDEBUG
@@ -60,6 +62,8 @@ SRC_TIMER := $(wildcard $(TIMER_PATH)/*.c)
 INC_TIMER := $(wildcard $(TIMER_PATH)/*.h)
 SRC_MD5 := $(wildcard $(MD5_PATH)/*.c)
 INC_MD5 := $(wildcard $(MD5_PATH)/*.h)
+SRC_BMP := $(wildcard $(BMP_PATH)/*.c)
+INC_BMP := $(wildcard $(BMP_PATH)/*.h)
 
 OBJ += $(SRC:%.c=%.o)
 OBJ += $(SRC_TCP:%.c=%.o)
@@ -68,6 +72,7 @@ OBJ += $(SRC_KLIB:%.c=%.o)
 OBJ += $(SRC_BASE64:%.c=%.o)
 OBJ += $(SRC_SIGNAL:%.c=%.o)
 OBJ += $(SRC_TIMER:%.c=%.o)
+OBJ += $(SRC_BMP:%.c=%.o)
 OBJ += $(SRC_MD5:%.c=%.o)
 
 %.o : %.c

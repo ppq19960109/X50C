@@ -401,7 +401,10 @@ int link_send_property_post(char *params)
         return -1;
     }
     if (g_connected == 0)
+    {
+        printf("%s,g_connected disconnect\n", __func__);
         return -1;
+    }
     printf("%s,%s\n", __func__, params);
     pthread_mutex_lock(&mutex);
     int ret = demo_send_property_post(g_dm_handle, params);
@@ -439,7 +442,10 @@ int link_send_event_post(char *event_id, char *params)
         return -1;
     }
     if (g_connected == 0)
+    {
+        printf("%s,g_connected disconnect\n", __func__);
         return -1;
+    }
     if (params == NULL)
     {
         params = "{}";
@@ -579,7 +585,6 @@ int link_model_start()
     // aiot_mqtt_setopt(mqtt_handle, AIOT_MQTTOPT_RECONN_INTERVAL_MS, (void *)&reconn_interval);
 
     void *ota_handle = link_fota_start(mqtt_handle);
-    link_fota_power_start(ota_handle);
     /* 创建DATA-MODEL实例 */
     dm_handle = aiot_dm_init();
     if (dm_handle == NULL)
@@ -603,7 +608,7 @@ int link_model_start()
             /* 尝试建立连接失败, 销毁MQTT实例, 回收资源 */
             // aiot_dm_deinit(&dm_handle);
             // aiot_mqtt_deinit(&mqtt_handle);
-            printf("aiot_mqtt_connect failed: -0x%04X\n\r\n", -res);
+            printf("aiot_mqtt_connect failed: -0x%04X\r\n", -res);
             printf("please check variables like mqtt_host, produt_key, device_name, device_secret in demo\r\n");
             // return -1;
             sleep(1);
@@ -643,7 +648,7 @@ int link_model_start()
     //     aiot_mqtt_deinit(&mqtt_handle);
     //     return -1;
     // }
-
+    link_fota_power_start(ota_handle);
     link_fota_report_version(cur_version);
 
     link_ntp_request();

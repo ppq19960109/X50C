@@ -1,4 +1,3 @@
-cd /oem && ./logoapp
 wpa_supplicant -B -i wlan0 -c /data/cfg/wpa_supplicant.conf
 #./wakeWordAgent -e gpio &
 
@@ -21,7 +20,8 @@ function check_upgrade() {
 check_upgrade userdata
 check_upgrade oem
 
-echo 4 > /sys/class/graphics/fb0/blank
-echo 0 > /sys/class/graphics/fb0/blank
+cd /oem && ./logoapp
+#echo 4 > /sys/class/graphics/fb0/blank
+echo 0 >/sys/class/graphics/fb0/blank
 export QT_LINUXFB_DRM_LOGO=/oem/logo.bmp
 sh /oem/marssenger/S100Marssenger start

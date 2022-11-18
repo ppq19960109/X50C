@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
     width = fb_var.xres;
     height = fb_var.yres;
     bpp = fb_var.bits_per_pixel;
-    printf("xres:%d,yres:%d,bits_per_pixel:%d,line_length:%d smem_len:%d\n", fb_var.xres, fb_var.yres, fb_var.bits_per_pixel, fb_fix.line_length,fb_fix.smem_len);
+    printf("xres:%d,yres:%d,bits_per_pixel:%d,line_length:%d smem_len:%d screen_size:%d\n", fb_var.xres, fb_var.yres, fb_var.bits_per_pixel, fb_fix.line_length, fb_fix.smem_len, screen_size);
     /* 将显示缓冲区映射到进程地址空间 */
     screen_base = mmap(NULL, fb_fix.smem_len, PROT_WRITE, MAP_SHARED, fd, 0);
     if (MAP_FAILED == screen_base)
