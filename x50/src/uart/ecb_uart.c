@@ -5,7 +5,7 @@
 #include "uart_resend.h"
 #include "uart_task.h"
 
-static unsigned short ecb_seq_id = 0;
+static unsigned short ecb_seq_id = 5;
 static int ecb_msg_get_count = 0;
 static struct Select_Client_Event select_client_event;
 
