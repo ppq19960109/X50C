@@ -877,13 +877,19 @@ static int ecb_parse_event_cmd(unsigned char *data)
     hood_min_speed_control(left_state, left_mode, right_state, right_mode);
     state = (data[8] >> 3) & 0x01;
     door_state_control(WORK_DIR_LEFT, left_state, left_door_state, state);
+    left_door_state = state;
     state = (data[8] >> 4) & 0x01;
     door_state_control(WORK_DIR_RIGHT, right_state, right_door_state, state);
+    right_door_state = state;
 
     state = (data[8] >> 0) & 0x01;
+    state = !state;
     water_tank_state_control(left_state, left_mode, right_state, right_mode, water_tank_locationState, state);
-    state = (data[8] >> 0) & 0x02;
+    water_tank_locationState = state;
+
+    state = (data[8] >> 2) & 0x01;
     water_tank_state_control(left_state, left_mode, right_state, right_mode, water_tank_waterState, state);
+    water_tank_waterState = state;
     return 0;
 }
 int ecb_parse_event_msg(unsigned char *data, unsigned int len)
