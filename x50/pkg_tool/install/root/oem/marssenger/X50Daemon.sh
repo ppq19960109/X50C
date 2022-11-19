@@ -15,8 +15,7 @@ function check() {
 }
 
 function check2() {
-  line=$(ps | grep $1 | grep -v "grep")
-  count=$(echo $line | wc -l)
+  count=$(ps | grep $1 | grep -v "grep" | wc -l)
   # echo $count
   if [ 1 != $count ]; then
     killall -9 $1
@@ -31,8 +30,7 @@ function check2() {
   #   echo "time no arrive"
   #   return 1
   # fi
-
-  size=$(echo $line | awk '{print $3}')
+  size=$(ps | grep $1 | grep -v "grep" | awk '{print $3}')
   echo "mem:$size"
 
   case $size in
