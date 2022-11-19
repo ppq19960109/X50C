@@ -11,6 +11,12 @@
 #define ETH_NAME "wlan0"
 #define SOFTER_VER "0.0.4"
 
+enum OTA_PUSH_TYPE
+{
+    OTA_PUSH_TYPE_SILENT = 0x00,
+    OTA_PUSH_TYPE_CONFIRM,
+};
+
 enum LINK_VALUE_TYPE
 {
     LINK_VALUE_TYPE_NUM = 0x00,

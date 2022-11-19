@@ -120,6 +120,15 @@ static int ota_state_event(const int state, void *arg)
         strcpy(g_ota_set_attr[3].value.p, arg);
         cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
     }
+    else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state || OTA_INSTALL_SUCCESS == state)
+    {
+        set_OtaCmdPushType(0);
+    }
+    if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+    {
+        cJSON_Delete(root);
+        return -1;
+    }
     set_attr_report_uds(root, &g_ota_set_attr[0]);
 
     return send_event_uds(root, NULL);
@@ -128,6 +137,8 @@ static int ota_state_event(const int state, void *arg)
 static void ota_progress_cb(const int precent)
 {
     dzlog_info("ota_progress_cb:%d", precent);
+    if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+        return;
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, g_ota_set_attr[2].cloud_key, precent);
 
