@@ -336,6 +336,7 @@ static void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, vo
         {
             link_fota_download_firmware();
         }
+        query_firmware_flag = 0;
         break;
     }
 

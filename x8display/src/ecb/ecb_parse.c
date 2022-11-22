@@ -461,13 +461,11 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
     }
     if (right_state == WORK_STATE_PREHEAT || right_state == WORK_STATE_RUN)
     {
-        if (speed < 2)
-        {
-            if (steaming_roast_judgment(right_mode))
-                speed = 2;
-            else
-                speed = 1;
-        }
+        speed = 3;
+        // if (steaming_roast_judgment(right_mode))
+        //     speed = 2;
+        // else
+        //     speed = 1;
         ecb_set_state[8] |= 1 << 3;
     }
     else
@@ -480,10 +478,6 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
     }
     if (g_ice_event_state.iceStOvState == REPORT_WORK_STATE_PREHEAT || g_ice_event_state.iceStOvState == REPORT_WORK_STATE_RUN)
     {
-        if (speed < 1)
-        {
-            speed = 1;
-        }
         ecb_set_state[8] |= 1 << 3;
     }
     if (hood_min_speed != speed)
@@ -497,6 +491,17 @@ static int hood_min_speed_control(char left_state, char left_mode, char right_st
         ecb_attr->change = 1;
     }
     dzlog_warn("%s,hood_min_speed:%d,speed:%d", __func__, hood_min_speed, speed);
+    return 0;
+}
+static int steaming_runing_judgment(char work_state, char work_mode)
+{
+    if (work_state == WORK_STATE_PREHEAT || work_state == WORK_STATE_RUN)
+    {
+        if (steaming_roast_judgment(work_mode) == 0)
+        {
+            return 1;
+        }
+    }
     return 0;
 }
 static int ecb_parse_event_cmd(unsigned char *data)
@@ -527,96 +532,6 @@ static int ecb_parse_event_cmd(unsigned char *data)
     if (*ecb_attr->value != state)
     {
         *ecb_attr->value = state;
-        ecb_attr->change = 1;
-    }
-
-    ecb_attr = get_event_state(EVENT_ErrorCode);
-    if (ecb_attr->value[2] != data[6] || ecb_attr->value[3] != data[5])
-    {
-        ecb_attr->value[2] = data[6];
-        ecb_attr->value[3] = data[5];
-        ecb_attr->change = 1;
-    }
-    unsigned short error = (data[6] << 8) + data[5];
-    unsigned char error_show = 0;
-    unsigned char input_state = data[8];
-
-    if (error & (1 << 9))
-    {
-        error_show = 7;
-    }
-    else if (error & (1 << 10))
-    {
-        error_show = 8;
-    }
-    else if (error & (1 << 11))
-    {
-        error_show = 9;
-    }
-    else if (error & (1 << 8))
-    {
-        error_show = 6;
-    }
-    else if (error & (1 << 0))
-    {
-        error_show = 5;
-    }
-    else if (error & (1 << 1))
-    {
-        error_show = 5;
-    }
-    else if (error & (1 << 2))
-    {
-        error_show = 4;
-    }
-    else if (error & (1 << 3))
-    {
-        error_show = 1;
-    }
-    else if (error & (1 << 4))
-    {
-        error_show = 14;
-    }
-    else if (error & (1 << 5))
-    {
-        error_show = 14;
-    }
-    else if (error & (1 << 6))
-    {
-        error_show = 13;
-    }
-    else if (error & (1 << 7))
-    {
-        error_show = 12;
-    }
-    else if ((input_state & (1 << 0)) == 0)
-    {
-        error_show = 2;
-    }
-    else if (input_state & (1 << 2))
-    {
-        error_show = 3;
-    }
-
-    ecb_attr = get_event_state(EVENT_ErrorCodeShow);
-    if (ecb_attr->value[0] != error_show)
-    {
-        ecb_attr->value[0] = error_show;
-        ecb_attr->change = 1;
-    }
-
-    state = input_state & (1 << 3);
-    ecb_attr = get_event_state(EVENT_LStOvDoorState);
-    if (ecb_attr->value[0] != state)
-    {
-        ecb_attr->value[0] = state;
-        ecb_attr->change = 1;
-    }
-    state = input_state & (1 << 4);
-    ecb_attr = get_event_state(EVENT_RStOvDoorState);
-    if (ecb_attr->value[0] != state)
-    {
-        ecb_attr->value[0] = state;
         ecb_attr->change = 1;
     }
 
@@ -874,20 +789,111 @@ static int ecb_parse_event_cmd(unsigned char *data)
     else
         dzlog_warn("%s,------------------right_order_time_remaining:%x", __func__, right_order_time_remaining);
 
+    ecb_attr = get_event_state(EVENT_ErrorCode);
+    if (ecb_attr->value[2] != data[6] || ecb_attr->value[3] != data[5])
+    {
+        ecb_attr->value[2] = data[6];
+        ecb_attr->value[3] = data[5];
+        ecb_attr->change = 1;
+    }
+    unsigned short error = (data[6] << 8) + data[5];
+    unsigned char error_show = 0;
+    unsigned char input_state = data[8];
+
+    if (error & (1 << 9))
+    {
+        error_show = 7;
+    }
+    else if (error & (1 << 10))
+    {
+        error_show = 8;
+    }
+    else if (error & (1 << 11))
+    {
+        error_show = 9;
+    }
+    else if (error & (1 << 8))
+    {
+        error_show = 6;
+    }
+    else if (error & (1 << 0))
+    {
+        error_show = 5;
+    }
+    else if (error & (1 << 1))
+    {
+        error_show = 5;
+    }
+    else if (error & (1 << 2))
+    {
+        error_show = 4;
+    }
+    else if (error & (1 << 3))
+    {
+        error_show = 1;
+    }
+    else if (error & (1 << 4))
+    {
+        error_show = 14;
+    }
+    else if (error & (1 << 5))
+    {
+        error_show = 14;
+    }
+    else if (error & (1 << 6))
+    {
+        error_show = 13;
+    }
+    else if (error & (1 << 7))
+    {
+        error_show = 12;
+    }
+    else if ((input_state & (1 << 0)) == 0)
+    {
+        if (steaming_runing_judgment(left_state, left_mode) || steaming_runing_judgment(right_state, right_mode))
+            error_show = 2;
+    }
+    else if (input_state & (1 << 2))
+    {
+        if (steaming_runing_judgment(left_state, left_mode) || steaming_runing_judgment(right_state, right_mode))
+            error_show = 3;
+    }
+
+    ecb_attr = get_event_state(EVENT_ErrorCodeShow);
+    if (ecb_attr->value[0] != error_show)
+    {
+        ecb_attr->value[0] = error_show;
+        ecb_attr->change = 1;
+    }
+    //----------------------
     hood_min_speed_control(left_state, left_mode, right_state, right_mode);
-    state = (data[8] >> 3) & 0x01;
+    //----------------------
+    state = (input_state >> 3) & 0x01;
+    ecb_attr = get_event_state(EVENT_LStOvDoorState);
+    if (ecb_attr->value[0] != state)
+    {
+        ecb_attr->value[0] = state;
+        ecb_attr->change = 1;
+    }
     door_state_control(WORK_DIR_LEFT, left_state, left_door_state, state);
     left_door_state = state;
-    state = (data[8] >> 4) & 0x01;
+    //----------------------
+    state = (input_state >> 4) & 0x01;
+    ecb_attr = get_event_state(EVENT_RStOvDoorState);
+    if (ecb_attr->value[0] != state)
+    {
+        ecb_attr->value[0] = state;
+        ecb_attr->change = 1;
+    }
     door_state_control(WORK_DIR_RIGHT, right_state, right_door_state, state);
     right_door_state = state;
-
-    state = (data[8] >> 0) & 0x01;
+    //----------------------
+    state = (input_state >> 0) & 0x01;
     state = !state;
     water_tank_state_control(left_state, left_mode, right_state, right_mode, water_tank_locationState, state);
     water_tank_locationState = state;
 
-    state = (data[8] >> 2) & 0x01;
+    state = (input_state >> 2) & 0x01;
     water_tank_state_control(left_state, left_mode, right_state, right_mode, water_tank_waterState, state);
     water_tank_waterState = state;
     return 0;

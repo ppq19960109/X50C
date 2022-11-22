@@ -158,6 +158,7 @@ signed char get_OtaCmdPushType(void)
 }
 signed char set_OtaCmdPushType(char type)
 {
+    dzlog_warn("%s,type:%d", __func__, type);
     cloud_attr_t *attr = get_attr_ptr("OtaCmdPushType");
     if (attr == NULL)
     {

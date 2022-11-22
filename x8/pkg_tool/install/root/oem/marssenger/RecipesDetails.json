@@ -1,5 +1,6 @@
 {
     "RecipesVersion": "1.0",
+    "marsUrl": "http://mcook.marssenger.com",
     "recipes": [
         {
             "imgUrl": "recipes/蒜蓉粉丝娃娃菜",

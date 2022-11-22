@@ -332,6 +332,7 @@ void ota_power_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *us
         {
             link_fota_power_download_firmware();
         }
+        query_firmware_flag = 0;
         break;
     }
 

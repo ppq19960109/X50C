@@ -33,6 +33,7 @@ static void *OTARquest_cb(void *ptr, void *arg)
     }
     else
     {
+        set_OtaCmdPushType(1);
         link_fota_power_download_firmware();
     }
     return NULL;
@@ -115,19 +116,28 @@ static int ota_state_event(const int state, void *arg)
 {
     dzlog_info("ota_state_event:%d", state);
     cJSON *root = cJSON_CreateObject();
-    if (OTA_NEW_FIRMWARE == state)
-    {
-        strcpy(g_ota_set_attr[3].value.p, arg);
-        cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
-    }
-    else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state || OTA_INSTALL_SUCCESS == state)
+
+    if (OTA_NO_FIRMWARE == state)
     {
         set_OtaCmdPushType(0);
     }
-    if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+    else
     {
-        cJSON_Delete(root);
-        return -1;
+        if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+        {
+            cJSON_Delete(root);
+            return -1;
+        }
+        if (OTA_NEW_FIRMWARE == state)
+        {
+            strcpy(g_ota_set_attr[3].value.p, arg);
+            cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
+            set_OtaCmdPushType(0);
+        }
+        else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state || OTA_INSTALL_SUCCESS == state)
+        {
+            set_OtaCmdPushType(0);
+        }
     }
     set_attr_report_uds(root, &g_ota_set_attr[0]);
 

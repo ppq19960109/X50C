@@ -9,6 +9,16 @@
 #include "link_solo.h"
 #include "ecb_uart_parse_msg.h"
 
+static void ota_OTASlientUpgrade_set(void)
+{
+    unsigned char buf[4];
+    int len = 0;
+    buf[len++] = 0xf9;
+    buf[len++] = 0x01;
+    buf[len++] = 0x05;
+    ecb_uart_send_ota_msg(buf, len, 0);
+}
+
 static void *OTAState_cb(void *ptr, void *arg)
 {
     cJSON *item = cJSON_CreateNumber(get_ota_state());
@@ -20,13 +30,13 @@ static void *OTARquest_cb(void *ptr, void *arg)
     if (NULL == arg)
         return NULL;
     cJSON *item = (cJSON *)arg;
+    set_OtaCmdPushType(1);
     if (item->valueint == 0)
     {
         link_fota_query_firmware();
     }
     else
     {
-        set_OtaCmdPushType(1);
         link_fota_download_firmware();
     }
     return NULL;
@@ -43,7 +53,15 @@ static void *OTANewVersion_cb(void *ptr, void *arg)
     cJSON *item = cJSON_CreateString(attr->value.p);
     return item;
 }
-
+static void *OTASlientUpgrade_cb(void *ptr, void *arg)
+{
+    cJSON *item = (cJSON *)arg;
+    if (item->valueint > 0)
+    {
+        ota_OTASlientUpgrade_set();
+    }
+    return NULL;
+}
 static set_attr_t g_ota_set_attr[] = {
     {
         cloud_key : "OTAState",
@@ -67,13 +85,17 @@ static set_attr_t g_ota_set_attr[] = {
         cb : OTANewVersion_cb,
         value : {p : NewVersion}
     },
+    {
+        cloud_key : "OTASlientUpgrade",
+        fun_type : LINK_FUN_TYPE_ATTR_CTRL,
+        cb : OTASlientUpgrade_cb
+    },
 };
 static const int attr_len = sizeof(g_ota_set_attr) / sizeof(g_ota_set_attr[0]);
 static set_attr_t *attr = g_ota_set_attr;
 
 int ota_resp_get(cJSON *root, cJSON *resp)
 {
-
     for (int i = 0; i < attr_len; ++i)
     {
         if (cJSON_HasObjectItem(root, attr[i].cloud_key))
@@ -109,19 +131,27 @@ static int ota_state_event(const int state, void *arg)
 {
     dzlog_info("ota_state_event:%d", state);
     cJSON *root = cJSON_CreateObject();
-    if (OTA_NEW_FIRMWARE == state)
+
+    if (OTA_NO_FIRMWARE == state)
     {
-        strcpy(g_ota_set_attr[3].value.p, arg);
-        cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
     }
-    else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state)
+    else
     {
-        set_OtaCmdPushType(0);
-    }
-    if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
-    {
-        cJSON_Delete(root);
-        return -1;
+        if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+        {
+            cJSON_Delete(root);
+            return -1;
+        }
+        if (OTA_NEW_FIRMWARE == state)
+        {
+            strcpy(g_ota_set_attr[3].value.p, arg);
+            cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
+            set_OtaCmdPushType(0);
+        }
+        else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state)
+        {
+            set_OtaCmdPushType(0);
+        }
     }
     set_attr_report_uds(root, &g_ota_set_attr[0]);
 
@@ -145,7 +175,7 @@ static void POSIXTimer_cb(union sigval val)
 }
 static int ota_query_timer_start_cb(void)
 {
-    POSIXTimerSet(g_ota_timer, 0, 12);
+    POSIXTimerSet(g_ota_timer, 0, 11);
     return 0;
 }
 static int ota_query_timer_stop_cb(void)
@@ -171,17 +201,13 @@ fail:
     system(cmd);
     return ret;
 }
+
 static void ota_complete_cb(void)
 {
     sync();
     if (get_OtaCmdPushType() == OTA_PUSH_TYPE_CONFIRM)
     {
-        unsigned char buf[4];
-        int len = 0;
-        buf[len++] = 0xf9;
-        buf[len++] = 0x01;
-        buf[len++] = 0x05;
-        ecb_uart_send_ota_msg(buf, len, 0);
+        ota_OTASlientUpgrade_set();
         reboot(RB_AUTOBOOT);
     }
     else
