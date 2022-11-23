@@ -42,6 +42,7 @@ static pangu_attr_t g_pangu_attr[] = {
         key : "HeatDissipation",
         value_len : 1,
     },
+    //--------------------------------
     {
         key : "HeatingMethod",
         value_len : 1,
@@ -51,19 +52,15 @@ static pangu_attr_t g_pangu_attr[] = {
         value_len : 1,
     },
     {
-        key : "MotorDirection",
+        key : "MotorDir",
         value_len : 1,
     },
     {
         key : "MotorSpeed",
-        value_len : 2,
-    },
-    {
-        key : "PotLidLock",
         value_len : 1,
     },
     {
-        key : "HeatingGear",
+        key : "PotLidLock",
         value_len : 1,
     },
 };

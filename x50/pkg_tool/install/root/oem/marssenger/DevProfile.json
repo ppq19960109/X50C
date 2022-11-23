@@ -271,55 +271,6 @@
             "uartByteLen": 1
         },
         {
-            "cloudKey": "RStOvState",
-            "valueType": 0,
-            "funType": 1,
-            "uartCmd": 82,
-            "uartByteLen": 1
-        },
-        {
-            "cloudKey": "RStOvSetTemp",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 83,
-            "uartByteLen": 2
-        },
-        {
-            "cloudKey": "RStOvRealTemp",
-            "valueType": 0,
-            "funType": 1,
-            "uartCmd": 84,
-            "uartByteLen": 2
-        },
-        {
-            "cloudKey": "RStOvSetTimer",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 85,
-            "uartByteLen": 2
-        },
-        {
-            "cloudKey": "RStOvSetTimerLeft",
-            "valueType": 0,
-            "funType": 1,
-            "uartCmd": 86,
-            "uartByteLen": 2
-        },
-        {
-            "cloudKey": "RStOvOrderTimer",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 87,
-            "uartByteLen": 2
-        },
-        {
-            "cloudKey": "RStOvOrderTimerLeft",
-            "valueType": 0,
-            "funType": 1,
-            "uartCmd": 88,
-            "uartByteLen": 2
-        },
-        {
             "cloudKey": "RStOvDoorState",
             "valueType": 0,
             "funType": 1,
@@ -331,20 +282,6 @@
             "valueType": 0,
             "funType": 1,
             "uartCmd": 90,
-            "uartByteLen": 1
-        },
-        {
-            "cloudKey": "RStOvMode",
-            "valueType": 0,
-            "funType": 0,
-            "uartCmd": 91,
-            "uartByteLen": 1
-        },
-        {
-            "cloudKey": "RStOvOperation",
-            "valueType": 0,
-            "funType": 2,
-            "uartCmd": 81,
             "uartByteLen": 1
         },
         {
