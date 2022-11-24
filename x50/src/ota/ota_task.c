@@ -113,8 +113,7 @@ static int ota_state_event(const int state, void *arg)
         strcpy(g_ota_set_attr[3].value.p, arg);
         cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
     }
-    set_attr_report_uds(root, &g_ota_set_attr[0]);
-
+    cJSON_AddNumberToObject(root, g_ota_set_attr[0].cloud_key, state);
     return send_event_uds(root, NULL);
 }
 
