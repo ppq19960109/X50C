@@ -112,8 +112,13 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
      *
      *       详情可见 https://help.aliyun.com/document_detail/85700.html
      */
-    fwrite(packet->data.buffer, packet->data.len, 1, ota_fp);
-
+    if (ota_fp != NULL)
+        fwrite(packet->data.buffer, packet->data.len, 1, ota_fp);
+    else
+    {
+        aiot_download_report_progress(handle, AIOT_OTAERR_FETCH_FAILED);
+        return;
+    }
     /* percent 入参的值为 100 时, 说明SDK已经下载固件内容全部完成 */
     if (percent == 100)
     {
@@ -176,7 +181,7 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
 void *demo_ota_download_thread(void *dl_handle)
 {
     int32_t ret = 0;
-
+    set_ota_state(OTA_DOWNLOAD_START, NULL);
     printf("starting download thread in 2 seconds ......\r\n");
     sleep(2);
 
@@ -193,7 +198,6 @@ void *demo_ota_download_thread(void *dl_handle)
      *
      */
 
-    set_ota_state(OTA_DOWNLOAD_START, NULL);
     download_fail_count = 0;
     ota_fp = fopen(OTA_FILE, "w+");
 
@@ -219,7 +223,7 @@ void *demo_ota_download_thread(void *dl_handle)
         if (ret <= STATE_SUCCESS)
         {
             printf("download failed, error code is %d, try to send renewal request :%d\r\n", ret, download_fail_count);
-            if (++download_fail_count >= 5)
+            if (++download_fail_count >= 4)
             {
                 aiot_download_report_progress(dl_handle, AIOT_OTAERR_FETCH_FAILED);
                 break;
@@ -243,15 +247,13 @@ void *demo_ota_download_thread(void *dl_handle)
     {
         set_ota_state(OTA_DOWNLOAD_FAIL, NULL);
     }
-    else
-    {
-        set_ota_state(OTA_IDLE, NULL);
-    }
     return NULL;
 }
 
 int link_download_firmware(void)
 {
+    if (g_ota_state == OTA_DOWNLOAD_START)
+        return 0;
     int res = 0;
     /* 启动专用的下载线程, 去完成固件内容的下载 */
     res = pthread_create(&g_download_thread, NULL, demo_ota_download_thread, g_dl_handle);
@@ -280,8 +282,6 @@ void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *use
         {
             break;
         }
-        if (ota_timer_stop_cb)
-            ota_timer_stop_cb();
         printf("OTA target firmware version: %s, size: %u Bytes \r\n", ota_msg->task_desc->version,
                ota_msg->task_desc->size_total);
         if (NULL != ota_msg->task_desc->extra_data)
@@ -292,6 +292,14 @@ void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *use
         {
             printf("module: %s\r\n", ota_msg->task_desc->module);
         }
+        if (g_ota_state == OTA_DOWNLOAD_START)
+        {
+            printf("OTA Upgrading ota_state:%d\r\n", g_ota_state);
+            query_firmware_flag = 0;
+            break;
+        }
+        if (ota_timer_stop_cb)
+            ota_timer_stop_cb();
         set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;
@@ -329,6 +337,7 @@ void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *use
         {
             link_download_firmware();
         }
+        query_firmware_flag = 0;
         break;
     }
 
