@@ -253,6 +253,8 @@ static void *demo_ota_download_thread(void *dl_handle)
 
 int link_fota_power_download_firmware(void)
 {
+    if (g_ota_state == OTA_DOWNLOAD_START)
+        return 0;
     int res = 0;
     /* 启动专用的下载线程, 去完成固件内容的下载 */
     res = pthread_create(&g_download_thread, NULL, demo_ota_download_thread, g_dl_handle);
@@ -277,14 +279,10 @@ void ota_power_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *us
     {
     case AIOT_OTARECV_FOTA:
     {
-        if (g_ota_state == OTA_INSTALL_SUCCESS && query_firmware_flag == 0)
-            break;
         if (NULL == ota_msg->task_desc || ota_msg->task_desc->protocol_type != AIOT_OTA_PROTOCOL_HTTPS)
         {
             break;
         }
-        if (ota_timer_stop_cb)
-            ota_timer_stop_cb();
         printf("power OTA target firmware version: %s, size: %u Bytes \r\n", ota_msg->task_desc->version,
                ota_msg->task_desc->size_total);
         if (NULL != ota_msg->task_desc->extra_data)
@@ -295,6 +293,14 @@ void ota_power_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *us
         {
             printf("power module: %s\r\n", ota_msg->task_desc->module);
         }
+        if (g_ota_state == OTA_DOWNLOAD_START || g_ota_state == OTA_INSTALL_SUCCESS)
+        {
+            printf("OTA Upgrading ota_state:%d\r\n", g_ota_state);
+            query_firmware_flag = 0;
+            break;
+        }
+        if (ota_timer_stop_cb)
+            ota_timer_stop_cb();
         set_ota_power_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;
@@ -374,6 +380,9 @@ int link_fota_power_report_version(char *cur_version)
 
 int link_fota_power_query_firmware(void)
 {
+    if (g_ota_state == OTA_DOWNLOAD_START)
+        return 0;
+
     set_ota_power_state(OTA_IDLE, NULL);
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "power");
     int res = aiot_ota_query_firmware(ota_handle);

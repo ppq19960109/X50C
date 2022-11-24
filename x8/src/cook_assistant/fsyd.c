@@ -290,6 +290,8 @@ void recv_ecb_gear(unsigned char gear, unsigned char gear_change_state)
             {
                 if (hood_gear_cb != NULL)
                     hood_gear_cb(-1);
+                if (cook_assist_remind_cb != NULL)
+                    cook_assist_remind_cb(2);
             }
         }
     }

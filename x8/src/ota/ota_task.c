@@ -153,8 +153,7 @@ static int ota_state_event(const int state, void *arg)
             set_OtaCmdPushType(0);
         }
     }
-    set_attr_report_uds(root, &g_ota_set_attr[0]);
-
+    cJSON_AddNumberToObject(root, g_ota_set_attr[0].cloud_key, state);
     return send_event_uds(root, NULL);
 }
 
