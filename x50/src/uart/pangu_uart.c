@@ -8,10 +8,12 @@
 #include "pangu_uart.h"
 
 static timer_t g_pangu_timer;
+static int g_time;
 
 static int fd = -1;
 static pthread_mutex_t lock;
 static struct Select_Client_Event select_client_event;
+static pangu_cook_t pangu_cook;
 
 static pangu_attr_t g_pangu_attr[] = {
     {
@@ -62,6 +64,19 @@ static pangu_attr_t g_pangu_attr[] = {
     {
         key : "PotLidLock",
         value_len : 1,
+    },
+    //----------------------
+    {
+        key : "RStOvMode",
+        value_len : 1,
+    },
+    {
+        key : "RStOvSetTimerLeft",
+        value_len : 2,
+    },
+    {
+        key : "RStOvOrderTimerLeft",
+        value_len : 2,
     },
 };
 static int g_pangu_attr_len = sizeof(g_pangu_attr) / sizeof(g_pangu_attr[0]);
@@ -333,14 +348,6 @@ static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *
     return ECB_UART_READ_VALID;
 }
 
-static void POSIXTimer_cb(union sigval val)
-{
-    dzlog_warn("%s sival_int:%d", __func__, val.sival_int);
-    if (val.sival_int == 0)
-    {
-    }
-}
-
 static int pangu_recv_cb(void *arg)
 {
     static unsigned char uart_read_buf[256];
@@ -360,66 +367,208 @@ static int pangu_recv_cb(void *arg)
     }
     return 0;
 }
-
-int pangu_recv_set(void *data)
+void pangu_transfer_set(char WaterInletValve, char Exhaust, char IndicatorLight, char PressurePot, char PushRod, char HeatDissipation)
 {
-    static unsigned char uart_buf[256];
-    unsigned short uart_buf_len = 0;
-    uart_buf[uart_buf_len++] = 0x00;
-    uart_buf[uart_buf_len++] = 0x01;
-    uart_buf[uart_buf_len++] = 0xb2;
-    uart_buf[uart_buf_len++] = 0x07;
-    cJSON *root = data;
-    if (cJSON_HasObjectItem(root, "HeatingMethod") && cJSON_HasObjectItem(root, "HeatingTemp"))
+    unsigned char uart_buf[8] = {0};
+
+    if (WaterInletValve >= 0)
     {
+        uart_buf[0] |= 1 << 5;
+        uart_buf[1] = WaterInletValve;
+    }
+    if (Exhaust >= 0)
+    {
+        uart_buf[0] |= 1 << 4;
+        uart_buf[2] = Exhaust;
+    }
+    if (IndicatorLight >= 0)
+    {
+        uart_buf[0] |= 1 << 3;
+        uart_buf[3] = IndicatorLight;
+    }
+    if (PressurePot >= 0)
+    {
+        uart_buf[0] |= 1 << 2;
+        uart_buf[4] = PressurePot;
+    }
+    if (PushRod >= 0)
+    {
+        uart_buf[0] |= 1 << 1;
+        uart_buf[5] = PushRod;
+    }
+    if (HeatDissipation >= 0)
+    {
+        uart_buf[0] |= 1 << 0;
+        uart_buf[6] = HeatDissipation;
+    }
+    pangu_send_msg(0x1a, uart_buf, 7);
+}
+void hoodSpeed_set(unsigned char speed)
+{
+    unsigned char uart_buf[2];
+    uart_buf[0] = 0x31;
+    uart_buf[1] = speed;
+    ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
+}
+int pangu_single_set(pangu_cook_attr_t *attr)
+{
+    unsigned char uart_buf[64] = {0};
+    unsigned short uart_buf_len = 0;
+    if (attr->waterTime)
+    {
+        pangu_transfer_set(1, -1, -1, -1, -1, -1);
+        POSIXTimerSet(g_pangu_timer, 60, 60);
+        if (g_time == 0)
+            g_time = attr->waterTime;
+    }
+    else
+    {
+        uart_buf[uart_buf_len++] = 0x00;
+        uart_buf[uart_buf_len++] = 0x01;
+        uart_buf[uart_buf_len++] = 0xb2;
+        uart_buf[uart_buf_len++] = 0x07;
+
         uart_buf[uart_buf_len++] = 0x04;
         uart_buf[uart_buf_len++] = 0x01;
-        cJSON *item = cJSON_GetObjectItem(root, "HeatingMethod");
+        uart_buf[uart_buf_len] = 0;
+        uart_buf[uart_buf_len] |= attr->mode << 6;
+        uart_buf[uart_buf_len] |= attr->fire;
+        ++uart_buf_len;
+        uart_buf[uart_buf_len++] = attr->temp;
         pangu_send_msg(0x73, uart_buf, uart_buf_len);
-    }
-    uart_buf_len = 4;
-    if (cJSON_HasObjectItem(root, "PotLidLock"))
-    {
+
+        uart_buf_len = 4;
         uart_buf[uart_buf_len++] = 0x04;
         uart_buf[uart_buf_len++] = 0x02;
+        uart_buf[uart_buf_len++] = attr->motorDir;
         pangu_send_msg(0x73, uart_buf, uart_buf_len);
-    }
-    uart_buf_len = 4;
-    if (cJSON_HasObjectItem(root, "HeatingGear") && cJSON_HasObjectItem(root, "HeatingTemp"))
-    {
+
+        uart_buf_len = 4;
         uart_buf[uart_buf_len++] = 0x04;
         uart_buf[uart_buf_len++] = 0x03;
+        uart_buf[uart_buf_len] = 0;
+        uart_buf[uart_buf_len] |= 0 << 6;
+        uart_buf[uart_buf_len] |= attr->motorSpeed;
+        ++uart_buf_len;
         pangu_send_msg(0x73, uart_buf, uart_buf_len);
-    }
-    if (cJSON_HasObjectItem(root, "HeatingTime"))
-    {
 
+        pangu_transfer_set(-1, -1, -1, -1, -1, 1);
+        hoodSpeed_set(attr->hoodSpeed);
+
+        POSIXTimerSet(g_pangu_timer, 60, 60);
+        if (g_time == 0)
+            g_time = attr->time;
     }
-    uart_buf_len = 7;
-    uart_buf[0] = 0;
-    pangu_attr_t *attr;
-    for (int i = 1; i < 7; ++i)
-    {
-        attr = &g_pangu_attr[i];
-        if (cJSON_HasObjectItem(root, attr->key))
-        {
-            cJSON *item = cJSON_GetObjectItem(root, attr->key);
-            uart_buf[i] = item->valueint;
-            uart_buf[0] |= 1 << (6 - i);
-        }
-        else
-        {
-            uart_buf[i] = 0;
-        }
-    }
-    if (uart_buf[0] > 0)
-        pangu_send_msg(0x1a, uart_buf, uart_buf_len);
     return 0;
+}
+int pangu_cook_start()
+{
+    if (pangu_cook.total_step != 0 && pangu_cook.current_step < pangu_cook.total_step)
+    {
+        pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
+        return 1;
+    }
+    return 0;
+}
+int pangu_cook_stop_or_pause(unsigned char pause)
+{
+    if (pause == 0)
+        pangu_cook.total_step = 0;
+
+    pangu_transfer_set(0, -1, -1, -1, -1, 0);
+    return 0;
+}
+int pangu_recv_set(void *data)
+{
+    cJSON *root = data;
+    cJSON *item;
+    if (cJSON_HasObjectItem(root, "RMultiStageContent"))
+    {
+        item = cJSON_GetObjectItem(root, "RMultiStageContent");
+        int arraySize = cJSON_GetArraySize(item);
+        if (arraySize == 0)
+        {
+            dzlog_error("arraySize is 0\n");
+            return 0;
+        }
+        pangu_cook.total_step = arraySize;
+        pangu_cook.current_step = 0;
+        pangu_cook_attr_t *pangu_cook_attr = pangu_cook.cook_attr;
+        cJSON *arraySub;
+        for (int i = 0; i < arraySize; i++)
+        {
+            arraySub = cJSON_GetArrayItem(item, i);
+            if (arraySub == NULL)
+                continue;
+            cJSON *mode = cJSON_GetObjectItem(arraySub, "mode");
+            cJSON *fire = cJSON_GetObjectItem(arraySub, "fire");
+            cJSON *temp = cJSON_GetObjectItem(arraySub, "temp");
+            cJSON *time = cJSON_GetObjectItem(arraySub, "time");
+            cJSON *motorSpeed = cJSON_GetObjectItem(arraySub, "motorSpeed");
+            cJSON *motorDir = cJSON_GetObjectItem(arraySub, "motorDir");
+            cJSON *waterTime = cJSON_GetObjectItem(arraySub, "waterTime");
+            cJSON *fan = cJSON_GetObjectItem(arraySub, "fan");
+            cJSON *hoodSpeed = cJSON_GetObjectItem(arraySub, "hoodSpeed");
+            cJSON *repeat = cJSON_GetObjectItem(arraySub, "repeat");
+            pangu_cook_attr[i].mode = mode->valueint;
+            pangu_cook_attr[i].fire = fire->valueint;
+            pangu_cook_attr[i].temp = temp->valueint;
+            pangu_cook_attr[i].time = time->valueint;
+            pangu_cook_attr[i].motorSpeed = motorSpeed->valueint;
+            pangu_cook_attr[i].motorDir = motorDir->valueint;
+            pangu_cook_attr[i].waterTime = waterTime->valueint;
+            pangu_cook_attr[i].fan = fan->valueint;
+            pangu_cook_attr[i].hoodSpeed = hoodSpeed->valueint;
+            pangu_cook_attr[i].repeat = repeat->valueint;
+        }
+    }
+    if (cJSON_HasObjectItem(root, "RStOvOrderTimer"))
+    {
+        item = cJSON_GetObjectItem(root, "RStOvOrderTimer");
+    }
+    if (cJSON_HasObjectItem(root, "RStOvOperation"))
+    {
+        item = cJSON_GetObjectItem(root, "RStOvOperation");
+    }
+    if (cJSON_HasObjectItem(root, "Gating"))
+    {
+        item = cJSON_GetObjectItem(root, "Gating");
+    }
+    return 0;
+}
+static void POSIXTimer_cb(union sigval val)
+{
+    dzlog_warn("%s sival_int:%d", __func__, val.sival_int);
+    if (val.sival_int == 0)
+    {
+        --g_time;
+        if (g_time == 0)
+        {
+            POSIXTimerSet(g_pangu_timer, 0, 0);
+            if (pangu_cook.cook_attr[pangu_cook.current_step].waterTime)
+            {
+                pangu_cook.cook_attr[pangu_cook.current_step].waterTime = 0;
+                pangu_cook_start();
+            }
+            else
+            {
+                pangu_cook.current_step += 1;
+                pangu_cook_start();
+            }
+        }
+    }
 }
 void pangu_uart_deinit(void)
 {
     POSIXTimerDelete(g_pangu_timer);
     close(fd);
+
+    for (int i = 0; i < g_pangu_attr_len; ++i)
+    {
+        if (g_pangu_attr[i].value_len > 0)
+            free(g_pangu_attr[i].value);
+    }
+
     pthread_mutex_destroy(&lock);
 }
 // ntpdate pool.ntp.org
@@ -442,6 +591,20 @@ void pangu_uart_init(void)
     pthread_mutex_init(&lock, NULL);
 
     g_pangu_timer = POSIXTimerCreate(0, POSIXTimer_cb);
+
+    for (int i = 0; i < g_pangu_attr_len; ++i)
+    {
+        if (g_pangu_attr[i].value_len > 0)
+        {
+            g_pangu_attr[i].value = (char *)malloc(g_pangu_attr[i].value_len);
+            if (g_pangu_attr[i].value == NULL)
+            {
+                dzlog_error("g_pangu_attr[%d].value malloc error\n", i);
+                return;
+            }
+            memset(g_pangu_attr[i].value, 0, g_pangu_attr[i].value_len);
+        }
+    }
 
     select_client_event.fd = fd;
     select_client_event.read_cb = pangu_recv_cb;

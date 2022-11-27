@@ -223,7 +223,7 @@ void *demo_ota_download_thread(void *dl_handle)
         if (ret <= STATE_SUCCESS)
         {
             printf("download failed, error code is %d, try to send renewal request :%d\r\n", ret, download_fail_count);
-            if (++download_fail_count >= 4)
+            if (++download_fail_count >= 5)
             {
                 aiot_download_report_progress(dl_handle, AIOT_OTAERR_FETCH_FAILED);
                 break;
@@ -300,7 +300,8 @@ void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *use
         }
         if (ota_timer_stop_cb)
             ota_timer_stop_cb();
-        set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
+        if (query_firmware_flag != 0)
+            set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;
         uint32_t max_buffer_len = (8 * 1024);
