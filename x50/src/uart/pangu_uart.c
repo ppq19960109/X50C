@@ -3,12 +3,11 @@
 #include "uart_task.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
-#include "cloud_platform_task.h"
 #include "uds_protocol.h"
 #include "pangu_uart.h"
 
 static timer_t g_pangu_timer;
-static int g_time;
+static int g_time, g_order_time;
 
 static int fd = -1;
 static pthread_mutex_t lock;
@@ -67,16 +66,33 @@ static pangu_attr_t g_pangu_attr[] = {
     },
     //----------------------
     {
+        key : "RStOvState",
+        value_len : 1,
+    },
+    {
         key : "RStOvMode",
         value_len : 1,
+    },
+    {
+        key : "RStOvSetTimer",
+        value_len : 2,
     },
     {
         key : "RStOvSetTimerLeft",
         value_len : 2,
     },
     {
+        key : "RStOvOrderTimer",
+        value_len : 2,
+    },
+    {
         key : "RStOvOrderTimerLeft",
         value_len : 2,
+    },
+    {
+        key : "RCookbookName",
+        value_len : 64,
+        value_type : LINK_VALUE_TYPE_STRING
     },
 };
 static int g_pangu_attr_len = sizeof(g_pangu_attr) / sizeof(g_pangu_attr[0]);
@@ -108,7 +124,14 @@ int pangu_state_event(unsigned char cmd)
         pangu_attr_t *attr = &g_pangu_attr[i];
         if (0 < attr->change || cmd > 0)
         {
-            cJSON_AddNumberToObject(resp, attr->key, cal_value_int(attr->value, attr->value_len));
+            if (attr->value_type == LINK_VALUE_TYPE_NUM)
+            {
+                cJSON_AddNumberToObject(resp, attr->key, cal_value_int(attr->value, attr->value_len));
+            }
+            else if (attr->value_type == LINK_VALUE_TYPE_STRING)
+            {
+                cJSON_AddStringToObject(resp, attr->key, attr->value);
+            }
             attr->change = 0;
         }
     }
@@ -341,7 +364,7 @@ static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *
     if (verify_val != verify)
     {
         dzlog_error("verify error:%x,%x", verify_val, verify);
-        return ECB_UART_READ_CHECK_ERR;
+        // return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
     pangu_payload_parse(cmd, payload, payload_len);
@@ -367,7 +390,7 @@ static int pangu_recv_cb(void *arg)
     }
     return 0;
 }
-void pangu_transfer_set(char WaterInletValve, char Exhaust, char IndicatorLight, char PressurePot, char PushRod, char HeatDissipation)
+static void pangu_transfer_set(char WaterInletValve, char Exhaust, char IndicatorLight, char PressurePot, char PushRod, char HeatDissipation)
 {
     unsigned char uart_buf[8] = {0};
 
@@ -403,15 +426,26 @@ void pangu_transfer_set(char WaterInletValve, char Exhaust, char IndicatorLight,
     }
     pangu_send_msg(0x1a, uart_buf, 7);
 }
-void hoodSpeed_set(unsigned char speed)
+static void hoodSpeed_set(unsigned char speed)
 {
     unsigned char uart_buf[2];
     uart_buf[0] = 0x31;
     uart_buf[1] = speed;
     ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
 }
-int pangu_single_set(pangu_cook_attr_t *attr)
+static void report_work_state(unsigned char state)
 {
+    pangu_attr_t *attr = get_pangu_attr("RStOvState");
+    if (attr->value[0] != state)
+    {
+        attr->value[0] = state;
+        attr->change = 1;
+        pangu_state_event(0);
+    }
+}
+static int pangu_single_set(pangu_cook_attr_t *attr)
+{
+    pangu_attr_t *pangu_attr;
     unsigned char uart_buf[64] = {0};
     unsigned short uart_buf_len = 0;
     if (attr->waterTime)
@@ -420,9 +454,17 @@ int pangu_single_set(pangu_cook_attr_t *attr)
         POSIXTimerSet(g_pangu_timer, 60, 60);
         if (g_time == 0)
             g_time = attr->waterTime;
+        report_work_state(REPORT_WORK_STATE_WATER);
     }
     else
     {
+        if (attr->mode == 1)
+        {
+            report_work_state(REPORT_WORK_STATE_CLEAN);
+        }
+        else
+            report_work_state(REPORT_WORK_STATE_RUN);
+
         uart_buf[uart_buf_len++] = 0x00;
         uart_buf[uart_buf_len++] = 0x01;
         uart_buf[uart_buf_len++] = 0xb2;
@@ -458,24 +500,68 @@ int pangu_single_set(pangu_cook_attr_t *attr)
         POSIXTimerSet(g_pangu_timer, 60, 60);
         if (g_time == 0)
             g_time = attr->time;
+
+        pangu_attr = get_pangu_attr("RStOvMode");
+        if (pangu_attr->value[0] != attr->mode)
+        {
+            pangu_attr->value[0] = attr->mode;
+            pangu_attr->change = 1;
+        }
     }
+    pangu_attr = get_pangu_attr("RStOvSetTimer");
+    pangu_attr->value[0] = attr->time >> 8;
+    pangu_attr->value[1] = attr->time;
+    pangu_attr->change = 1;
+    pangu_attr = get_pangu_attr("RStOvSetTimerLeft");
+    pangu_attr->value[0] = g_time >> 8;
+    pangu_attr->value[1] = g_time;
+    pangu_attr->change = 1;
+    pangu_state_event(0);
     return 0;
 }
 int pangu_cook_start()
 {
-    if (pangu_cook.total_step != 0 && pangu_cook.current_step < pangu_cook.total_step)
+    if (g_order_time)
     {
-        pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
-        return 1;
+        POSIXTimerSet(g_pangu_timer, 60, 60);
+        report_work_state(REPORT_WORK_STATE_RESERVE);
+        pangu_attr_t *attr = get_pangu_attr("RStOvOrderTimerLeft");
+        attr->value[0] = g_order_time >> 8;
+        attr->value[1] = g_order_time;
+        attr->change = 1;
+        pangu_state_event(0);
+    }
+    else
+    {
+        if (pangu_cook.total_step != 0 && pangu_cook.current_step < pangu_cook.total_step)
+        {
+            pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
+            return 1;
+        }
     }
     return 0;
 }
 int pangu_cook_stop_or_pause(unsigned char pause)
 {
     if (pause == 0)
+    {
+        g_time = 0;
+        g_order_time = 0;
         pangu_cook.total_step = 0;
-
-    pangu_transfer_set(0, -1, -1, -1, -1, 0);
+        report_work_state(REPORT_WORK_STATE_STOP);
+    }
+    else
+    {
+        if (g_order_time)
+            report_work_state(REPORT_WORK_STATE_RESERVE_PAUSE);
+        else
+            report_work_state(REPORT_WORK_STATE_PAUSE);
+    }
+    POSIXTimerSet(g_pangu_timer, 0, 0);
+    if (g_order_time == 0)
+    {
+        pangu_transfer_set(0, -1, -1, -1, -1, 0);
+    }
     return 0;
 }
 int pangu_recv_set(void *data)
@@ -525,14 +611,46 @@ int pangu_recv_set(void *data)
     if (cJSON_HasObjectItem(root, "RStOvOrderTimer"))
     {
         item = cJSON_GetObjectItem(root, "RStOvOrderTimer");
+        g_order_time = item->valueint;
+        pangu_attr_t *attr = get_pangu_attr("RStOvOrderTimer");
+        attr->value[0] = g_order_time >> 8;
+        attr->value[1] = g_order_time;
+        attr->change = 1;
     }
     if (cJSON_HasObjectItem(root, "RStOvOperation"))
     {
         item = cJSON_GetObjectItem(root, "RStOvOperation");
+        switch (item->valueint)
+        {
+        case WORK_OPERATION_RUN:
+            pangu_cook_start();
+            break;
+        case WORK_OPERATION_PAUSE:
+            pangu_cook_stop_or_pause(1);
+            break;
+        case WORK_OPERATION_STOP:
+            pangu_cook_stop_or_pause(0);
+            break;
+        case WORK_OPERATION_FINISH:
+            report_work_state(REPORT_WORK_STATE_STOP);
+            break;
+        case WORK_OPERATION_RUN_NOW:
+            g_order_time = 0;
+            pangu_cook_start();
+            break;
+        }
     }
     if (cJSON_HasObjectItem(root, "Gating"))
     {
         item = cJSON_GetObjectItem(root, "Gating");
+        pangu_transfer_set(-1, -1, -1, -1, item->valueint, -1);
+    }
+    if (cJSON_HasObjectItem(root, "RCookbookName"))
+    {
+        item = cJSON_GetObjectItem(root, "RCookbookName");
+        pangu_attr_t *attr = get_pangu_attr("RCookbookName");
+        strcpy(attr->value, item->valuestring);
+        attr->change = 1;
     }
     return 0;
 }
@@ -541,21 +659,42 @@ static void POSIXTimer_cb(union sigval val)
     dzlog_warn("%s sival_int:%d", __func__, val.sival_int);
     if (val.sival_int == 0)
     {
-        --g_time;
-        if (g_time == 0)
+        pangu_attr_t *pangu_attr;
+        if (g_order_time)
         {
-            POSIXTimerSet(g_pangu_timer, 0, 0);
-            if (pangu_cook.cook_attr[pangu_cook.current_step].waterTime)
+            --g_order_time;
+            if (g_order_time == 0)
             {
-                pangu_cook.cook_attr[pangu_cook.current_step].waterTime = 0;
                 pangu_cook_start();
             }
-            else
-            {
-                pangu_cook.current_step += 1;
-                pangu_cook_start();
-            }
+            pangu_attr = get_pangu_attr("RStOvOrderTimerLeft");
+            pangu_attr->value[0] = g_order_time >> 8;
+            pangu_attr->value[1] = g_order_time;
+            pangu_attr->change = 1;
         }
+        else
+        {
+            --g_time;
+            if (g_time == 0)
+            {
+                POSIXTimerSet(g_pangu_timer, 0, 0);
+                if (pangu_cook.cook_attr[pangu_cook.current_step].waterTime)
+                {
+                    pangu_cook.cook_attr[pangu_cook.current_step].waterTime = 0;
+                    pangu_cook_start();
+                }
+                else
+                {
+                    pangu_cook.current_step += 1;
+                    pangu_cook_start();
+                }
+            }
+            pangu_attr = get_pangu_attr("RStOvSetTimerLeft");
+            pangu_attr->value[0] = g_time >> 8;
+            pangu_attr->value[1] = g_time;
+            pangu_attr->change = 1;
+        }
+        pangu_state_event(0);
     }
 }
 void pangu_uart_deinit(void)
