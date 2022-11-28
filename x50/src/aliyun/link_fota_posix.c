@@ -116,7 +116,6 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
         fwrite(packet->data.buffer, packet->data.len, 1, ota_fp);
     else
     {
-        aiot_download_report_progress(handle, AIOT_OTAERR_FETCH_FAILED);
         return;
     }
     /* percent 入参的值为 100 时, 说明SDK已经下载固件内容全部完成 */
