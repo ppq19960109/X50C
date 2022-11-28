@@ -116,7 +116,6 @@ void demo_download_recv_handler(void *handle, const aiot_download_recv_t *packet
         fwrite(packet->data.buffer, packet->data.len, 1, ota_fp);
     else
     {
-        aiot_download_report_progress(handle, AIOT_OTAERR_FETCH_FAILED);
         return;
     }
     /* percent 入参的值为 100 时, 说明SDK已经下载固件内容全部完成 */
@@ -300,8 +299,7 @@ void demo_ota_recv_handler(void *ota_handle, aiot_ota_recv_t *ota_msg, void *use
         }
         if (ota_timer_stop_cb)
             ota_timer_stop_cb();
-        if (query_firmware_flag != 0)
-            set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
+        set_ota_state(OTA_NEW_FIRMWARE, ota_msg->task_desc->version);
 
         uint16_t port = 443;
         uint32_t max_buffer_len = (8 * 1024);
