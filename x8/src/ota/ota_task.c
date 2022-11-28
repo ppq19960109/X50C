@@ -8,7 +8,7 @@
 #include "link_fota_posix.h"
 #include "link_solo.h"
 #include "ecb_uart_parse_msg.h"
-
+static set_attr_t g_ota_set_attr[];
 static void ota_OTASlientUpgrade_set(void)
 {
     unsigned char buf[4];
@@ -33,7 +33,14 @@ static void *OTARquest_cb(void *ptr, void *arg)
     set_OtaCmdPushType(1);
     if (item->valueint == 0)
     {
-        link_fota_query_firmware();
+        if (get_ota_state() == OTA_DOWNLOAD_START)
+        {
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, g_ota_set_attr[3].value.p);
+            send_event_uds(root, NULL);
+        }
+        else
+            link_fota_query_firmware();
     }
     else
     {

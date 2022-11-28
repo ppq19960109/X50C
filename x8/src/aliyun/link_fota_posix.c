@@ -219,7 +219,7 @@ static void *demo_ota_download_thread(void *dl_handle)
         if (ret <= STATE_SUCCESS)
         {
             printf("download failed, error code is %d, try to send renewal request :%d\r\n", ret, download_fail_count);
-            if (++download_fail_count >= 4)
+            if (++download_fail_count >= 5)
             {
                 aiot_download_report_progress(dl_handle, AIOT_OTAERR_FETCH_FAILED);
                 break;

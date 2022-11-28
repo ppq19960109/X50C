@@ -1,7 +1,10 @@
 #!/bin/sh
+sh /oem/logo.sh
+
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=90
 export TZ='Asia/Shanghai'
 export QT_QPA_FB_DRM=0
+export QT_LINUXFB_DRM_LOGO=/oem/logo.bmp
 
 SERVER_APP_NAME="X8app"
 UI_APP_NAME="X8UI"
@@ -9,7 +12,7 @@ DAEMON_APP_NAME="Daemon.sh"
 BASE_PATH="/oem/marssenger"
 
 start() {
-    echo "Starting marssenger: "
+    echo "Starting marssenger:"
     cd $(dirname $0)
     ./$SERVER_APP_NAME &
     ./$UI_APP_NAME &

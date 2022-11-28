@@ -16,6 +16,7 @@
 #define POWER_OTA_FILE "/tmp/power_upgrade.bin"
 static unsigned short ench_package_len = 256;
 
+static set_attr_t g_ota_set_attr[];
 static void *OTAState_cb(void *ptr, void *arg)
 {
     cJSON *item = cJSON_CreateNumber(get_ota_power_state());
@@ -29,7 +30,14 @@ static void *OTARquest_cb(void *ptr, void *arg)
     cJSON *item = (cJSON *)arg;
     if (item->valueint == 0)
     {
-        link_fota_power_query_firmware();
+        if (get_ota_state() == OTA_DOWNLOAD_START)
+        {
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, g_ota_set_attr[3].value.p);
+            send_event_uds(root, NULL);
+        }
+        else
+            link_fota_power_query_firmware();
     }
     else
     {

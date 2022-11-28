@@ -218,7 +218,7 @@ static void *demo_ota_download_thread(void *dl_handle)
         if (ret <= STATE_SUCCESS)
         {
             printf("power download failed, error code is %d, try to send renewal request :%d\r\n", ret, download_fail_count);
-            if (++download_fail_count > 5)
+            if (++download_fail_count >= 5)
             {
                 aiot_download_report_progress(dl_handle, AIOT_OTAERR_FETCH_FAILED);
                 break;
@@ -241,12 +241,7 @@ static void *demo_ota_download_thread(void *dl_handle)
     }
     if (STATE_DOWNLOAD_FINISHED != ret || OTA_INSTALL_SUCCESS != g_ota_state)
     {
-        last_percent = -1;
         set_ota_power_state(OTA_DOWNLOAD_FAIL, NULL);
-    }
-    else
-    {
-        last_percent = 0;
     }
     return NULL;
 }
