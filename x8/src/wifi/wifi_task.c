@@ -71,7 +71,8 @@ static void *WifiEnable_cb(void *ptr, void *arg)
     {
         if (item->valueint == 0)
         {
-            wiFiReport(RK_WIFI_State_DISCONNECTED);
+            g_wifi_state = 0;
+            g_link_state = 0;
         }
         item = cJSON_CreateNumber(item->valueint);
     }
@@ -309,10 +310,10 @@ static void linkkit_connected_cb(int connect)
 static int link_wifi_state_cb()
 {
     dzlog_warn("link_wifi_state_cb:%d", g_wifi_state);
-    // if (RK_WIFI_State_CONNECTED != g_wifi_state)
-    // {
-    //     g_wifi_state = getWifiRunningState();
-    // }
+    if (RK_WIFI_State_CONNECTED != g_wifi_state)
+    {
+        g_wifi_state = getWifiRunningState();
+    }
     if (RK_WIFI_State_CONNECTED == g_wifi_state)
     {
         // if (back_online == 0)

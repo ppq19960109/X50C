@@ -1,5 +1,4 @@
 #!/bin/sh
-sh /oem/logo.sh
 
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=90
 export TZ='Asia/Shanghai'
@@ -26,25 +25,29 @@ stop() {
     [ $? = 0 ] && echo "OK" || echo "FAIL"
     killall -9 $UI_APP_NAME
     [ $? = 0 ] && echo "OK" || echo "FAIL"
-    killall -9 $SERVER_APP_NAME 
+    killall -9 $SERVER_APP_NAME
     [ $? = 0 ] && echo "OK" || echo "FAIL"
 }
 
 case "$1" in
-    start|START)
-        start
-        ;;
-    stop|STOP)
-        stop
-        ;;
-    restart|reload|RESTART|RELOAD)
-        stop
-        sleep 1
-        start
-        ;;
-  *)
-        echo "Usage: $0 {start|stop|restart}"
-        exit 1
+start | START)
+    if [ 0 == $QT_QPA_FB_DRM ]; then
+        sh /oem/logo.sh
+    fi
+    start
+    ;;
+stop | STOP)
+    stop
+    ;;
+restart | reload | RESTART | RELOAD)
+    stop
+    sleep 1
+    start
+    ;;
+*)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+    ;;
 esac
 
 exit $?
