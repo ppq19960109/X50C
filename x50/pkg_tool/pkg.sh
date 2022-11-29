@@ -1,11 +1,11 @@
 #!/bin/bash
 
 cd `dirname $0`
-SOFTWARE_VERSION="1.5.5"
+SOFTWARE_VERSION="5.0.0"
 
 #compress directory and compress file name
 PKG_DIRNAME="install"
-PKG_FINAL_FILENAME="upgrade_${SOFTWARE_VERSION}_x50.bin"
+PKG_FINAL_FILENAME="upgrade_pangu_${SOFTWARE_VERSION}_x50.bin"
 rm -f upgrade_*.bin
 #upgrade file name
 PKG_INSTALL_FILE="install.sh"

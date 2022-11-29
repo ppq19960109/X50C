@@ -1,11 +1,11 @@
 #!/bin/sh
 export QT_QPA_PLATFORM=linuxfb:tty=/dev/fb0:rotation=270
 export TZ='Asia/Shanghai'
+export QT_QPA_FB_DRM=1
 export QT_LINUXFB_DRM_LOGO=/oem/logo.bmp
-# export QT_QPA_FB_DRM=1
 
-SERVER_APP_NAME="X50app"
-UI_APP_NAME="X50QML"
+SERVER_APP_NAME="X50Panguapp"
+UI_APP_NAME="X50PanguQML"
 DAEMON_APP_NAME="X50Daemon.sh"
 BASE_PATH="/oem/marssenger"
 

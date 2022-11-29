@@ -39,7 +39,7 @@ typedef struct
     unsigned short time;
     unsigned char motorSpeed;
     unsigned char motorDir;
-    unsigned char waterTime;
+    unsigned short waterTime;
     unsigned char fan;
     unsigned char hoodSpeed;
     unsigned char repeat;

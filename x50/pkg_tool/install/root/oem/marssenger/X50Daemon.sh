@@ -63,6 +63,6 @@ function check2() {
 
 while true; do
   sleep 30
-  check X50app
-  check2 X50QML
+  check X50Panguapp
+  check2 X50PanguQML
 done

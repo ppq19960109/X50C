@@ -1,0 +1,230 @@
+{
+    "RecipesVersion": "1.0",
+    "recipes": [
+        {
+            "dishName": "红烧肉",
+            "imgUrl": "recipes/红烧肉.png",
+            "cookSteps": [
+                {
+                    "mode": 17,
+                    "fire": 9,
+                    "temp": 115,
+                    "time": 5,
+                    "motorSpeed": 1,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 9,
+                    "temp": 115,
+                    "time": 5,
+                    "motorSpeed": 1,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 31
+                },
+                {
+                    "mode": 17,
+                    "fire": 10,
+                    "temp": 115,
+                    "time": 5,
+                    "motorSpeed": 1,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 10,
+                    "temp": 115,
+                    "time": 30,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 5
+                },
+                {
+                    "mode": 17,
+                    "fire": 7,
+                    "temp": 115,
+                    "time": 5,
+                    "motorSpeed": 1,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 7,
+                    "temp": 115,
+                    "time": 30,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 51
+                },
+                {
+                    "mode": 17,
+                    "fire": 10,
+                    "temp": 130,
+                    "time": 300,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 1,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                }
+            ],
+            "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
+            "cookType": 1,
+            "recipeType": 1
+        },
+        {
+            "dishName": "豆浆",
+            "imgUrl": "recipes/豆浆.png",
+            "cookSteps": [
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                }
+            ],
+            "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
+            "cookType": 1,
+            "recipeType": 1
+        },
+        {
+            "dishName": "冰糖粉",
+            "imgUrl": "recipes/冰糖粉.png",
+            "cookSteps": [
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                }
+            ],
+            "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
+            "cookType": 1,
+            "recipeType": 1
+        },
+        {
+            "dishName": "面团",
+            "imgUrl": "recipes/面团.png",
+            "cookSteps": [
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                }
+            ],
+            "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
+            "cookType": 1,
+            "recipeType": 1
+        },
+        {
+            "dishName": "面团",
+            "imgUrl": "recipes/面团.png",
+            "cookSteps": [
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                },
+                {
+                    "mode": 17,
+                    "fire": 5,
+                    "temp": 100,
+                    "time": 2,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0
+                }
+            ],
+            "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
+            "cookType": 1,
+            "recipeType": 2
+        }
+    ]
+}
