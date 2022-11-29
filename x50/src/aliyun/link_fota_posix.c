@@ -266,7 +266,6 @@ int link_download_firmware(void)
         /* 下载线程被设置为 detach 类型, 固件内容获取完毕后可自主退出 */
         pthread_detach(g_download_thread);
     }
-    g_dl_handle = NULL;
     return 0;
 }
 
