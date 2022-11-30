@@ -16,7 +16,7 @@ static pangu_cook_t pangu_cook;
 
 static pangu_attr_t g_pangu_attr[] = {
     {
-        key : "Weigh",
+        key : "Weight",
         value_len : 2,
     },
     {
