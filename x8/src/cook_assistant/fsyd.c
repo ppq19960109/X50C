@@ -107,7 +107,7 @@ void register_thread_unlock_cb(int (*cb)())
 {
     thread_unlock_cb = cb;
 }
-static int (*cook_assist_remind_cb)();
+static int (*cook_assist_remind_cb)(int);
 void register_cook_assist_remind_cb(int (*cb)(int)) // 0:辅助控温3分钟 1:移锅小火3分钟
 {
     cook_assist_remind_cb = cb;
@@ -137,7 +137,7 @@ void set_fire_gear(unsigned char fire_gear, state_handle_t *state_handle, const 
  ***********************************************************/
 static void gear_change(unsigned char gear, const unsigned char type, const char *msg, state_handle_t *state_handle)
 {
-    mlogPrintf("%s,gear_change gear:%d type:%d\n", __func__, gear, type, msg);
+    mlogPrintf("%s,gear_change gear:%d type:%d msg:%s\n", __func__, gear, type, msg);
 
     if (thread_lock_cb != NULL)
     {
