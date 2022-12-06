@@ -184,16 +184,6 @@ fail:
     return size * nmemb;
 }
 
-void quad_burn_init()
-{
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-}
-
-void quad_burn_deinit()
-{
-    curl_global_cleanup();
-}
-
 int quad_burn_requst(const char *product_key, const char *mac, const char *request_ip)
 {
     if (product_key == NULL || mac == NULL || request_ip == NULL)

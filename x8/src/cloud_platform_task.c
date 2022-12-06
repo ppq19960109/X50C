@@ -13,7 +13,9 @@
 #include "device_task.h"
 #include "quad_burn.h"
 #include "cook_assist.h"
+#include "cook_history.h"
 #include "curl_http_request.h"
+#include "md5_func.h"
 
 static pthread_mutex_t mutex;
 static cloud_dev_t *g_cloud_dev = NULL;
@@ -759,6 +761,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     {
         ecb_uart_send_cloud_msg(uart_buf, uart_buf_len);
     }
+    cook_history_set(root);
     pthread_mutex_unlock(&mutex);
     return 0;
 }
@@ -1042,8 +1045,14 @@ int cloud_init(void) //初始化
             return -1;
         }
     }
-    quad_burn_init();
+
     getNetworkMac(ETH_NAME, g_cloud_dev->mac, sizeof(g_cloud_dev->mac), "");
+
+    char buf[48];
+    sprintf(buf, "%s%s", "device", g_cloud_dev->device_name);
+    Compute_string_md5((unsigned char *)buf, strlen(buf), g_cloud_dev->token);
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
     curl_http_request_init();
     // char buf[] = {1, 33, 44, 55, 77, 99};
     // http_report_hex("SET:", buf, sizeof(buf));
@@ -1054,7 +1063,7 @@ int cloud_init(void) //初始化
 void cloud_deinit(void) //反初始化
 {
     curl_http_request_deinit();
-    quad_burn_deinit();
+    curl_global_cleanup();
     link_model_close();
     for (int i = 0; i < g_cloud_dev->attr_len; ++i)
     {

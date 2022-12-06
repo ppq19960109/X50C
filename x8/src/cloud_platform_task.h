@@ -52,12 +52,13 @@ typedef struct
     char device_secret[33];
     char device_category[33];
     char device_model[16];
+    char token[33];
     char mac[16];
     char hardware_ver[6];
     char software_ver[6];
     char lRemindText[3][48];
     char rRemindText[3][48];
-    char update_log[960];
+    char update_log[640];
     cloud_attr_t *attr;
     int attr_len;
 } cloud_dev_t;

@@ -3,6 +3,18 @@
         "main.h": "c",
         "un.h": "c",
         "reboot.h": "c",
-        "rkwifi.h": "c"
+        "rkwifi.h": "c",
+        "cook_history.h": "c",
+        "cloud_platform_task.h": "c",
+        "cook_wrapper.h": "c",
+        "istream": "c",
+        "ostream": "c",
+        "ratio": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "curl_http_request.h": "c"
     }
 }

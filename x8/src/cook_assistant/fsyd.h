@@ -7,7 +7,7 @@ extern "C"
 #include "ring_buffer.h"
 #include "cook_wrapper.h"
 
-// #define BOIL_ENABLE
+#define BOIL_ENABLE
 
 #define STATE_JUDGE_DATA_SIZE (10)
 #define INPUT_DATA_HZ (4)
@@ -57,8 +57,8 @@ extern "C"
         PAN_FIRE_HIGH_TEMP = 2300,
         SHAKE_PERMIT_TEMP = 1100,
 #ifdef BOIL_ENABLE
-        BOIL_LOW_TEMP = 830,
-        BOIL_HIGH_TEMP = 1050,
+        BOIL_LOW_TEMP = 750,
+        BOIL_HIGH_TEMP = 990,
 #endif
     };
 
@@ -74,7 +74,8 @@ extern "C"
         SHAKE_EXIT_TICK = INPUT_DATA_HZ * 20,
         TEMP_CONTROL_LOCK_TICK = INPUT_DATA_HZ * 5,
 #ifdef BOIL_ENABLE
-        BOIL_START_TICK = INPUT_DATA_HZ * 30,
+        BOIL_START_TICK = INPUT_DATA_HZ * 9,
+        BOIL_STOP_TICK = INPUT_DATA_HZ * 90,
 #endif
     };
 
@@ -113,7 +114,7 @@ extern "C"
 
         unsigned char fire_gear;
         unsigned char hood_gear;
-        unsigned int current_tick;
+        int current_tick;
         unsigned int total_tick;
 
         unsigned char temp_data_size;
@@ -125,7 +126,9 @@ extern "C"
 
 #ifdef BOIL_ENABLE
         unsigned char boil_gengle_state;
-        unsigned short boil_start_tick;
+        unsigned char boil_gengle_small_state;
+        signed short boil_start_tick;
+        unsigned char boil_stop_count;
 #endif
         ring_buffer_t ring_buffer;
     } state_handle_t;

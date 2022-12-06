@@ -305,7 +305,7 @@ void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);
     mlogPrintf("%s,recv ecb fire:%d fire_gear:%d\n", __func__, fire, state_handle->fire_gear);
-    if (state_handle->pan_fire_switch)
+    if (state_handle->pan_fire_switch || state_handle->temp_control_switch)
     {
         if (fire != state_handle->fire_gear)
         {
@@ -314,10 +314,12 @@ void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir)
     }
     else
     {
+#ifndef BOIL_ENABLE
         if (fire != FIRE_BIG)
         {
             set_fire_gear(FIRE_BIG, state_handle, 1);
         }
+#endif
     }
 }
 
@@ -618,7 +620,10 @@ static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_
         state_handle->current_tick = 1;
         state_handle->last_prepare_state = STATE_IDLE;
         state_handle->last_prepare_state_tick = 0;
-
+#ifdef BOIL_ENABLE
+        state_handle->boil_start_tick = 0;
+        state_handle->boil_stop_count = 0;
+#endif
         return prepare_state;
     }
     else
@@ -653,21 +658,39 @@ static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_
 #ifdef BOIL_ENABLE
     if (state_handle->state_jump_temp > BOIL_LOW_TEMP && state_handle->state_jump_temp <= BOIL_HIGH_TEMP)
     {
-        if ((state_handle->state_jump_temp <= 91 && state_handle->boil_gengle_state < 1) || (state_handle->state_jump_temp > 91 && state_handle->boil_gengle_state < 2))
+        if ((state_handle->boil_gengle_state >= 2 && state_handle->boil_gengle_state <= 10))
         {
             if (state_handle->boil_start_tick == 0)
+            {
                 state_handle->boil_start_tick = state_handle->current_tick;
+                state_handle->boil_stop_count = 1;
+            }
+        }
+        else if ((state_handle->boil_gengle_small_state >= 8 && state_handle->boil_gengle_small_state <= 10))
+        {
+            if (state_handle->boil_start_tick == 0)
+            {
+                state_handle->boil_start_tick = state_handle->current_tick;
+            }
         }
         else
         {
-            state_handle->boil_start_tick = 0;
+            if (state_handle->boil_stop_count == 0)
+                state_handle->boil_start_tick = 0;
+            if (state_handle->boil_stop_count > 0)
+            {
+                --state_handle->boil_stop_count;
+            }
         }
     }
     else
+    {
+        state_handle->boil_stop_count = 0;
         state_handle->boil_start_tick = 0;
+    }
 
-    mlogPrintf("%s,%s current_tick:%d boil_start_tick:%d boil_gengle_state:%d\n", __func__, state_info[STATE_GENTLE], state_handle->current_tick, state_handle->boil_start_tick, state_handle->boil_gengle_state);
-    if (state_handle->boil_start_tick > 0 && state_handle->current_tick - state_handle->boil_start_tick >= BOIL_START_TICK)
+    mlogPrintf("-----------------%s,%s current_tick:%d boil_start_tick:%d boil_gengle_state:%d boil_gengle_small_state:%d\n", __func__, state_info[STATE_GENTLE], state_handle->current_tick, state_handle->boil_start_tick, state_handle->boil_gengle_state, state_handle->boil_gengle_small_state);
+    if (state_handle->boil_start_tick > 0 && state_handle->current_tick >= state_handle->boil_start_tick + BOIL_START_TICK)
     {
         state_handle->boil_start_tick = 0;
         return STATE_BOIL;
@@ -911,7 +934,7 @@ static int state_func_boil(unsigned char prepare_state, state_handle_t *state_ha
         state_handle->last_prepare_state = prepare_state;
         state_handle->last_prepare_state_tick = state_handle->current_tick;
     }
-    if (state_handle->last_temp <= BOIL_LOW_TEMP)
+    if (state_handle->last_temp <= BOIL_LOW_TEMP + 4)
     {
     }
     else if (prepare_state == STATE_RISE_SLOW)
@@ -921,7 +944,7 @@ static int state_func_boil(unsigned char prepare_state, state_handle_t *state_ha
     }
     else if (prepare_state == STATE_DOWN_SLOW)
     {
-        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 5 > state_handle->current_tick)
+        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 2 > state_handle->current_tick)
             return STATE_BOIL;
     }
     else if (prepare_state == STATE_GENTLE)
@@ -995,7 +1018,7 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
 
 static int status_judge(state_handle_t *state_handle, const unsigned short *data, const int len)
 {
-#define START (3)
+#define START (2)
 
     mlogPrintf("%s,total_tick:%d pan_fire_state:%d pan_fire_first_error:%d\n", __func__, state_handle->total_tick, state_handle->pan_fire_state, state_handle->pan_fire_first_error);
     mlogPrintf("%s,ignition_switch_close_temp:%d last_temp:%d\n", __func__, state_handle->ignition_switch_close_temp, state_handle->last_temp);
@@ -1159,8 +1182,10 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
 
     if ((state_handle->state == STATE_GENTLE || (state_handle->state == STATE_RISE_SLOW && data[len - 1] - data[0] < 50 && data[len - 1] - data[0] > 0)) && state_handle->current_tick >= INPUT_DATA_HZ * 2 && state_handle->last_temp < 1000 && state_handle->last_temp > 650)
     {
+#ifndef BOIL_ENABLE
         // JUMP_DOWN_VALUE = -150;
         JUMP_RISE_VALUE = 30;
+#endif
     }
     else if (state_handle->state == STATE_SHAKE)
     {
@@ -1318,6 +1343,10 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
         }
     }
     // STATE_RISE_SLOW
+#ifdef BOIL_ENABLE
+    state_handle->boil_gengle_state = 0;
+    state_handle->boil_gengle_small_state = 0;
+#endif
 #define STEP (2)
     signed short slow_rise_value = -200;
 
@@ -1335,6 +1364,8 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
         // slow_rise += diff3 <= 0;
         if (slow_rise >= 3)
         {
+            // state_handle->boil_gengle_state=0x0f;
+            state_handle->boil_gengle_small_state = 0x0f;
             for (i = START + 1; i < len - 1; ++i)
             {
                 if (data[START] > data[i])
@@ -1384,20 +1415,16 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
             }
         }
     }
-// STATE_GENTLE
-#ifdef BOIL_ENABLE
-    state_handle->boil_gengle_state = 0;
-#endif
+    // STATE_GENTLE
     if (state_hood.gear > GEAR_CLOSE || state_handle->pan_fire_state == PAN_FIRE_ENTER)
     {
 #ifdef BOIL_ENABLE
-        for (i = len - 1; i >= START; --i)
+        for (i = len - 1; i >= 0; --i)
         {
-            if (state_handle->boil_gengle_state < 3)
-            {
-                if ((gentle_average <= 91 && abs(data[i] - gentle_average) >= 10) || (gentle_average > 91 && abs(data[i] - gentle_average) >= 18))
-                    ++state_handle->boil_gengle_state;
-            }
+            if (abs(data[i] - average) >= 15)
+                ++state_handle->boil_gengle_state;
+            if (abs(data[i] - average) < 9)
+                ++state_handle->boil_gengle_small_state;
         }
 #endif
         char gentle_range;
@@ -1428,8 +1455,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
         if (abs(gentle_average_before - gentle_average_after) < 10)
         {
 #ifdef BOIL_ENABLE
-            if (gentle_average <= 90)
-                state_handle->boil_gengle_state = 0xff;
+            state_handle->boil_gengle_state = 10;
 #endif
             state_handle->state_jump_temp = gentle_average_before > gentle_average_after ? gentle_average_before : gentle_average_after;
             return STATE_GENTLE;

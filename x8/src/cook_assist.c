@@ -36,7 +36,7 @@ static unsigned long curveKey = 0;
 static pthread_mutex_t lock;
 static cook_assist_t g_cook_assist = {
     workMode : 0,
-    OilTempSwitch : 0,
+    OilTempSwitch : 1,
     CookingCurveSwitch : 0,
     RMovePotLowHeatSwitch : 0,
     RAuxiliarySwitch : 0,
@@ -118,12 +118,7 @@ static void cookingCurve_post(const signed short *temp, const unsigned char len)
     cJSON_AddStringToObject(root, "iotId", cloud_dev->device_name);
     cJSON_AddNumberToObject(root, "Temp", 0);
     cJSON_AddNumberToObject(root, "curveKey", curveKey);
-
-    char buf[48];
-    char md5_str[33] = {0};
-    sprintf(buf, "%s%s", "device", cloud_dev->device_name);
-    Compute_string_md5((unsigned char *)buf, strlen(buf), md5_str);
-    cJSON_AddStringToObject(root, "Token", md5_str);
+    cJSON_AddStringToObject(root, "Token", cloud_dev->token);
 
     time_t now_time = time(NULL);
     cJSON *cookCurveTempDTOS = cJSON_AddArrayToObject(root, "cookCurveTempDTOS");
@@ -144,13 +139,13 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
     static signed short right_oil_curve[20];
     static unsigned char right_oil_curve_len;
 
-    static unsigned char report_temp_count = 15;
+    static unsigned char report_temp_count = 8;
     static unsigned short left_oil_temp = 0;
     static unsigned short right_oil_temp = 0;
 
     if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0)
     {
-        report_temp_count = 15;
+        report_temp_count = 8;
         right_oil_curve_len = 0;
         return;
     }
@@ -164,12 +159,12 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
         right_oil_temp = temp;
     }
 
-    if (++report_temp_count >= 20 || report_temp_count == 10)
+    if (++report_temp_count >= 10 || report_temp_count == 5)
     {
         cJSON *root = cJSON_CreateObject();
         cJSON_AddNumberToObject(root, "LOilTemp", left_oil_temp / 10);
         cJSON_AddNumberToObject(root, "ROilTemp", right_oil_temp / 10);
-        if (report_temp_count != 10)
+        if (report_temp_count != 5)
         {
             report_temp_count = 0;
             report_msg_all_platform(root);
@@ -178,22 +173,21 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
         {
             send_event_uds(root, NULL);
         }
-
-        if (report_temp_count % 2 == 0)
+    }
+    if (report_temp_count % 2 == 0)
+    {
+        if (g_cook_assist.RStoveStatus > 0 && g_cook_assist.CookingCurveSwitch > 0)
         {
-            if (g_cook_assist.RStoveStatus > 0 && g_cook_assist.CookingCurveSwitch > 0)
+            right_oil_curve[right_oil_curve_len++] = right_oil_temp / 10;
+            if (right_oil_curve_len >= 20)
             {
-                right_oil_curve[right_oil_curve_len++] = right_oil_temp / 10;
-                if (right_oil_curve_len >= 20)
-                {
-                    cookingCurve_post(right_oil_curve, right_oil_curve_len);
-                    right_oil_curve_len = 0;
-                }
-            }
-            else
-            {
+                cookingCurve_post(right_oil_curve, right_oil_curve_len);
                 right_oil_curve_len = 0;
             }
+        }
+        else
+        {
+            right_oil_curve_len = 0;
         }
     }
 }
@@ -318,7 +312,7 @@ static int cook_assist_recv_cb(void *arg)
             right_temp = 380;
 
         cook_assistant_input(INPUT_RIGHT, right_temp * 10, right_environment_temp * 10);
-        cook_assistant_input(INPUT_LEFT, left_temp * 10, left_environment_temp * 10);
+        // cook_assistant_input(INPUT_LEFT, left_temp * 10, left_environment_temp * 10);
         prepare_gear_change_task();
     }
     return 0;
@@ -378,7 +372,6 @@ void cook_assist_init()
     dzlog_warn("cook_assist init,OilTempSwitch:%d", g_cook_assist.OilTempSwitch);
     cook_assistant_init(INPUT_LEFT);
     cook_assistant_init(INPUT_RIGHT);
-    cook_assist_judge_work_mode();
 
     select_client_event.fd = fd;
     select_client_event.read_cb = cook_assist_recv_cb;
@@ -389,6 +382,7 @@ void cook_assist_init()
 
     // cook_assist_set_smartSmoke(1);
     // cook_assistant_hood_speed_cb(0,INPUT_RIGHT);
+    cook_assist_judge_work_mode();
 }
 void cook_assist_deinit()
 {

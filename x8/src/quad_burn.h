@@ -5,7 +5,5 @@ void register_save_quad_cb(int (*cb)(const char *, const char *, const char *, c
 void register_report_message_cb(int (*cb)(const char *));
 void register_quad_burn_success_cb(void (*cb)());
 
-void quad_burn_init();
-void quad_burn_deinit();
 int quad_burn_requst(const char *product_key, const char *mac, const char *request_ip);
 #endif
