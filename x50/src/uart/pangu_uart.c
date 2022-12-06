@@ -43,6 +43,10 @@ static pangu_attr_t g_pangu_attr[] = {
         key : "HeatDissipation",
         value_len : 1,
     },
+    {
+        key : "hallState",
+        value_len : 1,
+    },
     //--------------------------------
     {
         key : "HeatingMethod",
@@ -238,24 +242,13 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
         attr = get_pangu_attr("PotLidLock");
         attr->value[0] = (state >> 7) & 0x01;
         attr->change = 1;
-        attr = get_pangu_attr("HeatingGear");
+        attr = get_pangu_attr("MotorSpeed");
         attr->value[0] = state & 0x7f;
         attr->change = 1;
 
-        state = (payload[3] << 8) + payload[4];
-        attr = get_pangu_attr("MotorSpeed");
-        attr->value[0] = state >> 8;
-        attr->value[1] = state;
-        attr->change = 1;
-
-        state = payload[13];
-        attr = get_pangu_attr("HeatingTemp");
-        attr->value[0] = state;
-        attr->change = 1;
-
-        state = payload[14];
-        attr = get_pangu_attr("HeatingMethod");
-        attr->value[0] = state;
+        attr = get_pangu_attr("RStOvRealTemp");
+        attr->value[0] = 0;
+        attr->value[1] = payload[7];
         attr->change = 1;
     }
     else if (cmd == 0x08)
@@ -297,8 +290,13 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
         attr->value[0] = state;
         attr->change = 1;
 
-        state = payload[76];
+        state = payload[7];
         attr = &g_pangu_attr[6];
+        attr->value[0] = state;
+        attr->change = 1;
+
+        state = payload[8];
+        attr = &g_pangu_attr[7];
         attr->value[0] = state;
         attr->change = 1;
     }
@@ -543,10 +541,17 @@ int pangu_cook_start()
     }
     else
     {
-        if (pangu_cook.total_step != 0 && pangu_cook.current_step < pangu_cook.total_step)
+        if (pangu_cook.total_step != 0)
         {
-            pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
-            return 1;
+            if (pangu_cook.current_step < pangu_cook.total_step)
+            {
+                pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
+                return 1;
+            }
+            else
+            {
+                report_work_state(REPORT_WORK_STATE_FINISH);
+            }
         }
     }
     return 0;
@@ -689,9 +694,9 @@ int pangu_recv_set(void *data)
             break;
         }
     }
-    if (cJSON_HasObjectItem(root, "Gating"))
+    if (cJSON_HasObjectItem(root, "PushRod"))
     {
-        item = cJSON_GetObjectItem(root, "Gating");
+        item = cJSON_GetObjectItem(root, "PushRod");
         pangu_transfer_set(-1, -1, -1, -1, item->valueint, -1);
     }
     return 0;
