@@ -6,7 +6,7 @@
             "imgUrl": "recipes/红烧肉.png",
             "cookSteps": [
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 9,
                     "temp": 115,
                     "time": 5,
@@ -15,10 +15,11 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 },
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 9,
                     "temp": 115,
                     "time": 5,
@@ -27,10 +28,11 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 31
+                    "repeat": 31,
+                    "repeatStep": 1
                 },
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 10,
                     "temp": 115,
                     "time": 5,
@@ -39,10 +41,11 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 },
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 10,
                     "temp": 115,
                     "time": 30,
@@ -51,10 +54,11 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 5
+                    "repeat": 5,
+                    "repeatStep": 1
                 },
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 7,
                     "temp": 115,
                     "time": 5,
@@ -63,10 +67,11 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 },
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 7,
                     "temp": 115,
                     "time": 30,
@@ -75,10 +80,11 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 51
+                    "repeat": 51,
+                    "repeatStep": 1
                 },
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 10,
                     "temp": 130,
                     "time": 300,
@@ -87,19 +93,21 @@
                     "waterTime": 0,
                     "fan": 1,
                     "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 }
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
             "cookType": 1,
-            "recipeType": 1
+            "recipeType": 1,
+            "clearMode": 1
         },
         {
             "dishName": "豆浆",
             "imgUrl": "recipes/豆浆.png",
             "cookSteps": [
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 5,
                     "temp": 100,
                     "time": 2,
@@ -108,19 +116,8 @@
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
-                    "repeat": 0
-                },
-                {
-                    "mode": 17,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 }
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
@@ -132,7 +129,7 @@
             "imgUrl": "recipes/冰糖粉.png",
             "cookSteps": [
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 5,
                     "temp": 100,
                     "time": 2,
@@ -141,19 +138,8 @@
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
-                    "repeat": 0
-                },
-                {
-                    "mode": 17,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 }
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
@@ -165,7 +151,7 @@
             "imgUrl": "recipes/面团.png",
             "cookSteps": [
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 5,
                     "temp": 100,
                     "time": 2,
@@ -174,19 +160,8 @@
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
-                    "repeat": 0
-                },
-                {
-                    "mode": 17,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 }
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
@@ -198,7 +173,7 @@
             "imgUrl": "recipes/面团.png",
             "cookSteps": [
                 {
-                    "mode": 17,
+                    "mode": 3,
                     "fire": 5,
                     "temp": 100,
                     "time": 2,
@@ -207,24 +182,186 @@
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
-                    "repeat": 0
-                },
-                {
-                    "mode": 17,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 1,
-                    "repeat": 0
+                    "repeat": 0,
+                    "repeatStep": 0
                 }
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
             "cookType": 1,
             "recipeType": 2
+        }
+    ],
+    "clear": [
+        {
+            "dishName": "快速清洗",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 8,
+                    "motorSpeed": 14,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 14,
+                    "motorSpeed": 14,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                }
+            ]
+        },
+        {
+            "dishName": "深度清洗",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 65,
+                    "time": 30,
+                    "motorSpeed": 5,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 65,
+                    "time": 30,
+                    "motorSpeed": 5,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 65,
+                    "time": 20,
+                    "motorSpeed": 10,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 65,
+                    "time": 20,
+                    "motorSpeed": 10,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 1,
+                    "repeatStep": 1
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 65,
+                    "time": 20,
+                    "motorSpeed": 12,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 65,
+                    "time": 20,
+                    "motorSpeed": 12,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                }
+            ]
+        },
+        {
+            "dishName": "面团清洗",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 40,
+                    "time": 30,
+                    "motorSpeed": 5,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 40,
+                    "time": 30,
+                    "motorSpeed": 5,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 1,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 40,
+                    "time": 20,
+                    "motorSpeed": 12,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 40,
+                    "time": 20,
+                    "motorSpeed": 12,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 1,
+                    "repeatStep": 1
+                }
+            ]
         }
     ]
 }

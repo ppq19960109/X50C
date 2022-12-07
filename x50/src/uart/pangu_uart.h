@@ -20,6 +20,7 @@ enum report_work_state
     REPORT_WORK_STATE_RESERVE_PAUSE,
     REPORT_WORK_STATE_WATER,
     REPORT_WORK_STATE_CLEAN,
+    REPORT_WORK_STATE_CLEAN_FINISH,
 };
 
 typedef struct
@@ -43,6 +44,7 @@ typedef struct
     unsigned char fan;
     unsigned char hoodSpeed;
     unsigned char repeat;
+    unsigned char repeatStep;
 } pangu_cook_attr_t;
 
 typedef struct

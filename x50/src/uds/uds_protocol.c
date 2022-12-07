@@ -30,7 +30,7 @@ int send_event_uds(cJSON *send, const char *type) // uds发送u接口
     if (cJSON_Object_isNull(send))
     {
         cJSON_Delete(send);
-        dzlog_warn("%s,send NULL", __func__);
+        // dzlog_warn("%s,send NULL", __func__);
         return -1;
     }
 
