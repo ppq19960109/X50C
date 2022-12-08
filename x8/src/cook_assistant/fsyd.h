@@ -7,7 +7,7 @@ extern "C"
 #include "ring_buffer.h"
 #include "cook_wrapper.h"
 
-#define BOIL_ENABLE
+// #define BOIL_ENABLE
 
 #define STATE_JUDGE_DATA_SIZE (10)
 #define INPUT_DATA_HZ (4)

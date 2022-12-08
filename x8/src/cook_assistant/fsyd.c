@@ -22,7 +22,7 @@ static char *state_info[] = {"shake", "down_jump", "rise_jump", "rise_slow", "do
                              "boil"
 #endif
 };
-//档位切换延时
+// 档位切换延时
 static unsigned char g_gear_delay_time = INPUT_DATA_HZ * 2;
 
 static state_handle_t g_state_func[2];
@@ -402,7 +402,7 @@ static int state_func_shake(unsigned char prepare_state, state_handle_t *state_h
 /***********************************************************
  * 风随烟动跳降处理函数
  ***********************************************************/
-static int state_func_down_jump(unsigned char prepare_state, state_handle_t *state_handle) //跳降
+static int state_func_down_jump(unsigned char prepare_state, state_handle_t *state_handle) // 跳降
 {
     if (state_handle->current_tick == 0)
     {
@@ -576,7 +576,7 @@ end:
 /***********************************************************
  * 风随烟动缓降处理函数
  ***********************************************************/
-static int state_func_down_slow(unsigned char prepare_state, state_handle_t *state_handle) //缓降
+static int state_func_down_slow(unsigned char prepare_state, state_handle_t *state_handle) // 缓降
 {
     if (state_handle->current_tick == 0)
     {
@@ -612,7 +612,7 @@ static int state_func_down_slow(unsigned char prepare_state, state_handle_t *sta
 /***********************************************************
  * 风随烟动平缓处理函数
  ***********************************************************/
-static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_handle) //平缓
+static int state_func_gentle(unsigned char prepare_state, state_handle_t *state_handle) // 平缓
 {
     if (state_handle->current_tick == 0)
     {
@@ -719,7 +719,7 @@ end:
 /***********************************************************
  * 风随烟动空闲处理函数
  ***********************************************************/
-static int state_func_idle(unsigned char prepare_state, state_handle_t *state_handle) //空闲
+static int state_func_idle(unsigned char prepare_state, state_handle_t *state_handle) // 空闲
 {
     if (state_handle->current_tick == 0)
     {
@@ -754,7 +754,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     }
     mlogPrintf("%s,%s pan_fire_state:%d pan_fire_tick:%d current_tick:%d\n", __func__, state_info[STATE_PAN_FIRE], state_handle->pan_fire_state, state_handle->pan_fire_tick, state_handle->current_tick);
 
-    if (state_handle->pan_fire_state == PAN_FIRE_CLOSE) //假设移锅小火
+    if (state_handle->pan_fire_state == PAN_FIRE_CLOSE) // 假设移锅小火
     {
         mlogPrintf("%s,%s %s\n", __func__, state_info[STATE_PAN_FIRE], "set small fire");
         set_fire_gear(FIRE_SMALL, state_handle, 0);
@@ -769,7 +769,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
             state_handle->pan_fire_state = PAN_FIRE_START;
         }
     }
-    else if (state_handle->pan_fire_state == PAN_FIRE_ENTER) //开关小火，温度跳降，确定是移锅小火
+    else if (state_handle->pan_fire_state == PAN_FIRE_ENTER) // 开关小火，温度跳降，确定是移锅小火
     {
         if (state_handle->pan_fire_enter_start_tick < INPUT_DATA_HZ * 60 * 3)
         {
@@ -790,7 +790,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
             goto exit;
         }
     }
-    else if (state_handle->pan_fire_state == PAN_FIRE_START && state_handle->pan_fire_tick + PAN_FIRE_ENTER_TICK < state_handle->current_tick) //开关小火，规定时间温度没有跳降，不是移锅小火
+    else if (state_handle->pan_fire_state == PAN_FIRE_START && state_handle->pan_fire_tick + PAN_FIRE_ENTER_TICK < state_handle->current_tick) // 开关小火，规定时间温度没有跳降，不是移锅小火
     {
         mlogPrintf("%s, %s pan_fire_state:%d\n", __func__, "set small fire errors", state_handle->pan_fire_state);
         set_fire_gear(FIRE_BIG, state_handle, 0);
@@ -865,7 +865,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
             {
                 goto exit;
             }
-            if (state_handle->pan_fire_enter_type == 1) //翻炒进入移锅小火
+            if (state_handle->pan_fire_enter_type == 1) // 翻炒进入移锅小火
             {
                 if (state_handle->last_temp >= 800)
                 {
@@ -1364,8 +1364,10 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
         // slow_rise += diff3 <= 0;
         if (slow_rise >= 3)
         {
+#ifdef BOIL_ENABLE
             // state_handle->boil_gengle_state=0x0f;
             state_handle->boil_gengle_small_state = 0x0f;
+#endif
             for (i = START + 1; i < len - 1; ++i)
             {
                 if (data[START] > data[i])
@@ -1549,7 +1551,7 @@ static void change_state(state_handle_t *state_handle)
     state_handle->last_temp = state_handle->last_temp_data[state_handle->temp_data_size - 1];
     mlogPrintf("%s,last_temp:%d\n", __func__, state_handle->last_temp);
     MLOG_INT_PRINTF("ring_buffer_peek:", state_handle->last_temp_data, STATE_JUDGE_DATA_SIZE, 2);
-    //点火开关判断
+    // 点火开关判断
     if (!state_handle->ignition_switch)
     {
         state_handle->temp_control_enter_start_tick = 0;
@@ -1567,7 +1569,7 @@ static void change_state(state_handle_t *state_handle)
         if (state_handle->last_temp > 500 && state_handle->state != STATE_PAN_FIRE && state_handle->total_tick > INPUT_DATA_HZ * 20)
             gear_change(1, 1, "init gear_change", state_handle);
     }
-    //控温
+    // 控温
     if (state_handle->temp_control_switch)
     {
         temp_control_func(state_handle);
@@ -1577,30 +1579,30 @@ static void change_state(state_handle_t *state_handle)
         state_handle->state = STATE_IDLE;
         return;
     }
-    //翻炒允许温度
+    // 翻炒允许温度
     if (state_handle->last_temp > SHAKE_PERMIT_TEMP)
     {
         state_handle->shake_permit_start_tick = state_handle->total_tick;
     }
-    //高温时，移锅小火退出后，锁定时间
+    // 高温时，移锅小火退出后，锁定时间
     if (state_handle->pan_fire_high_temp_exit_lock_tick > 0)
     {
         --state_handle->pan_fire_high_temp_exit_lock_tick;
     }
-    //跳升退出移锅小火后，锁定时间
+    // 跳升退出移锅小火后，锁定时间
     if (state_handle->pan_fire_rise_jump_exit_lock_tick > 0)
     {
         --state_handle->pan_fire_rise_jump_exit_lock_tick;
     }
-    //移锅小火判断错误
+    // 移锅小火判断错误
     if (state_handle->pan_fire_state == PAN_FIRE_ERROR_CLOSE)
     {
-        //开始一分钟内,移锅小火第一次判断错误
+        // 开始一分钟内,移锅小火第一次判断错误
         if (state_handle->total_tick < START_FIRST_MINUTE_TICK && state_handle->pan_fire_first_error == 0)
         {
             state_handle->pan_fire_first_error = 1;
         }
-        //移锅小火判断错误，锁定时间
+        // 移锅小火判断错误，锁定时间
         if (state_handle->pan_fire_error_lock_tick == 0)
             state_handle->pan_fire_error_lock_tick = state_handle->total_tick;
         else
@@ -1613,7 +1615,7 @@ static void change_state(state_handle_t *state_handle)
         }
     }
 
-    //下一个状态判断
+    // 下一个状态判断
     prepare_state = status_judge(state_handle, &state_handle->last_temp_data[state_handle->temp_data_size - STATE_JUDGE_DATA_SIZE], STATE_JUDGE_DATA_SIZE);
     mlogPrintf("%s,prepare_state:%s\n", __func__, state_info[prepare_state]);
 
@@ -1624,7 +1626,7 @@ static void change_state(state_handle_t *state_handle)
         return;
     }
 
-    //状态切换
+    // 状态切换
     next_state = g_state_func_handle[state_handle->state](prepare_state, state_handle);
     if (state_handle->state != next_state)
     {

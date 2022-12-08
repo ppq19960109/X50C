@@ -27,7 +27,7 @@ static int main_quit(void)
 #else
         uart_task_deinit(); // ECB串口资源释放
 #endif
-        cloud_deinit(); //阿里云相关释放
+        cloud_deinit(); // 阿里云相关释放
         zlog_fini();    // zlog释放
         usleep(1000);
 #ifdef DEBUG
@@ -63,16 +63,16 @@ int main(int argc, char **argv)
     pthread_t cloud_tid;
     pthread_t uds_tid;
 
-    registerQuitCb(main_quit); //注册退出信号回调
-    signalQuit();              //退出信号初始化
+    registerQuitCb(main_quit); // 注册退出信号回调
+    signalQuit();              // 退出信号初始化
 #ifndef ICE_ENABLE
     uart_task_init();
 #endif
     uds_protocol_init(); // uds相关初始化
-    cloud_init();        //阿里云相关初始化
+    cloud_init();        // 阿里云相关初始化
 
-    // pthread_create(&cloud_tid, NULL, cloud_task, NULL); //阿里云线程启动
-    // pthread_detach(cloud_tid);
+    pthread_create(&cloud_tid, NULL, cloud_task, NULL); // 阿里云线程启动
+    pthread_detach(cloud_tid);
 
     pthread_create(&uds_tid, NULL, uds_tcp_server_task, NULL); // UI uds通信线程启动
     pthread_detach(uds_tid);
