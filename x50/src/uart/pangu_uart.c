@@ -258,12 +258,12 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
             attr->value[0] = state;
             attr->change = 1;
         }
-        state = payload[7];
+        state = payload[8];
         attr = get_pangu_attr("RStOvRealTemp");
         if (attr->value[1] != state)
         {
             attr->value[0] = 0;
-            attr->value[1] = payload[7];
+            attr->value[1] = payload[8];
             attr->change = 1;
         }
     }
@@ -389,7 +389,7 @@ static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *
         // return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
-    if (cmd != 0x10)
+    // if (cmd != 0x10)
     {
         hdzlog_info(&in[index], cmd_index);
     }
@@ -408,7 +408,7 @@ static int pangu_recv_cb(void *arg)
     {
         uart_read_buf_index += uart_read_len;
         // dzlog_warn("recv from pangu-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
-        //  hdzlog_info(uart_read_buf, uart_read_buf_index);
+        // hdzlog_info(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, pangu_uart_parse_msg);
         // dzlog_warn("pangu uart_read_buf_index:%d", uart_read_buf_index);
         //  hdzlog_info(uart_read_buf, uart_read_buf_index);
@@ -516,12 +516,12 @@ static int pangu_single_set(pangu_cook_attr_t *attr)
         uart_buf[uart_buf_len++] = 0x04;
         uart_buf[uart_buf_len++] = 0x03;
         uart_buf[uart_buf_len] = 0;
-        uart_buf[uart_buf_len] |= 1 << 5;
+        uart_buf[uart_buf_len] |= 0 << 5;
         uart_buf[uart_buf_len] |= attr->motorSpeed;
         ++uart_buf_len;
         pangu_cuyi_set(uart_buf, uart_buf_len);
-
-        pangu_transfer_set(-1, -1, -1, -1, -1, 1);
+        if (attr->fan)
+            pangu_transfer_set(-1, -1, -1, -1, -1, 1);
         // hoodSpeed_set(attr->hoodSpeed);
 
         if (g_time == 0)
@@ -675,11 +675,16 @@ int pangu_recv_set(void *data)
             pangu_cook_attr[i].hoodSpeed = hoodSpeed->valueint;
             pangu_cook_attr[i].repeat = repeat->valueint;
             pangu_cook_attr[i].repeatStep = repeatStep->valueint;
+            if (pangu_cook_attr[i].repeat > 0 && pangu_cook_attr[i].repeatStep == 0)
+                pangu_cook_attr[i].repeatStep = 1;
             g_total_time += pangu_cook_attr[i].waterTime;
             if (pangu_cook_attr[i].repeat && i > 0)
             {
                 g_total_time += pangu_cook_attr[i].time * (pangu_cook_attr[i].repeat + 1);
-                g_total_time += pangu_cook_attr[i - 1].time * (pangu_cook_attr[i].repeat);
+                for (int j = pangu_cook_attr[i].repeatStep; j > 0; --j)
+                {
+                    g_total_time += pangu_cook_attr[i - j].time * (pangu_cook_attr[i].repeat);
+                }
             }
             else
                 g_total_time += pangu_cook_attr[i].time;
@@ -769,10 +774,10 @@ static void POSIXTimer_cb(union sigval val)
                 }
                 else
                 {
-                    if (pangu_cook.cook_attr[pangu_cook.current_step].repeat && pangu_cook.current_step)
+                    if (pangu_cook.cook_attr[pangu_cook.current_step].repeat && pangu_cook.current_step >= pangu_cook.cook_attr[pangu_cook.current_step].repeatStep)
                     {
                         pangu_cook.cook_attr[pangu_cook.current_step].repeat -= 1;
-                        pangu_cook.current_step -= 1;
+                        pangu_cook.current_step -= pangu_cook.cook_attr[pangu_cook.current_step].repeatStep;
                     }
                     else
                     {
@@ -843,4 +848,6 @@ void pangu_uart_init(void)
     select_client_event.fd = fd;
     select_client_event.read_cb = pangu_recv_cb;
     add_select_client_uart(&select_client_event);
+
+    pangu_cook_stop_pause_finish(0);
 }
