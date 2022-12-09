@@ -187,7 +187,7 @@ int pangu_uart_send(unsigned char *in, int in_len)
             goto fail;
         }
         res = write(fd, in, in_len);
-        usleep(30000);
+        usleep(100000);
     fail:
         pthread_mutex_unlock(&lock);
         return res;
@@ -258,12 +258,12 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
             attr->value[0] = state;
             attr->change = 1;
         }
-        state = payload[8];
+        state = payload[7];
         attr = get_pangu_attr("RStOvRealTemp");
         if (attr->value[1] != state)
         {
             attr->value[0] = 0;
-            attr->value[1] = payload[8];
+            attr->value[1] = payload[7];
             attr->change = 1;
         }
     }
@@ -275,46 +275,69 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
     }
     else if (cmd == 0x0a)
     {
-        state = (payload[0] << 8) + payload[1];
         attr = &g_pangu_attr[0];
-        attr->value[0] = state >> 8;
-        attr->value[1] = state;
-        attr->change = 1;
+        if (attr->value[0] != payload[0] || attr->value[1] != payload[1])
+        {
+            attr->value[0] = payload[0];
+            attr->value[1] = payload[1];
+            attr->change = 1;
+        }
 
         state = payload[2];
         attr = &g_pangu_attr[1];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        {
+            attr->value[0] = state;
+            attr->change = 1;
+        }
 
         state = payload[3];
         attr = &g_pangu_attr[2];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        { 
+            attr->value[0] = state;
+            attr->change = 1;
+        }
 
         state = payload[4];
         attr = &g_pangu_attr[3];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        {
+            attr->value[0] = state;
+            attr->change = 1;
+        }
 
         state = payload[5];
         attr = &g_pangu_attr[4];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        {
+            attr->value[0] = state;
+            attr->change = 1;
+        }
 
         state = payload[6];
         attr = &g_pangu_attr[5];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        {
+            attr->value[0] = state;
+            attr->change = 1;
+        }
 
         state = payload[7];
         attr = &g_pangu_attr[6];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        {
+            attr->value[0] = state;
+            attr->change = 1;
+        }
 
         state = payload[8];
         attr = &g_pangu_attr[7];
-        attr->value[0] = state;
-        attr->change = 1;
+        if (attr->value[0] != state)
+        {
+            attr->value[0] = state;
+            attr->change = 1;
+        }
     }
     else
     {
@@ -389,7 +412,7 @@ static int pangu_uart_parse_msg(const unsigned char *in, const int in_len, int *
         // return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
-    // if (cmd != 0x10)
+    if (cmd != 0x10)
     {
         hdzlog_info(&in[index], cmd_index);
     }
@@ -475,6 +498,12 @@ static void pangu_cuyi_set(unsigned char *buf, int len)
     memcpy(&uart_buf[4], buf, len);
     pangu_send_msg(0x73, uart_buf, 4 + len);
 }
+static void pangu_cuyi_get(unsigned char *buf, int len)
+{
+    unsigned char uart_buf[16] = {0x00, 0x01, 0xb2, 0x07};
+    memcpy(&uart_buf[4], buf, len);
+    pangu_send_msg(0x72, uart_buf, 4 + len);
+}
 static int pangu_single_set(pangu_cook_attr_t *attr)
 {
     pangu_attr_t *pangu_attr;
@@ -516,10 +545,11 @@ static int pangu_single_set(pangu_cook_attr_t *attr)
         uart_buf[uart_buf_len++] = 0x04;
         uart_buf[uart_buf_len++] = 0x03;
         uart_buf[uart_buf_len] = 0;
-        uart_buf[uart_buf_len] |= 0 << 5;
+        uart_buf[uart_buf_len] |= 1 << 5;
         uart_buf[uart_buf_len] |= attr->motorSpeed;
         ++uart_buf_len;
         pangu_cuyi_set(uart_buf, uart_buf_len);
+
         if (attr->fan)
             pangu_transfer_set(-1, -1, -1, -1, -1, 1);
         // hoodSpeed_set(attr->hoodSpeed);
