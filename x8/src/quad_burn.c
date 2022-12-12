@@ -39,6 +39,7 @@ static int curl_http_quad(const char *path, const char *body)
     CURL *curl = curl_easy_init();
     if (curl)
     {
+        printf("%s,g_product_key:%s,g_mac:%s\n", __func__, g_product_key, g_mac);
         headers = curl_slist_append(headers, "Content-Type:application/json");
         sprintf(buf, "pk:%s", g_product_key);
         headers = curl_slist_append(headers, buf);
@@ -92,10 +93,10 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     printf("http_quad_cb size:%lu,nmemb:%lu\n", size, nmemb);
     printf("http_quad_cb data:%s\n", (char *)ptr);
     // iotx_linkkit_dev_meta_info_t *master_meta_info = (iotx_linkkit_dev_meta_info_t *)stream;
-    int res = 2, quad_rupleId = 0;
+    int res = 0, quad_rupleId = 0;
     cJSON *root = cJSON_Parse(ptr);
     if (root == NULL)
-        return -1;
+        goto fail;
     // char *json = cJSON_PrintUnformatted(root);
     // printf("http_quad_cb json:%s\n", json);
     // free(json);
@@ -125,8 +126,18 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
         cJSON *quadrupleId = cJSON_GetObjectItem(data, "quadrupleId");
         quad_rupleId = quadrupleId->valueint;
     }
-    res = 0;
-    cJSON *ProductKey, *ProductSecret, *DeviceName, *DeviceSecret;
+
+    cJSON *ProductKey, *ProductSecret, *DeviceName, *DeviceSecret, *mqVerify;
+    if (cJSON_HasObjectItem(data, "mqVerify"))
+    {
+        mqVerify = cJSON_GetObjectItem(data, "mqVerify");
+    }
+    else
+    {
+        if (report_message_cb)
+            report_message_cb("四元组校验码缺失");
+        goto fail;
+    }
     if (cJSON_HasObjectItem(data, "productKey"))
     {
         ProductKey = cJSON_GetObjectItem(data, "productKey");
@@ -152,10 +163,27 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
             ++res;
     }
 
-    if (res == 4 && save_quad_cb)
+    if (res == 4)
     {
+        char buf[144];
+        sprintf(buf, "%s%s%s%s", DeviceName->valuestring, DeviceSecret->valuestring, ProductKey->valuestring, ProductSecret->valuestring);
+        char md5_str[33] = {0};
+        Compute_string_md5((unsigned char *)buf, strlen(buf), md5_str);
+        if (strcmp(md5_str, mqVerify->valuestring))
+        {
+            if (report_message_cb)
+                report_message_cb("四元组校验码错误");
+            goto fail;
+        }
+        if (save_quad_cb == NULL)
+        {
+            if (report_message_cb)
+                report_message_cb("保存四元组功能缺失");
+            goto fail;
+        }
+        else
+            save_quad_cb(ProductKey->valuestring, ProductSecret->valuestring, DeviceName->valuestring, DeviceSecret->valuestring);
         res = 1;
-        save_quad_cb(ProductKey->valuestring, ProductSecret->valuestring, DeviceName->valuestring, DeviceSecret->valuestring);
     }
     else
         res = 2;
@@ -163,9 +191,10 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddNumberToObject(resp, "quadrupleId", quad_rupleId);
     cJSON_AddNumberToObject(resp, "state", res);
-    if (res != 1)
+    if (res == 2)
     {
-        cJSON_AddStringToObject(resp, "QuadInfo", "四元组错误，可能存在空值");
+        if (report_message_cb)
+            report_message_cb("四元组错误，可能存在空值");
     }
     char *body = cJSON_PrintUnformatted(resp);
     printf("http_quad_cb report json:%s\n", body);
@@ -180,7 +209,13 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
             quad_burn_success_cb();
     }
 fail:
-    cJSON_Delete(root);
+    if (res == 0)
+    {
+        if (report_message_cb)
+            report_message_cb("返回JSON错误");
+    }
+    if (root != NULL)
+        cJSON_Delete(root);
     return size * nmemb;
 }
 

@@ -556,6 +556,20 @@
             "funType": 2,
             "uartCmd": 0,
             "uartByteLen": 1
+        },
+        {
+            "cloudKey": "LStOvPauseTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 129,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RStOvPauseTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 130,
+            "uartByteLen": 1
         }
     ],
     "event": [],
