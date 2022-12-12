@@ -968,7 +968,6 @@ int cloud_init(void) //初始化
         if (get_dev_profile(".", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
         {
             dzlog_error("cloud_init cloud_quad_parse_json error\n");
-            return -1;
         }
     }
     quad_burn_init();

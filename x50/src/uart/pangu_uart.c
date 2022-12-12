@@ -188,6 +188,8 @@ int pangu_uart_send(unsigned char *in, int in_len)
         }
         res = write(fd, in, in_len);
         usleep(100000);
+        res = write(fd, in, in_len);
+        usleep(100000);
     fail:
         pthread_mutex_unlock(&lock);
         return res;
@@ -294,7 +296,7 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
         state = payload[3];
         attr = &g_pangu_attr[2];
         if (attr->value[0] != state)
-        { 
+        {
             attr->value[0] = state;
             attr->change = 1;
         }
