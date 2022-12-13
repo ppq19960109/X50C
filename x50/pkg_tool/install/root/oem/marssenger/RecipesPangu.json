@@ -113,86 +113,158 @@
             "details": "用料:\n带皮五花肉500克,姜3片,大蒜瓣4个,料酒10g,冰糖25g,八角1个,桂皮1小块,香叶1片,生抽20g,老抽15g,清水300g\n步骤:\n1、将洗净切块的五花肉、姜片、大蒜瓣、料酒、冰糖放入主锅内，盖上主锅盖，爆香8分钟\n2、加入八角、桂皮、香叶、生抽、老抽、清水，炖煮30分钟",
             "cookType": 2,
             "recipeType": 1,
-            "clearMode": 1
+            "clearMode": 1,
+            "reserve": 0
         },
         {
             "dishName": "古法豆浆",
             "imgUrl": "recipes/豆浆.png",
             "cookSteps": [
                 {
-                    "mode": 3,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
+                    "mode": 2,
+                    "fire": 10,
+                    "temp": 0,
+                    "time": 480,
+                    "motorSpeed": 1,
+                    "motorDir": 1,
+                    "waterTime": 83,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 2,
+                    "fire": 3,
+                    "temp": 0,
+                    "time": 1140,
+                    "motorSpeed": 1,
                     "motorDir": 0,
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 180,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
                     "repeat": 0,
                     "repeatStep": 0
                 }
             ],
             "details": "用料:\n干黄豆70克（泡发后约140克）,细砂糖30克\n步骤:\n1、将干黄豆、细砂糖放入主锅内，盖上主锅盖，制浆25分钟",
             "cookType": 2,
-            "recipeType": 1
+            "recipeType": 1,
+            "clearMode": 0,
+            "reserve": 1
         },
         {
             "dishName": "冰糖粉",
             "imgUrl": "recipes/冰糖粉.png",
             "cookSteps": [
                 {
-                    "mode": 3,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 15,
+                    "motorSpeed": 20,
                     "motorDir": 0,
                     "waterTime": 0,
                     "fan": 0,
-                    "hoodSpeed": 1,
+                    "hoodSpeed": 0,
                     "repeat": 0,
                     "repeatStep": 0
                 }
             ],
             "details": "用料:\n冰糖200克\n步骤:\n1、将冰糖放入主锅内，盖上主锅盖，研磨20秒",
             "cookType": 2,
-            "recipeType": 1
+            "recipeType": 1,
+            "clearMode": 0,
+            "reserve": 0
         },
         {
             "dishName": "馒头面团",
             "imgUrl": "recipes/面团.png",
             "cookSteps": [
                 {
-                    "mode": 3,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 10,
+                    "motorSpeed": 3,
                     "motorDir": 0,
                     "waterTime": 0,
                     "fan": 0,
-                    "hoodSpeed": 1,
+                    "hoodSpeed": 0,
                     "repeat": 0,
                     "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 10,
+                    "motorSpeed": 3,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 20,
+                    "repeatStep": 1
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 10,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "time": 10,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 8,
+                    "repeatStep": 1
                 }
             ],
             "details": "用料:\n中筋面粉500克,清水250克,细砂糖10克,高活性干酵母5克,食盐2克\n步骤:\n1、 将中筋面粉、细砂糖、食盐、高活性干酵母、清水放入主锅内，盖上主锅盖，揉面10分钟",
             "cookType": 2,
-            "recipeType": 1
+            "recipeType": 1,
+            "clearMode": 2,
+            "reserve": 0
         },
         {
             "dishName": "预制菜",
             "imgUrl": "recipes/面团.png",
             "cookSteps": [
                 {
-                    "mode": 3,
-                    "fire": 5,
-                    "temp": 100,
-                    "time": 2,
-                    "motorSpeed": 10,
+                    "mode": 2,
+                    "fire": 6,
+                    "temp": 0,
+                    "time": 10,
+                    "motorSpeed": 5,
                     "motorDir": 0,
-                    "waterTime": 0,
+                    "waterTime": 10,
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
@@ -201,7 +273,9 @@
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
             "cookType": 2,
-            "recipeType": 2
+            "recipeType": 2,
+            "clearMode": 1,
+            "reserve": 1
         }
     ],
     "clear": [

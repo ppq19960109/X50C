@@ -187,9 +187,11 @@ int pangu_uart_send(unsigned char *in, int in_len)
             goto fail;
         }
         res = write(fd, in, in_len);
-        usleep(100000);
+        usleep(200000);
         res = write(fd, in, in_len);
-        usleep(100000);
+        usleep(200000);
+        res = write(fd, in, in_len);
+        usleep(200000);
     fail:
         pthread_mutex_unlock(&lock);
         return res;
@@ -479,6 +481,8 @@ static void pangu_transfer_set(signed char WaterInletValve, signed char Exhaust,
 }
 static void hoodSpeed_set(unsigned char speed)
 {
+    if (speed <= 0)
+        return;
     unsigned char uart_buf[2];
     uart_buf[0] = 0x31;
     uart_buf[1] = speed;
@@ -554,7 +558,7 @@ static int pangu_single_set(pangu_cook_attr_t *attr)
 
         if (attr->fan)
             pangu_transfer_set(-1, -1, -1, -1, -1, 1);
-        // hoodSpeed_set(attr->hoodSpeed);
+        hoodSpeed_set(attr->hoodSpeed);
 
         if (g_time == 0)
             g_time = attr->time;
@@ -621,7 +625,7 @@ int pangu_cook_stop_pause_finish(unsigned char state)
         uart_buf[uart_buf_len++] = 0x04;
         uart_buf[uart_buf_len++] = 0x03;
         uart_buf[uart_buf_len] = 0;
-        uart_buf[uart_buf_len] |= 0 << 5;
+        uart_buf[uart_buf_len] |= 2 << 5;
         uart_buf[uart_buf_len] |= 0;
         ++uart_buf_len;
         pangu_cuyi_set(uart_buf, uart_buf_len);
