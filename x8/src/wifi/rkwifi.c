@@ -37,8 +37,8 @@ void wifiRegsiterCallback(AppWiFiCallback cb)
  */
 void wifiInit()
 {
-    // RK_wifi_disable_ap();
-    //获取Mac地址
+    RK_wifi_disable_ap();
+    // 获取Mac地址
     char mac[16] = {0};
     RK_wifi_get_mac(mac);
     printf("RK_wifi Mac:%s\n", mac);
@@ -83,7 +83,7 @@ int wifiEnable(const int enable)
         system("wpa_cli enable_network all && wpa_cli save_config && wpa_cli reconnect"); //&& wpa_cli reconnect
     else
     {
-        // wifiDisconnect();
+        wifiDisconnect();
         system("wpa_cli disable_network all && wpa_cli save_config");
     }
 
@@ -128,7 +128,7 @@ int wifiDisconnect()
  */
 int getWifiRunningState()
 {
-    RK_WIFI_RUNNING_State_e state;
+    static RK_WIFI_RUNNING_State_e state;
     RK_wifi_running_getState(&state);
     printf("getWifiRunningState WiFi state :%d\n", state);
     return state;

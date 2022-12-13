@@ -274,6 +274,7 @@ static int wiFiCallback(int event)
     // }
     if (event == RK_WIFI_State_CONNECTED)
     {
+        systemRun("udhcpc -A 1 -t 1 -i wlan0 -n -q -b");
         cloud_attr_t *attr = get_attr_ptr("ProductionTestStatus");
         if (attr == NULL)
         {
