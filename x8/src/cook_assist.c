@@ -312,7 +312,7 @@ static int cook_assist_recv_cb(void *arg)
             right_temp = 380;
 
         cook_assistant_input(INPUT_RIGHT, right_temp * 10, right_environment_temp * 10);
-        // cook_assistant_input(INPUT_LEFT, left_temp * 10, left_environment_temp * 10);
+        cook_assistant_input(INPUT_LEFT, left_temp * 10, left_environment_temp * 10);
         prepare_gear_change_task();
     }
     return 0;

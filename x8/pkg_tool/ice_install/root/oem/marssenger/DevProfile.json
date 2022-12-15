@@ -187,6 +187,13 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "OilBoxState",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": 58,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "LMultiMode",
             "valueType": 0,
             "funType": 0,

@@ -595,6 +595,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                         get_attr_report_value(root, ptr);
                     }
                 }
+                break;
                 case 0x5e:
                 {
                     cloud_attr_t *ptr = get_attr_ptr("RCookbookName");
