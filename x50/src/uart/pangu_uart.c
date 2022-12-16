@@ -275,7 +275,7 @@ static int pangu_payload_parse(const unsigned char cmd, const unsigned char *pay
     {
         if (payload[0] != 0)
             return -1;
-        //unsigned short cmd_id = (payload[1] << 8) + payload[2];
+        // unsigned short cmd_id = (payload[1] << 8) + payload[2];
     }
     else if (cmd == 0x0a)
     {
@@ -481,8 +481,14 @@ static void pangu_transfer_set(signed char WaterInletValve, signed char Exhaust,
 }
 static void hoodSpeed_set(unsigned char speed)
 {
-    if (speed <= 0)
+    // if (speed <= 0)
+    //     return;
+    char hoodSpeed = get_HoodSpeed();
+    if (hoodSpeed >= 0 && speed <= hoodSpeed)
+    {
         return;
+    }
+
     unsigned char uart_buf[2];
     uart_buf[0] = 0x31;
     uart_buf[1] = speed;
@@ -559,7 +565,8 @@ static int pangu_single_set(pangu_cook_attr_t *attr)
 
         if (attr->fan)
             pangu_transfer_set(-1, -1, -1, -1, -1, 1);
-        hoodSpeed_set(attr->hoodSpeed);
+        if (attr->hoodSpeed > 0)
+            hoodSpeed_set(attr->hoodSpeed);
 
         if (g_time == 0)
             g_time = attr->time;
@@ -658,6 +665,7 @@ int pangu_cook_start()
                 else
                     report_work_state(REPORT_WORK_STATE_FINISH);
                 pangu_cook_stop_pause_finish(2);
+                hoodSpeed_set(0);
             }
         }
     }
