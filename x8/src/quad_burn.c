@@ -93,10 +93,15 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     printf("http_quad_cb size:%lu,nmemb:%lu\n", size, nmemb);
     printf("http_quad_cb data:%s\n", (char *)ptr);
     // iotx_linkkit_dev_meta_info_t *master_meta_info = (iotx_linkkit_dev_meta_info_t *)stream;
-    int res = 0, quad_rupleId = 0;
+    int res = 2, quad_rupleId = 0;
     cJSON *root = cJSON_Parse(ptr);
     if (root == NULL)
+    {
+        if (report_message_cb)
+            report_message_cb("返回JSON格式错误");
         goto fail;
+    }
+
     // char *json = cJSON_PrintUnformatted(root);
     // printf("http_quad_cb json:%s\n", json);
     // free(json);
@@ -104,6 +109,8 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     cJSON *code = cJSON_GetObjectItem(root, "code");
     if (code == NULL)
     {
+        if (report_message_cb)
+            report_message_cb("返回JSON格式错误");
         goto fail;
     }
     if (code->valueint != 0)
@@ -119,6 +126,8 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
     cJSON *data = cJSON_GetObjectItem(root, "data");
     if (data == NULL)
     {
+        if (report_message_cb)
+            report_message_cb("返回JSON格式错误");
         goto fail;
     }
     if (cJSON_HasObjectItem(data, "quadrupleId"))
@@ -138,6 +147,8 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
             report_message_cb("四元组校验码缺失");
         goto fail;
     }
+
+    res = 0;
     if (cJSON_HasObjectItem(data, "productKey"))
     {
         ProductKey = cJSON_GetObjectItem(data, "productKey");
@@ -186,16 +197,21 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
         res = 1;
     }
     else
+    {
+        if (report_message_cb)
+            report_message_cb("四元组错误，可能存在空值");
         res = 2;
+    }
+fail:
+    if (res != 1)
+        res = 2;
+    if (root != NULL)
+        cJSON_Delete(root);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddNumberToObject(resp, "quadrupleId", quad_rupleId);
     cJSON_AddNumberToObject(resp, "state", res);
-    if (res == 2)
-    {
-        if (report_message_cb)
-            report_message_cb("四元组错误，可能存在空值");
-    }
+
     char *body = cJSON_PrintUnformatted(resp);
     printf("http_quad_cb report json:%s\n", body);
 
@@ -208,14 +224,7 @@ size_t http_quad_cb(void *ptr, size_t size, size_t nmemb, void *stream)
         if (quad_burn_success_cb)
             quad_burn_success_cb();
     }
-fail:
-    if (res == 0)
-    {
-        if (report_message_cb)
-            report_message_cb("返回JSON错误");
-    }
-    if (root != NULL)
-        cJSON_Delete(root);
+
     return size * nmemb;
 }
 
