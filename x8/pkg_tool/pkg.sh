@@ -4,7 +4,7 @@ cd `dirname $0`
 
 if [ ! -n "$1" ]; then
   echo "IS NULL"
-  SOFTWARE_VERSION="0.0.9"
+  SOFTWARE_VERSION="0.1.0"
 else
   echo "NOT NULL"
   SOFTWARE_VERSION=$1

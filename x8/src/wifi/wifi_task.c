@@ -12,12 +12,7 @@ static int wiFiReport(int event);
 
 static int g_wifi_state = 0, g_link_state = 0;
 // static int back_online = 0;
-int get_link_state(void)
-{
-    if (g_link_state == RK_WIFI_State_CONNECTED)
-        return 1;
-    return 0;
-}
+
 void wifi_reset(void)
 {
     link_disconnect();
@@ -44,11 +39,8 @@ static void *WifiState_cb(void *ptr, void *arg)
     else
         attr->value.n = wifi_state;
     dzlog_warn("WifiState_cb wifi_state:%d link_connected_state:%d", wifi_state, link_connected_state);
-    // if (attr->value.n == RK_WIFI_State_CONNECTED && get_link_connected_state() == 0)
-    // {
-    //     attr->value.n = RK_WIFI_State_DISCONNECTED;
-    // }
-    g_link_state = attr->value.n;
+
+    g_link_state = link_connected_state;
     cJSON *item = cJSON_CreateNumber(attr->value.n);
     return item;
 }
@@ -250,7 +242,7 @@ static int wiFiReport(int event)
             wifi_connected_cb(0);
         }
     }
-    g_link_state = event;
+    
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
 
@@ -264,14 +256,7 @@ static int wiFiCallback(int event)
     int secret_len = strlen(cloud_dev->device_secret);
     dzlog_warn("wiFiCallback:%d link_connected_state:%d secret_len:%d", event, link_connected_state, secret_len);
     g_wifi_state = event;
-    // if (event > RK_WIFI_State_CONNECTING)
-    // {
-    //     link_disconnect();
-    // }
-    // if (event == RK_WIFI_State_CONNECTED && secret_len > 0)
-    // {
-    //     return -1;
-    // }
+
     if (event == RK_WIFI_State_CONNECTED)
     {
         systemRun("udhcpc -A 1 -t 1 -i wlan0 -n -q -b");
@@ -307,6 +292,7 @@ static void linkkit_connected_cb(int connect)
         if (g_link_state != 0)
             wiFiReport(RK_WIFI_State_DISCONNECTED);
     }
+    g_link_state = connect;
 }
 static int link_wifi_state_cb()
 {
