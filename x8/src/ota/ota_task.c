@@ -136,7 +136,8 @@ int ota_resp_set(cJSON *root, cJSON *resp)
 
 static int ota_state_event(const int state, void *arg)
 {
-    dzlog_info("ota_state_event:%d", state);
+    char otaCmdPushType = get_OtaCmdPushType();
+    dzlog_info("ota_state_event:%d,otaCmdPushType:%d", state, otaCmdPushType);
     cJSON *root = cJSON_CreateObject();
 
     if (OTA_NO_FIRMWARE == state)
@@ -144,7 +145,7 @@ static int ota_state_event(const int state, void *arg)
     }
     else
     {
-        if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+        if (otaCmdPushType == OTA_PUSH_TYPE_SILENT)
         {
             cJSON_Delete(root);
             return -1;
@@ -153,7 +154,6 @@ static int ota_state_event(const int state, void *arg)
         {
             strcpy(g_ota_set_attr[3].value.p, arg);
             cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
-            set_OtaCmdPushType(0);
         }
         else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state)
         {
@@ -201,6 +201,7 @@ static int ota_install_cb(char *text)
     char cmd[48] = {0};
     sprintf(cmd, "sh %s", text);
     ret = system(cmd);
+    // ret = 0;
     dzlog_warn("ota_install_cb ret:%d", ret);
 fail:
     sprintf(cmd, "rm -rf %s", text);
@@ -210,6 +211,7 @@ fail:
 
 static void ota_complete_cb(void)
 {
+    dzlog_warn("%s...", __func__);
     sync();
     if (get_OtaCmdPushType() == OTA_PUSH_TYPE_CONFIRM)
     {

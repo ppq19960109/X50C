@@ -529,6 +529,12 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) // æŠ
             else if (strcmp("ProductionTestStatus", ptr->cloud_key) == 0)
             {
                 *ptr->value = num;
+                return 0;
+            }
+            else if (strcmp("OtaCmdPushType", ptr->cloud_key) == 0)
+            {
+                *ptr->value = num;
+                return 0;
             }
             // else if (strcmp("HoodSpeed", ptr->cloud_key) == 0)
             // {
@@ -1007,9 +1013,9 @@ static void quad_burn_success()
 static void link_timestamp_cb(const unsigned long timestamp)
 {
     dzlog_warn("link_timestamp_cb:%ld", timestamp);
-    struct timeval tv;
-    tv.tv_sec = timestamp;
-    settimeofday(&tv, NULL);
+    // struct timeval tv;
+    // tv.tv_sec = timestamp;
+    // settimeofday(&tv, NULL);
 
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "NtpTimestamp", timestamp);

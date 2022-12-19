@@ -4,8 +4,7 @@
 #include "cJSON.h"
 
 typedef enum {
-	RK_WIFI_State_LINK_CONNECTED = 8,
-	RK_WIFI_State_LINK_DISCONNECTED
+	RK_WIFI_State_LINK_CONNECTED = 8
 } RK_WIFI_State_t;
 
 int wifi_task_init(void);

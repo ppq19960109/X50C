@@ -540,7 +540,7 @@
             "cloudKey": "OtaCmdPushType",
             "valueType": 0,
             "funType": 2,
-            "uartCmd": -1,
+            "uartCmd": 0,
             "uartByteLen": 1
         },
         {

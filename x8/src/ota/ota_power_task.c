@@ -140,7 +140,6 @@ static int ota_state_event(const int state, void *arg)
         {
             strcpy(g_ota_set_attr[3].value.p, arg);
             cJSON_AddStringToObject(root, g_ota_set_attr[3].cloud_key, arg);
-            set_OtaCmdPushType(0);
         }
         else if (OTA_DOWNLOAD_FAIL == state || OTA_INSTALL_FAIL == state || OTA_INSTALL_SUCCESS == state)
         {
