@@ -12,10 +12,10 @@ static void cook_history_post(cJSON *root)
 
     cJSON_AddStringToObject(root, "deviceMac", cloud_dev->mac);
     cJSON_AddStringToObject(root, "iotId", cloud_dev->device_name);
-    cJSON_AddStringToObject(root, "Token", cloud_dev->token);
+    cJSON_AddStringToObject(root, "token", cloud_dev->token);
 
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/addCookHistory", json);
+    curl_http_post("http://mcook.marssenger.com/menu-anon/addCookHistory", json);
     free(json);
 }
 int cook_history_set(void *data)

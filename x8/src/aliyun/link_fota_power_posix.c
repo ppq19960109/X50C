@@ -231,7 +231,7 @@ static void *demo_ota_download_thread(void *dl_handle)
         }
     }
     /* 下载所有固件内容完成, 销毁下载会话, 线程自行退出 */
-    printf("power download thread exit:%d\r\n", ret);
+    printf("power download thread exit:0x%x\r\n", ret);
     aiot_download_deinit(&dl_handle);
 
     if (ota_fp != NULL)

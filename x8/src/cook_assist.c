@@ -118,7 +118,7 @@ static void cookingCurve_post(const signed short *temp, const unsigned char len)
     cJSON_AddStringToObject(root, "iotId", cloud_dev->device_name);
     cJSON_AddNumberToObject(root, "Temp", 0);
     cJSON_AddNumberToObject(root, "curveKey", curveKey);
-    cJSON_AddStringToObject(root, "Token", cloud_dev->token);
+    cJSON_AddStringToObject(root, "token", cloud_dev->token);
 
     time_t now_time = time(NULL);
     cJSON *cookCurveTempDTOS = cJSON_AddArrayToObject(root, "cookCurveTempDTOS");
@@ -130,7 +130,7 @@ static void cookingCurve_post(const signed short *temp, const unsigned char len)
         cJSON_AddItemToArray(cookCurveTempDTOS, item);
     }
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/addCookCurve", json);
+    curl_http_post("http://mcook.marssenger.com/menu-anon/addCookCurve", json);
     free(json);
     cJSON_Delete(root);
 }

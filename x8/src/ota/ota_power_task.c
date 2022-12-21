@@ -300,7 +300,12 @@ static int ota_power_send_data(const char cmd)
     if (OTA_CMD_START == cmd)
     {
         ecb_uart_send_ota_msg(buf, len, 0);
-        POSIXTimerSet(ota_power_timer, 0, 8);
+        POSIXTimerSet(ota_power_timer, 0, 10);
+    }
+    else if (OTA_CMD_END == cmd)
+    {
+        ecb_uart_send_ota_msg(buf, len, 0);
+        POSIXTimerSet(ota_power_timer, 0, 25);
     }
     else
     {
@@ -429,10 +434,10 @@ fail:
     // system(cmd);
     return ret;
 }
-// void power_ota_install()
-// {
-//     ota_install_cb("/oem/marssenger/power_upgrade.bin");
-// }
+void power_ota_install()
+{
+    ota_install_cb("/data/power_upgrade.bin");
+}
 static void POSIXTimer_cb(union sigval val)
 {
     dzlog_warn("%s, sigval:%d", __func__, val.sival_int);
