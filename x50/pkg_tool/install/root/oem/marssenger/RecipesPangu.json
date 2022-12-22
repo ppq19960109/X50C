@@ -315,10 +315,10 @@
             "cookSteps": [
                 {
                     "mode": 3,
-                    "fire": 5,
-                    "temp": 40,
-                    "time": 30,
-                    "motorSpeed": 5,
+                    "fire": 9,
+                    "temp": 140,
+                    "time": 180,
+                    "motorSpeed": 9,
                     "motorDir": 0,
                     "waterTime": 67,
                     "fan": 0,
@@ -328,42 +328,16 @@
                 },
                 {
                     "mode": 3,
-                    "fire": 5,
-                    "temp": 40,
-                    "time": 30,
-                    "motorSpeed": 5,
-                    "motorDir": 1,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 1,
-                    "repeat": 0,
-                    "repeatStep": 0
-                },
-                {
-                    "mode": 3,
-                    "fire": 5,
+                    "fire": 9,
                     "temp": 60,
-                    "time": 8,
-                    "motorSpeed": 12,
-                    "motorDir": 1,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 1,
-                    "repeat": 0,
-                    "repeatStep": 0
-                },
-                {
-                    "mode": 3,
-                    "fire": 5,
-                    "temp": 60,
-                    "time": 8,
-                    "motorSpeed": 12,
+                    "time": 120,
+                    "motorSpeed": 17,
                     "motorDir": 0,
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
-                    "repeat": 14,
-                    "repeatStep": 1
+                    "repeat": 0,
+                    "repeatStep": 0
                 }
             ]
         },
