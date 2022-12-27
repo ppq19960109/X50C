@@ -238,30 +238,19 @@ static int wiFiReport(int event)
 
 static int wiFiCallback(int event)
 {
+    if (event == RK_WIFI_State_CONNECTED && g_link_state > 0)
+    {
+    }
+    else
+        wiFiReport(event);
     dzlog_warn("wiFiCallback:%d", event);
     g_wifi_state = event;
 
     if (event == RK_WIFI_State_CONNECTED)
     {
         systemRun("udhcpc -A 1 -t 1 -i wlan0 -n -q -b");
-        // cloud_attr_t *attr = get_attr_ptr("ProductionTestStatus");
-        // if (attr == NULL)
-        // {
-        //     dzlog_error("not attr ProductionTestStatus");
-        //     if (link_connected_state == 0 && secret_len > 0)
-        //         return -1;
-        // }
-        // else
-        // {
-        //     if (*attr->value == 0)
-        //     {
-        //         dzlog_warn("wait ProductionTestStatus");
-        //         if (link_connected_state == 0 && secret_len > 0)
-        //             return -1;
-        //     }
-        // }
     }
-    return wiFiReport(event);
+    return 0;
 }
 static void linkkit_connected_cb(int connect)
 {
@@ -269,9 +258,9 @@ static void linkkit_connected_cb(int connect)
     if (connect)
     {
         wiFiReport(RK_WIFI_State_LINK_CONNECTED);
-        send_all_to_cloud();
         if (wifi_connected_cb != NULL)
             wifi_connected_cb(1);
+        send_all_to_cloud();
     }
     else
     {

@@ -1,7 +1,14 @@
 #!/bin/bash
 
 cd `dirname $0`
-SOFTWARE_VERSION="0.1"
+
+if [ ! -n "$1" ]; then
+  echo "IS NULL"
+  SOFTWARE_VERSION="1.0"
+else
+  echo "NOT NULL"
+  SOFTWARE_VERSION=$1
+fi
 
 #compress directory and compress file name
 PKG_DIRNAME="power_install"
