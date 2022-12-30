@@ -155,13 +155,13 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
                 return;
             }
         }
-        set_ota_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
         if (ota_progress_cb)
             ota_progress_cb(percent);
         sleep(1);
         if (ota_complete_cb)
             ota_complete_cb();
+        set_ota_state(OTA_INSTALL_SUCCESS, NULL);
     }
     /* 简化输出, 只有距离上次的下载进度增加5%以上时, 才会打印进度, 并向服务器上报进度 */
     if (percent - last_percent >= 5 || percent == 100)
@@ -178,10 +178,11 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
 static void *demo_ota_download_thread(void *dl_handle)
 {
     int32_t ret = 0;
-    set_ota_state(OTA_DOWNLOAD_START, NULL);
-    printf("starting download thread in 2 seconds ......\r\n");
-    sleep(2);
 
+    printf("starting download thread in 2 seconds ......\r\n");
+    sleep(1);
+    set_ota_state(OTA_DOWNLOAD_START, NULL);
+    sleep(1);
     /* 向固件服务器请求下载 */
     /*
      * TODO: 下面这样的写法, 就是以1个请求, 获取全部的固件内容

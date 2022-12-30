@@ -138,7 +138,8 @@ void set_fire_gear(unsigned char fire_gear, state_handle_t *state_handle, const 
 static void gear_change(unsigned char gear, const unsigned char type, const char *msg, state_handle_t *state_handle)
 {
     mlogPrintf("%s,gear_change gear:%d type:%d msg:%s\n", __func__, gear, type, msg);
-
+    if (state_hood.smart_smoke_switch == 0)
+        return;
     if (thread_lock_cb != NULL)
     {
         if (thread_lock_cb() == 0)
@@ -179,7 +180,10 @@ static void gear_change(unsigned char gear, const unsigned char type, const char
 
     if (gear == GEAR_INVALID)
         goto end;
-
+    if (gear < state_hood.min_gear)
+    {
+        gear = state_hood.min_gear;
+    }
     if (last_gear == gear)
     {
         state_hood.prepare_gear = GEAR_INVALID;
@@ -274,25 +278,23 @@ void set_ignition_switch(unsigned char ignition_switch, enum INPUT_DIR input_dir
         cook_assistant_reinit(state_handle);
     }
 }
-
-void recv_ecb_gear(unsigned char gear, unsigned char gear_change_state)
+void set_hood_min_gear(unsigned char gear)
+{
+    mlogPrintf("%s,min_gear:%d\n", __func__, gear);
+    if (state_hood.min_gear != gear)
+        state_hood.min_gear = gear;
+}
+void recv_ecb_gear(unsigned char gear)
 {
     mlogPrintf("%s,recv ecb gear:%d hood_gear:%d\n", __func__, gear, state_hood.gear);
     if (state_hood.smart_smoke_switch)
     {
         if (gear != state_hood.gear)
         {
-            if (gear_change_state)
-            {
-                state_hood.gear = gear;
-            }
-            else
-            {
-                if (hood_gear_cb != NULL)
-                    hood_gear_cb(-1);
-                if (cook_assist_remind_cb != NULL)
-                    cook_assist_remind_cb(2);
-            }
+            if (hood_gear_cb != NULL)
+                hood_gear_cb(-1);
+            if (cook_assist_remind_cb != NULL)
+                cook_assist_remind_cb(2);
         }
     }
     else

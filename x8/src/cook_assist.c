@@ -31,6 +31,8 @@ static unsigned short left_environment_temp = 0;
 static unsigned short right_temp = 0;
 static unsigned short right_environment_temp = 0;
 static unsigned long curveKey = 0;
+static unsigned char recv_timeout_count = 0;
+static unsigned char temp_uart_switch = 0;
 //-----------------------------------------------
 
 static pthread_mutex_t lock;
@@ -45,17 +47,63 @@ static cook_assist_t g_cook_assist = {
 };
 static cJSON *resp = NULL;
 
+static int cook_assist_uart_send(const unsigned char *in, int in_len)
+{
+    if (fd < 0)
+    {
+        dzlog_error("cook_assist_uart_send fd error\n");
+        return -1;
+    }
+    if (in == NULL || in_len <= 0)
+    {
+        return -1;
+    }
+    dzlog_warn("cook_assist_uart_send--------------------------");
+    hdzlog_info(in, in_len);
+    return write(fd, in, in_len);
+}
+static void cook_assist_uart_switch(const int state)
+{
+    static unsigned char open_uart_data[] = {0xAA, 0X01, 0X01, 0X00, 0XAC};
+    static unsigned char close_uart_data[] = {0xAA, 0X01, 0X00, 0X00, 0XAB};
+    if (state)
+        cook_assist_uart_send(open_uart_data, sizeof(open_uart_data));
+    else
+        cook_assist_uart_send(close_uart_data, sizeof(close_uart_data));
+}
 static void cook_assist_judge_work_mode()
 {
     if (g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
     {
-        g_cook_assist.workMode = 0;
-        set_work_mode(0);
+        if (g_cook_assist.workMode != 0)
+        {
+            g_cook_assist.workMode = 0;
+            set_work_mode(0);
+        }
     }
     else
     {
-        g_cook_assist.workMode = 1;
-        set_work_mode(1);
+        if (g_cook_assist.workMode == 0)
+        {
+            g_cook_assist.workMode = 1;
+            set_work_mode(1);
+        }
+    }
+    if (g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.OilTempSwitch == 0 && g_cook_assist.workMode == 0)
+    {
+        if (temp_uart_switch != 0)
+        {
+            temp_uart_switch = 0;
+            cook_assist_uart_switch(0);
+        }
+    }
+    else
+    {
+        if (temp_uart_switch == 0)
+        {
+            temp_uart_switch = 1;
+            cook_assist_uart_switch(1);
+        }
     }
 }
 
@@ -292,12 +340,14 @@ static int cook_assist_recv_cb(void *arg)
     int uart_read_len;
 
     uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));
+
+    recv_timeout_count = 0;
+    // printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
+    // hdzlog_info(uart_read_buf, uart_read_len);
     if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
         return -1;
     if (uart_read_len > 0)
     {
-        // printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
-        // hdzlog_info(uart_read_buf, uart_read_len);
         if (uart_read_len < 15 || uart_read_buf[0] != 0x55 || uart_read_buf[1] != 0x2b)
             return -1;
 
@@ -325,6 +375,17 @@ static int cook_assist_except_cb(void *arg)
 static int cook_assist_timeout_cb(void *arg)
 {
     cook_assist_link_recv(NULL, NULL);
+    if (recv_timeout_count < 6)
+    {
+        ++recv_timeout_count;
+        if (recv_timeout_count >= 6)
+        {
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddNumberToObject(root, "LOilTemp", -1);
+            cJSON_AddNumberToObject(root, "ROilTemp", -1);
+            report_msg_all_platform(root);
+        }
+    }
     return 0;
 }
 static int cook_assist_remind_cb(int index)

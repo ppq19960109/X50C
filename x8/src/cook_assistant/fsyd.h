@@ -141,6 +141,7 @@ extern "C"
         unsigned char smart_smoke_switch;
         unsigned char lock;
         unsigned char gear;
+        unsigned char min_gear;
         unsigned char prepare_gear;
         unsigned int gear_tick;
         unsigned int close_delay_tick;

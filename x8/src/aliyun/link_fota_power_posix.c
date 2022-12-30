@@ -151,13 +151,13 @@ static void demo_download_recv_handler(void *handle, const aiot_download_recv_t 
                 return;
             }
         }
-        set_ota_power_state(OTA_INSTALL_SUCCESS, NULL);
         sync();
         if (ota_progress_cb)
             ota_progress_cb(percent);
         sleep(1);
         if (ota_complete_cb)
             ota_complete_cb();
+        set_ota_power_state(OTA_INSTALL_SUCCESS, NULL);
     }
 
     /* 简化输出, 只有距离上次的下载进度增加5%以上时, 才会打印进度, 并向服务器上报进度 */
@@ -177,8 +177,9 @@ static void *demo_ota_download_thread(void *dl_handle)
     int32_t ret = 0;
 
     printf("power starting download thread in 2 seconds ......\r\n");
-    sleep(2);
-
+    sleep(1);
+    set_ota_power_state(OTA_DOWNLOAD_START, NULL);
+    sleep(1);
     /* 向固件服务器请求下载 */
     /*
      * TODO: 下面这样的写法, 就是以1个请求, 获取全部的固件内容
@@ -191,8 +192,6 @@ static void *demo_ota_download_thread(void *dl_handle)
      *       实现, 这种情况下, 需要把以上组合语句放置到循环中, 多次 send_request 和 recv
      *
      */
-
-    set_ota_power_state(OTA_DOWNLOAD_START, NULL);
     download_fail_count = 0;
     ota_fp = fopen(OTA_FILE, "w+");
 

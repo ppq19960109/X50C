@@ -577,6 +577,13 @@
             "funType": 1,
             "uartCmd": 130,
             "uartByteLen": 1
+        },
+        {
+            "cloudKey": "StirFryTimerLeft",
+            "valueType": 0,
+            "funType": 1,
+            "uartCmd": 131,
+            "uartByteLen": 1
         }
     ],
     "event": [],

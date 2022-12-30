@@ -81,7 +81,6 @@ void set_smart_smoke_switch(unsigned char smart_smoke_switch)
     hood_handle->smart_smoke_switch = smart_smoke_switch;
     if (smart_smoke_switch)
     {
-
     }
     else
     {

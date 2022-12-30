@@ -122,7 +122,8 @@ int ota_power_resp_set(cJSON *root, cJSON *resp)
 
 static int ota_state_event(const int state, void *arg)
 {
-    dzlog_info("ota_state_event:%d", state);
+    char otaCmdPushType = get_OtaCmdPushType();
+    dzlog_info("power ota_state_event:%d,otaCmdPushType:%d", state, otaCmdPushType);
     cJSON *root = cJSON_CreateObject();
 
     if (OTA_NO_FIRMWARE == state)
@@ -131,7 +132,7 @@ static int ota_state_event(const int state, void *arg)
     }
     else
     {
-        if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
+        if (otaCmdPushType == OTA_PUSH_TYPE_SILENT)
         {
             cJSON_Delete(root);
             return -1;
@@ -184,6 +185,7 @@ enum ota_cmd_status_t
 static int ota_power_steps = 0;
 static FILE *ota_fp = NULL;
 static timer_t ota_power_timer;
+static timer_t ota_power_slient_timer;
 static unsigned short ota_total_packages = 0;
 static unsigned short ota_current_package = 0;
 static void *cloud_parse_power_json(void *input, const char *str)
@@ -335,7 +337,7 @@ void ota_power_ack(const unsigned char *data)
             if (ota_fp == NULL)
             {
                 dzlog_error("fopen error NULL");
-                ota_power_steps = 0;
+                ota_power_steps = -1;
                 return;
             }
             ota_power_send_data(OTA_CMD_DATA);
@@ -404,9 +406,54 @@ void ota_power_ack(const unsigned char *data)
         }
     }
 }
+static int ota_power_install()
+{
+    dzlog_warn("ota_power_install start...");
+    set_ecb_ota_power_state(1);
+    ota_power_send_data(OTA_CMD_START);
+    while (ota_power_steps > 0)
+    {
+    }
+    dzlog_warn("ota_power_install end...");
+    POSIXTimerSet(ota_power_timer, 0, 0);
+#ifdef OTA_RESEND
+    set_resend_wait_tick(0);
+#endif
+    set_ecb_ota_power_state(0);
+
+    char cmd[48] = {0};
+    sprintf(cmd, "rm -rf %s", POWER_OTA_CONFIG_FILE);
+    system(cmd);
+    sprintf(cmd, "rm -rf %s", POWER_OTA_FILE);
+    system(cmd);
+    return ota_power_steps;
+}
+static void ota_power_slient_install()
+{
+    time_t t;
+    time(&t);
+    struct tm *local_tm = localtime(&t);
+    dzlog_warn("%s,mon:%d mday:%d hour:%d minutes:%d", __func__, local_tm->tm_mon, local_tm->tm_mday, local_tm->tm_hour, local_tm->tm_min);
+    int minutes = 0;
+    srand(t);
+
+    if (local_tm->tm_hour >= 1 && local_tm->tm_hour <= 4)
+    {
+        minutes = rand() % 30;
+    }
+    else
+    {
+        int hour = 24 - local_tm->tm_hour + 2;
+        minutes = rand() % 120;
+        minutes += hour * 60;
+    }
+    dzlog_warn("%s,slient_install minutes:%d", __func__, minutes);
+    POSIXTimerSet(ota_power_slient_timer, 0, minutes * 60);
+}
 static int ota_install_cb(char *text)
 {
     int ret = -1;
+    POSIXTimerSet(ota_power_slient_timer, 0, 0);
     long size = getFileSize(text);
     dzlog_warn("ota_power_install_cb size:%ld", size);
     if (size <= 0)
@@ -416,28 +463,24 @@ static int ota_install_cb(char *text)
     ret = system(cmd);
     if (ret != 0)
         goto fail;
-    set_ecb_ota_power_state(1);
-    ota_power_send_data(OTA_CMD_START);
-    while (ota_power_steps > 0)
-    {
-    }
-    dzlog_warn("ota_power_install_cb end...");
-    POSIXTimerSet(ota_power_timer, 0, 0);
-#ifdef OTA_RESEND
-    set_resend_wait_tick(0);
-#endif
-    set_ecb_ota_power_state(0);
-    ret = ota_power_steps;
+
+    char otaCmdPushType = get_OtaCmdPushType();
+    if (otaCmdPushType == 0)
+        ret = ota_power_install();
+    else
+        ota_power_slient_install();
+
 fail:
     dzlog_warn("ota_power_install_cb ret:%d", ret);
-    // sprintf(cmd, "rm -rf %s", text);
-    // system(cmd);
+    sprintf(cmd, "rm -rf %s", text);
+    system(cmd);
     return ret;
 }
 void power_ota_install()
 {
     ota_install_cb("/data/power_upgrade.bin");
 }
+
 static void POSIXTimer_cb(union sigval val)
 {
     dzlog_warn("%s, sigval:%d", __func__, val.sival_int);
@@ -450,6 +493,10 @@ static void POSIXTimer_cb(union sigval val)
         ota_power_send_data(OTA_CMD_STOP);
         ota_power_steps = -1;
     }
+    else if (val.sival_int == 2)
+    {
+        ota_power_install();
+    }
 }
 int ota_power_task_init(void)
 {
@@ -460,6 +507,7 @@ int ota_power_task_init(void)
     register_ota_power_query_timer_stop_cb(ota_query_timer_stop_cb);
     g_ota_timer = POSIXTimerCreate(0, POSIXTimer_cb);
     ota_power_timer = POSIXTimerCreate(1, POSIXTimer_cb);
+    ota_power_slient_timer = POSIXTimerCreate(2, POSIXTimer_cb);
     return 0;
 }
 void ota_power_task_deinit(void)
@@ -468,6 +516,11 @@ void ota_power_task_deinit(void)
     {
         fclose(ota_fp);
         ota_fp = NULL;
+    }
+    if (ota_power_slient_timer != NULL)
+    {
+        POSIXTimerDelete(ota_power_slient_timer);
+        ota_power_slient_timer = NULL;
     }
     if (ota_power_timer != NULL)
     {

@@ -182,7 +182,34 @@ static void POSIXTimer_cb(union sigval val)
     cloud_set_json = NULL;
 }
 #endif
-
+static int steaming_roast_judgment(char mode)
+{
+    if (mode >= 35 && mode <= 42)
+        return 1;
+    return 0;
+}
+static int hood_min_speed(char left_state, char left_mode, char right_state, char right_mode)
+{
+    unsigned char speed = 0;
+    if (left_state == REPORT_WORK_STATE_PREHEAT || left_state == REPORT_WORK_STATE_RUN || left_state == REPORT_WORK_STATE_PREHEAT_PAUSE || left_state == REPORT_WORK_STATE_PAUSE)
+    {
+        if (steaming_roast_judgment(left_mode))
+            speed = 2;
+        else
+            speed = 1;
+    }
+    if (speed < 2)
+    {
+        if (right_state == REPORT_WORK_STATE_PREHEAT || right_state == REPORT_WORK_STATE_RUN || right_state == REPORT_WORK_STATE_PREHEAT_PAUSE || right_state == REPORT_WORK_STATE_PAUSE)
+        {
+            if (steaming_roast_judgment(right_mode))
+                speed = 2;
+            else
+                speed = 1;
+        }
+    }
+    return speed;
+}
 int set_attr_report_uds(cJSON *root, set_attr_t *attr) // 调用相关上报回调函数，并拼包
 {
     if (root == NULL)
@@ -613,18 +640,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                 break;
                 case 0x31:
                 {
-                    cloud_attr_t *ptr = get_attr_ptr_from_uartCmd(0x39);
-                    if (ptr != NULL)
-                    {
-                        unsigned char value = *(ptr->value);
-                        if (value == 2 || value == 3 || value == 6)
-                        {
-                            recv_ecb_gear(*(attr->value), 1);
-                            *(ptr->value) = 0;
-                            break;
-                        }
-                    }
-                    recv_ecb_gear(*(attr->value), 0);
+                    recv_ecb_gear(*(attr->value));
                 }
                 break;
                 case 0x35:
@@ -651,6 +667,14 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
         cJSON_Delete(root);
         dzlog_warn("%s,send NULL", __func__);
         return;
+    }
+    if (cJSON_HasObjectItem(root, "LStOvState") && cJSON_HasObjectItem(root, "LStOvMode") && cJSON_HasObjectItem(root, "RStOvState") && cJSON_HasObjectItem(root, "RStOvMode"))
+    {
+        cloud_attr_t *LStOvState = get_attr_ptr_from_uartCmd(66);
+        cloud_attr_t *LStOvMode = get_attr_ptr_from_uartCmd(67);
+        cloud_attr_t *RStOvState = get_attr_ptr_from_uartCmd(82);
+        cloud_attr_t *RStOvMode = get_attr_ptr_from_uartCmd(91);
+        set_hood_min_gear(hood_min_speed(*LStOvState->value, *LStOvMode->value, *RStOvState->value, *RStOvMode->value));
     }
     if (cJSON_HasObjectItem(root, "LoadPowerState") == 0 && cJSON_HasObjectItem(root, "PCBInput") == 0)
     {
