@@ -8,6 +8,7 @@
 #include "link_reset_posix.h"
 #include "link_bind_posix.h"
 #include "wifi_task.h"
+#include "cook_history.h"
 
 static void *ProductCategory_cb(void *ptr, void *arg)
 {
@@ -82,6 +83,7 @@ static void *Reset_cb(void *ptr, void *arg)
 {
     // reboot(RB_AUTOBOOT);
     // return NULL;
+    cook_history_reset();
     link_reset_report();
     sleep(1);
     

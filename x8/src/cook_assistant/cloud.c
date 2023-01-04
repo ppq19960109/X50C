@@ -114,12 +114,15 @@ void set_pan_fire_switch(unsigned char pan_fire_switch, enum INPUT_DIR input_dir
     }
     else
     {
-        state_handle->pan_fire_state = PAN_FIRE_CLOSE;
-        state_handle->pan_fire_high_temp_exit_lock_tick = 0;
-        state_handle->pan_fire_rise_jump_exit_lock_tick = 0;
-        state_handle->pan_fire_first_error = 0;
-        state_handle->pan_fire_error_lock_tick = 0;
-        set_fire_gear(FIRE_BIG, state_handle, 0);
+        if (state_handle->temp_control_switch == 0)
+        {
+            state_handle->pan_fire_state = PAN_FIRE_CLOSE;
+            state_handle->pan_fire_high_temp_exit_lock_tick = 0;
+            state_handle->pan_fire_rise_jump_exit_lock_tick = 0;
+            state_handle->pan_fire_first_error = 0;
+            state_handle->pan_fire_error_lock_tick = 0;
+            set_fire_gear(FIRE_BIG, state_handle, 0);
+        }
     }
     if (pan_fire_switch_cb != NULL)
         pan_fire_switch_cb(pan_fire_switch, input_dir);

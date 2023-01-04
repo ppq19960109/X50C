@@ -15,6 +15,7 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c",
-        "curl_http_request.h": "c"
+        "curl_http_request.h": "c",
+        "wifi_task.h": "c"
     }
 }

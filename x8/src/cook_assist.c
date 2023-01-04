@@ -292,6 +292,11 @@ int cook_assist_link_recv(const char *key, cJSON *value)
     {
         if (resp != NULL)
         {
+            if (g_cook_assist.RAuxiliarySwitch > 0 && g_cook_assist.OilTempSwitch == 0)
+            {
+                g_cook_assist.OilTempSwitch = 1;
+                cJSON_AddNumberToObject(resp, "OilTempSwitch", g_cook_assist.OilTempSwitch);
+            }
             report_msg_all_platform(resp);
             resp = NULL;
         }
