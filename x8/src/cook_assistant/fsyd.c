@@ -123,7 +123,7 @@ void set_fire_gear(unsigned char fire_gear, state_handle_t *state_handle, const 
 
     if (state_handle->fire_gear != fire_gear || type == 1)
     {
-        mlogPrintf("%s,change set_fire_gear:%d\n", __func__, fire_gear);
+        mlogPrintf("%s,change set_fire_gear:%d type:%d\n", __func__, fire_gear, type);
         state_handle->fire_gear = fire_gear;
         if (fire_gear_cb != NULL)
             fire_gear_cb(fire_gear, state_handle->input_dir);
@@ -306,7 +306,7 @@ void recv_ecb_gear(unsigned char gear)
 void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);
-    mlogPrintf("%s,recv ecb fire:%d fire_gear:%d\n", __func__, fire, state_handle->fire_gear);
+    mlogPrintf("%s,recv ecb fire:%d fire_gear:%d pan_fire_switch:%d temp_control_switch:%d\n", __func__, fire, state_handle->fire_gear, state_handle->pan_fire_switch, state_handle->temp_control_switch);
     if (state_handle->pan_fire_switch || state_handle->temp_control_switch)
     {
         if (fire != state_handle->fire_gear)
