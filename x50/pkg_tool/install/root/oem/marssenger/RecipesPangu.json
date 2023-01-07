@@ -254,6 +254,43 @@
             "reserve": 0
         },
         {
+            "dishName": "香菇牛肉酱",
+            "imgUrl": "recipes/面团.png",
+            "cookSteps": [
+                {
+                    "mode": 3,
+                    "fire": 5,
+                    "temp": 120,
+                    "time": 180,
+                    "motorSpeed": 3,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0
+                },
+                {
+                    "mode": 3,
+                    "fire": 5,
+                    "temp": 120,
+                    "time": 1200,
+                    "motorSpeed": 3,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0
+                }
+            ],
+            "details": "用料:\n主料：牛里脊200克,辅料：盐2g 料酒15g 大蒜20g 生姜15g 红葱头 50g 小米椒2个 食用油100g 花椒油2g 豆豉酱5g 生抽12g 老抽3g 冰糖10g 干香菇（泡发）20g 黄豆（煮熟）30g\n步骤:\n1、干香菇泡发切成碎\n2、牛里脊洗净切成肉馅，加入盐及料酒腌制30分钟\n3、大蒜、生姜、红葱头、小米椒切碎\n4、将食用油、花椒油、豆豉酱、蒜末、姜末、红葱头、小米椒放入主锅内，盖上主锅盖，爆香3分钟\n5、加入牛肉馅、香菇粒、煮熟的黄豆、生抽、老抽、冰糖，炖煮15分钟",
+            "cookType": 2,
+            "recipeType": 1,
+            "clearMode": 1,
+            "reserve": 0
+        },
+        {
             "dishName": "预制菜",
             "imgUrl": "recipes/面团.png",
             "cookSteps": [
