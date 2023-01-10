@@ -282,25 +282,18 @@ void set_hood_min_gear(unsigned char gear)
 {
     mlogPrintf("%s,min_gear:%d\n", __func__, gear);
     if (state_hood.min_gear != gear)
+    {
         state_hood.min_gear = gear;
+        if (state_hood.gear < state_hood.min_gear)
+        {
+            state_hood.gear = state_hood.min_gear;
+        }
+    }
 }
 void recv_ecb_gear(unsigned char gear)
 {
     mlogPrintf("%s,recv ecb gear:%d hood_gear:%d\n", __func__, gear, state_hood.gear);
-    if (state_hood.smart_smoke_switch)
-    {
-        if (gear != state_hood.gear)
-        {
-            if (hood_gear_cb != NULL)
-                hood_gear_cb(-1);
-            if (cook_assist_remind_cb != NULL)
-                cook_assist_remind_cb(2);
-        }
-    }
-    else
-    {
-        state_hood.gear = gear;
-    }
+    state_hood.gear = gear;
 }
 
 void recv_ecb_fire(unsigned char fire, enum INPUT_DIR input_dir)
@@ -773,10 +766,10 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     }
     else if (state_handle->pan_fire_state == PAN_FIRE_ENTER) // 开关小火，温度跳降，确定是移锅小火
     {
-        if (state_handle->pan_fire_enter_start_tick < INPUT_DATA_HZ * 60 * 3)
+        if (state_handle->pan_fire_enter_start_tick < INPUT_DATA_HZ * state_handle->pan_fire_close_delay_tick)
         {
             ++state_handle->pan_fire_enter_start_tick;
-            if (state_handle->pan_fire_enter_start_tick == INPUT_DATA_HZ * 60 * 3)
+            if (state_handle->pan_fire_enter_start_tick == INPUT_DATA_HZ * state_handle->pan_fire_close_delay_tick)
             {
                 if (cook_assist_remind_cb != NULL)
                     cook_assist_remind_cb(1);
@@ -1016,6 +1009,8 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
         set_pan_fire_switch(0, input_dir);
 
     set_temp_control_target_temp(150, input_dir);
+
+    state_handle->pan_fire_close_delay_tick = 180;
 }
 
 static int status_judge(state_handle_t *state_handle, const unsigned short *data, const int len)

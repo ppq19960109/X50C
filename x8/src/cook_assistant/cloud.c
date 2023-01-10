@@ -127,7 +127,11 @@ void set_pan_fire_switch(unsigned char pan_fire_switch, enum INPUT_DIR input_dir
     if (pan_fire_switch_cb != NULL)
         pan_fire_switch_cb(pan_fire_switch, input_dir);
 }
-
+void set_pan_fire_close_delay_tick(unsigned short tick, enum INPUT_DIR input_dir)
+{
+    state_handle_t *state_handle = get_input_handle(input_dir);
+    state_handle->pan_fire_close_delay_tick = tick;
+}
 void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR input_dir)
 {
     state_handle_t *state_handle = get_input_handle(input_dir);

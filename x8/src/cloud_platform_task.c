@@ -676,6 +676,11 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
         cloud_attr_t *RStOvMode = get_attr_ptr_from_uartCmd(91);
         set_hood_min_gear(hood_min_speed(*LStOvState->value, *LStOvMode->value, *RStOvState->value, *RStOvMode->value));
     }
+    // if (cJSON_HasObjectItem(root, "HoodSpeed"))
+    // {
+    //     cloud_attr_t *HoodSpeed = get_attr_ptr_from_uartCmd(0x31);
+    //     recv_ecb_gear(*(HoodSpeed->value));
+    // }
     if (cJSON_HasObjectItem(root, "LoadPowerState") == 0 && cJSON_HasObjectItem(root, "PCBInput") == 0)
     {
         char *json = cJSON_PrintUnformatted(root);
@@ -940,6 +945,12 @@ static void *cloud_parse_json(void *input, const char *str) // 启动时解析�
         dzlog_error("UpdateLog is NULL\n");
         goto fail;
     }
+    // cJSON *mcookUrl = cJSON_GetObjectItem(root, "mcookUrl");
+    // if (mcookUrl == NULL)
+    // {
+    //     dzlog_error("mcookUrl is NULL\n");
+    //     goto fail;
+    // }
     cJSON *attr = cJSON_GetObjectItem(root, "attr");
     if (attr == NULL)
     {

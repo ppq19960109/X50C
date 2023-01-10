@@ -3,6 +3,7 @@
     "DeviceModel": "X8GCZ01",
     "HardwareVer": "1.0.0",
     "UpdateLog": "1、新增：产品说明页增加视频说明功能\n2、新增：智慧菜谱增加10个\n3、优化：用户交互体验\n4、bug修复：页面跳转报错修复",
+    "mcookUrl": "http://mcook.marssenger.com",
     "attr": [
         {
             "cloudKey": "ComSWVersion",
@@ -535,6 +536,13 @@
             "funType": 0,
             "uartCmd": -1,
             "uartByteLen": 1
+        },
+        {
+            "cloudKey": "RMovePotLowHeatOffTime",
+            "valueType": 0,
+            "funType": 0,
+            "uartCmd": -1,
+            "uartByteLen": 2
         },
         {
             "cloudKey": "OtaCmdPushType",

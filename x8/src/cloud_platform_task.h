@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile.json"
 #define QUAD_NAME "DevQuad.json"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "0.1.3"
+#define SOFTER_VER "0.1.4"
 
 enum OTA_PUSH_TYPE
 {
@@ -67,6 +67,7 @@ typedef struct
     char mac[16];
     char hardware_ver[6];
     char software_ver[6];
+    char mcook_url[48];
     char lRemindText[3][48];
     char rRemindText[3][48];
     char update_log[640];

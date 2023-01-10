@@ -23,6 +23,7 @@ typedef struct
     char SmartSmokeSwitch;
     char RStoveStatus;
     unsigned short RAuxiliaryTemp;
+    unsigned short RMovePotLowHeatOffTime;
 } cook_assist_t;
 static int fd = -1;
 static struct Select_Client_Event select_client_event;
@@ -43,7 +44,8 @@ static cook_assist_t g_cook_assist = {
     RMovePotLowHeatSwitch : 0,
     RAuxiliarySwitch : 0,
     SmartSmokeSwitch : 0,
-    RAuxiliaryTemp : 0
+    RAuxiliaryTemp : 0,
+    RMovePotLowHeatOffTime : 180
 };
 static cJSON *resp = NULL;
 
@@ -61,6 +63,44 @@ static int cook_assist_uart_send(const unsigned char *in, int in_len)
     dzlog_warn("cook_assist_uart_send--------------------------");
     hdzlog_info(in, in_len);
     return write(fd, in, in_len);
+}
+static int cook_assist_remind_cb(int index)
+{
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "CookAssistRemind", index);
+    send_event_uds(root, NULL);
+    if (index == 0)
+    {
+    }
+    else if (index == 1)
+    {
+        unsigned char uart_buf[2];
+        uart_buf[0] = 0x1d;
+        uart_buf[1] = 0x01;
+        ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
+    }
+    else
+    {
+    }
+    return 0;
+}
+static int cook_assistant_hood_speed_cb(const int gear)
+{
+    if (g_cook_assist.SmartSmokeSwitch == 0)
+        return -1;
+    unsigned char uart_buf[2];
+    if (gear < 0)
+    {
+        uart_buf[0] = 0x35;
+        uart_buf[1] = 0;
+    }
+    else
+    {
+        uart_buf[0] = 0x31;
+        uart_buf[1] = gear;
+    }
+    ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
+    return 0;
 }
 static void cook_assist_uart_switch(const int state)
 {
@@ -134,8 +174,18 @@ static int cook_assist_recv_property_set(const char *key, cJSON *value)
     {
         set_pan_fire_switch(value->valueint, INPUT_RIGHT);
     }
+    else if (strcmp("RMovePotLowHeatOffTime", key) == 0)
+    {
+        g_cook_assist.RMovePotLowHeatOffTime = value->valueint;
+        set_pan_fire_close_delay_tick(value->valueint, INPUT_RIGHT);
+    }
     else
     {
+        if (strcmp("HoodSpeed", key) == 0)
+        {
+            cook_assistant_hood_speed_cb(-1);
+            cook_assist_remind_cb(2);
+        }
         return -1;
     }
     if (resp == NULL)
@@ -178,7 +228,7 @@ static void cookingCurve_post(const signed short *temp, const unsigned char len)
         cJSON_AddItemToArray(cookCurveTempDTOS, item);
     }
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.marssenger.com/menu-anon/addCookCurve", json);
+    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/addCookCurve", json);
     free(json);
     cJSON_Delete(root);
 }
@@ -277,7 +327,7 @@ void cook_assist_report_all(cJSON *root)
     cJSON_AddNumberToObject(root, "CookingCurveSwitch", g_cook_assist.CookingCurveSwitch);
     cJSON_AddNumberToObject(root, "OilTempSwitch", g_cook_assist.OilTempSwitch);
     cJSON_AddNumberToObject(root, "RMovePotLowHeatSwitch", g_cook_assist.RMovePotLowHeatSwitch);
-
+    cJSON_AddNumberToObject(root, "RMovePotLowHeatOffTime", g_cook_assist.RMovePotLowHeatOffTime);
     if (resp != NULL)
         cJSON_Delete(resp);
     resp = NULL;
@@ -309,24 +359,7 @@ int cook_assist_link_recv(const char *key, cJSON *value)
     return res;
 }
 //-----------------------------------------------------------------
-static int cook_assistant_hood_speed_cb(const int gear)
-{
-    if (g_cook_assist.SmartSmokeSwitch == 0)
-        return -1;
-    unsigned char uart_buf[2];
-    if (gear < 0)
-    {
-        uart_buf[0] = 0x35;
-        uart_buf[1] = 0;
-    }
-    else
-    {
-        uart_buf[0] = 0x31;
-        uart_buf[1] = gear;
-    }
-    ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
-    return 0;
-}
+
 static int cook_assistant_fire_cb(const int gear, enum INPUT_DIR input_dir)
 {
     unsigned char uart_buf[2];
@@ -390,26 +423,6 @@ static int cook_assist_timeout_cb(void *arg)
             cJSON_AddNumberToObject(root, "ROilTemp", -1);
             report_msg_all_platform(root);
         }
-    }
-    return 0;
-}
-static int cook_assist_remind_cb(int index)
-{
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "CookAssistRemind", index);
-    send_event_uds(root, NULL);
-    if (index == 0)
-    {
-    }
-    else if (index == 1)
-    {
-        unsigned char uart_buf[2];
-        uart_buf[0] = 0x1d;
-        uart_buf[1] = 0x01;
-        ecb_uart_send_cloud_msg(uart_buf, sizeof(uart_buf));
-    }
-    else
-    {
     }
     return 0;
 }

@@ -15,7 +15,7 @@ static void cook_history_post(cJSON *root)
     cJSON_AddStringToObject(root, "token", cloud_dev->token);
 
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.marssenger.com/menu-anon/addCookHistory", json);
+    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/addCookHistory", json);//http://mcook.marssenger.com http://mcook.dev.marssenger.net
     free(json);
 }
 void cook_history_reset()
@@ -27,7 +27,7 @@ void cook_history_reset()
     cJSON_AddStringToObject(root, "token", cloud_dev->token);
 
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.marssenger.com/menu-anon/deleteCookHistoryAndCurves", json);
+    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/deleteCookHistoryAndCurves", json);
     free(json);
 }
 int cook_history_set(void *data)
