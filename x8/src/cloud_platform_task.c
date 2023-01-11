@@ -1090,7 +1090,7 @@ int cloud_init(void) // 初始化
     getNetworkMac(ETH_NAME, g_cloud_dev->mac, sizeof(g_cloud_dev->mac), "");
 
     char buf[48];
-    sprintf(buf, "%s%s", "device", g_cloud_dev->device_name);
+    sprintf(buf, "%s%s", "device", g_cloud_dev->mac);
     Compute_string_md5((unsigned char *)buf, strlen(buf), g_cloud_dev->token);
 
     curl_global_init(CURL_GLOBAL_DEFAULT);

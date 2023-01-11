@@ -11,11 +11,11 @@ static void cook_history_post(cJSON *root)
     cloud_dev_t *cloud_dev = get_cloud_dev();
 
     cJSON_AddStringToObject(root, "deviceMac", cloud_dev->mac);
-    cJSON_AddStringToObject(root, "iotId", cloud_dev->device_name);
+    cJSON_AddStringToObject(root, "iotId", cloud_dev->mac);
     cJSON_AddStringToObject(root, "token", cloud_dev->token);
 
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/addCookHistory", json);//http://mcook.marssenger.com http://mcook.dev.marssenger.net
+    curl_http_post("http://mcook.marssenger.com/menu-anon/addCookHistory", json);//http://mcook.marssenger.com http://mcook.dev.marssenger.net
     free(json);
 }
 void cook_history_reset()
@@ -23,11 +23,11 @@ void cook_history_reset()
     cloud_dev_t *cloud_dev = get_cloud_dev();
     cJSON *root = cJSON_CreateObject();
     // cJSON_AddStringToObject(root, "deviceMac", cloud_dev->mac);
-    cJSON_AddStringToObject(root, "iotId", cloud_dev->device_name);
+    cJSON_AddStringToObject(root, "iotId", cloud_dev->mac);
     cJSON_AddStringToObject(root, "token", cloud_dev->token);
 
     char *json = cJSON_PrintUnformatted(root);
-    curl_http_post("http://mcook.dev.marssenger.net/menu-anon/deleteCookHistoryAndCurves", json);
+    curl_http_post("http://mcook.marssenger.com/menu-anon/deleteCookHistoryAndCurves", json);
     free(json);
 }
 int cook_history_set(void *data)
