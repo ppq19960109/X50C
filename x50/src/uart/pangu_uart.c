@@ -78,6 +78,14 @@ static pangu_attr_t g_pangu_attr[] = {
         value_len : 1,
     },
     {
+        key : "RMultiMode",
+        value_len : 1,
+    },
+    {
+        key : "ClearMode",
+        value_len : 1,
+    },
+    {
         key : "RStOvSetTemp",
         value_len : 2,
     },
@@ -741,6 +749,20 @@ int pangu_recv_set(void *data)
     {
         item = cJSON_GetObjectItem(root, "RStOvMode");
         pangu_attr = get_pangu_attr("RStOvMode");
+        pangu_attr->value[0] = item->valueint;
+        pangu_attr->change = 1;
+    }
+    if (cJSON_HasObjectItem(root, "RMultiMode"))
+    {
+        item = cJSON_GetObjectItem(root, "RMultiMode");
+        pangu_attr = get_pangu_attr("RMultiMode");
+        pangu_attr->value[0] = item->valueint;
+        pangu_attr->change = 1;
+    }
+    if (cJSON_HasObjectItem(root, "ClearMode"))
+    {
+        item = cJSON_GetObjectItem(root, "ClearMode");
+        pangu_attr = get_pangu_attr("ClearMode");
         pangu_attr->value[0] = item->valueint;
         pangu_attr->change = 1;
     }
