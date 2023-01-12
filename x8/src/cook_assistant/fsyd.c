@@ -737,8 +737,11 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
         state_handle->current_tick = 1;
         state_handle->last_prepare_state = STATE_IDLE;
         state_handle->last_prepare_state_tick = 0;
-
+#ifdef FIRE_CONFIRM_ENABLE
         state_handle->pan_fire_state = PAN_FIRE_CLOSE;
+#else
+        state_handle->pan_fire_state = PAN_FIRE_ENTER;
+#endif
         state_handle->pan_fire_tick = 0;
 
         return prepare_state;

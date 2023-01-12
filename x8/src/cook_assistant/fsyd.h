@@ -8,7 +8,7 @@ extern "C"
 #include "cook_wrapper.h"
 
     // #define BOIL_ENABLE
-
+// #define FIRE_CONFIRM_ENABLE
 #define STATE_JUDGE_DATA_SIZE (10)
 #define INPUT_DATA_HZ (4)
 
