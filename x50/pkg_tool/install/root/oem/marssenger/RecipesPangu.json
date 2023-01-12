@@ -16,7 +16,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -29,7 +30,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 31,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -42,7 +44,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 1
                 },
                 {
                     "mode": 2,
@@ -55,7 +58,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 4,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -68,7 +72,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -81,7 +86,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 21,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -94,7 +100,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -107,7 +114,8 @@
                     "fan": 1,
                     "hoodSpeed": 1,
                     "repeat": 6,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 }
             ],
             "details": "用料:\n带皮五花肉500克,姜3片,大蒜瓣4个,料酒10g,冰糖25g,八角1个,桂皮1小块,香叶1片,生抽20g,老抽15g,清水300g\n步骤:\n1、将洗净切块的五花肉、姜片、大蒜瓣、料酒、冰糖放入主锅内，盖上主锅盖，爆香8分钟\n2、加入八角、桂皮、香叶、生抽、老抽、清水，炖煮30分钟",
@@ -131,7 +139,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 2,
@@ -144,7 +153,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -157,7 +167,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 }
             ],
             "details": "用料:\n干黄豆70克（泡发后约140克）,细砂糖30克\n步骤:\n1、将干黄豆、细砂糖放入主锅内，盖上主锅盖，制浆25分钟",
@@ -181,7 +192,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 }
             ],
             "details": "用料:\n冰糖200克\n步骤:\n1、将冰糖放入主锅内，盖上主锅盖，研磨20秒",
@@ -205,7 +217,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -218,7 +231,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 20,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -231,7 +245,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -244,7 +259,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 8,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 }
             ],
             "details": "用料:\n中筋面粉500克,清水250克,细砂糖10克,高活性干酵母5克,食盐2克\n步骤:\n1、 将中筋面粉、细砂糖、食盐、高活性干酵母、清水放入主锅内，盖上主锅盖，揉面10分钟",
@@ -268,7 +284,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 3,
@@ -281,7 +298,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 1
                 }
             ],
             "details": "用料:\n主料：牛里脊200克\n辅料：盐2g 料酒15g 大蒜20g 生姜15g 红葱头 50g 小米椒2个 食用油180g 花椒油2g 豆豉酱5g 生抽12g 老抽3g 冰糖10g 干香菇（泡发）20g 清水冬笋（切粒）15g\n步骤:\n1、干香菇泡发切成碎\n2、牛里脊洗净切成肉馅，加入盐及料酒腌制30分钟\n3、大蒜、生姜、红葱头、小米椒切碎\n4、将食用油、花椒油、豆豉酱、蒜末、姜末、红葱头、小米椒放入主锅内，盖上主锅盖，爆香3分钟\n5、加入牛肉馅、香菇粒、煮熟的黄豆、生抽、老抽、冰糖，炖煮15分钟",
@@ -305,7 +323,9 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -331,7 +351,9 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -368,7 +390,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 }
             ],
             "details": "用料:\n干粉丝50g,娃娃菜300g,蒜4瓣,玉米油24g,生抽15g,细砂糖5g,盐3g\n步骤:\n1、粉丝放水里泡软后捞起备用\n2、蒜切蒜末,娃娃菜切成8瓣\n3、用玉米油将蒜蓉爆香,加入盐、糖、生抽,加水煮1分钟关火盛起备用\n5、粉丝放在浅盘底部,铺上娃娃菜,倒入蒜蓉汁,放入蒸烤箱中烹饪",
@@ -393,7 +416,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 3,
@@ -406,7 +430,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 1,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 }
             ]
         },
@@ -424,7 +449,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 3,
@@ -437,7 +463,8 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 }
             ]
         },
@@ -455,7 +482,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 3,
@@ -468,7 +496,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 1,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 },
                 {
                     "mode": 3,
@@ -481,7 +510,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 0
+                    "repeatStep": 0,
+                    "runPause": 0
                 },
                 {
                     "mode": 3,
@@ -494,7 +524,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 1,
-                    "repeatStep": 1
+                    "repeatStep": 1,
+                    "runPause": 0
                 }
             ]
         }

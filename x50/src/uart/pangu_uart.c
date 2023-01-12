@@ -86,6 +86,10 @@ static pangu_attr_t g_pangu_attr[] = {
         value_len : 1,
     },
     {
+        key : "RunPause",
+        value_len : 1,
+    },
+    {
         key : "RStOvSetTemp",
         value_len : 2,
     },
@@ -646,6 +650,13 @@ int pangu_cook_stop_pause_finish(unsigned char state)
 int pangu_cook_start()
 {
     pangu_attr_t *pangu_attr;
+
+    pangu_attr = get_pangu_attr("RunPause");
+    if (pangu_attr->value[0] != 0)
+    {
+        pangu_attr->value[0] = 0;
+        pangu_attr->change = 1;
+    }
     if (g_order_time)
     {
         POSIXTimerSet(g_pangu_timer, 60, 60);
@@ -662,7 +673,16 @@ int pangu_cook_start()
         {
             if (pangu_cook.current_step < pangu_cook.total_step)
             {
-                pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
+                if (pangu_cook.cook_attr[pangu_cook.current_step].runPause > 0)
+                {
+                    pangu_attr->value[0] = 1;
+                    pangu_attr->change = 1;
+                    pangu_cook_stop_pause_finish(1);
+                }
+                else
+                {
+                    pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
+                }
                 return 1;
             }
             else
@@ -715,6 +735,7 @@ int pangu_recv_set(void *data)
             cJSON *hoodSpeed = cJSON_GetObjectItem(arraySub, "hoodSpeed");
             cJSON *repeat = cJSON_GetObjectItem(arraySub, "repeat");
             cJSON *repeatStep = cJSON_GetObjectItem(arraySub, "repeatStep");
+            cJSON *runPause = cJSON_GetObjectItem(arraySub, "runPause");
             pangu_cook_attr[i].mode = mode->valueint;
             pangu_cook_attr[i].fire = fire->valueint;
             pangu_cook_attr[i].temp = temp->valueint;
@@ -726,6 +747,7 @@ int pangu_recv_set(void *data)
             pangu_cook_attr[i].hoodSpeed = hoodSpeed->valueint;
             pangu_cook_attr[i].repeat = repeat->valueint;
             pangu_cook_attr[i].repeatStep = repeatStep->valueint;
+            pangu_cook_attr[i].runPause = runPause->valueint;
             if (pangu_cook_attr[i].repeat > 0 && pangu_cook_attr[i].repeatStep == 0)
                 pangu_cook_attr[i].repeatStep = 1;
             g_total_time += pangu_cook_attr[i].waterTime;

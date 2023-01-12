@@ -45,6 +45,7 @@ typedef struct
     unsigned char hoodSpeed;
     unsigned char repeat;
     unsigned char repeatStep;
+    unsigned char runPause;
 } pangu_cook_attr_t;
 
 typedef struct
