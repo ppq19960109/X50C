@@ -1477,10 +1477,10 @@ static void temp_control_func(state_handle_t *state_handle)
     {
         ++state_handle->temp_control_lock_countdown;
     }
-    if (state_handle->pan_fire_state > PAN_FIRE_ERROR_CLOSE)
-    {
-        return;
-    }
+    // if (state_handle->pan_fire_state > PAN_FIRE_ERROR_CLOSE)
+    // {
+    //     return;
+    // }
     // if (state_handle->last_temp < state_handle->temp_control_target_value / 2)
     // {
     //     for (i = 0; i < INPUT_DATA_HZ; ++i)
@@ -1507,8 +1507,13 @@ static void temp_control_func(state_handle_t *state_handle)
         if (state_handle->temp_control_target_value - 40 < average)
         {
             state_handle->temp_control_enter_start_tick = INPUT_DATA_HZ * 60 * 2;
-            set_fire_gear(FIRE_SMALL, state_handle, 0);
             state_handle->temp_control_first = 1;
+            set_fire_gear(FIRE_SMALL, state_handle, 0);
+            state_handle->temp_control_lock_countdown = 0;
+        }
+        else
+        {
+            set_fire_gear(FIRE_BIG, state_handle, 0);
             state_handle->temp_control_lock_countdown = 0;
         }
     }
