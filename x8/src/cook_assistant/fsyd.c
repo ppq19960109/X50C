@@ -728,7 +728,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
 {
     if (!state_handle->pan_fire_switch || state_handle->temp_control_switch)
     {
-        goto end;
+        goto exit;
     }
 
     if (state_handle->current_tick == 0)
@@ -741,6 +741,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
         state_handle->pan_fire_state = PAN_FIRE_CLOSE;
 #else
         state_handle->pan_fire_state = PAN_FIRE_ENTER;
+        set_fire_gear(FIRE_SMALL, state_handle, 0);
 #endif
         state_handle->pan_fire_tick = 0;
 
@@ -791,9 +792,9 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     else if (state_handle->pan_fire_state == PAN_FIRE_START && state_handle->pan_fire_tick + PAN_FIRE_ENTER_TICK < state_handle->current_tick) // 开关小火，规定时间温度没有跳降，不是移锅小火
     {
         mlogPrintf("%s, %s pan_fire_state:%d\n", __func__, "set small fire errors", state_handle->pan_fire_state);
-        set_fire_gear(FIRE_BIG, state_handle, 0);
-        state_handle->pan_fire_state = PAN_FIRE_ERROR_CLOSE;
-        goto end;
+        // set_fire_gear(FIRE_BIG, state_handle, 0);
+        // state_handle->pan_fire_state = PAN_FIRE_ERROR_CLOSE;
+        goto exit;
     }
 
     if (state_handle->last_prepare_state != prepare_state)
@@ -905,10 +906,12 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     }
 exit:
     state_handle->pan_fire_state = PAN_FIRE_CLOSE;
-end:
     state_handle->pan_fire_enter_start_tick = 0;
-    set_fire_gear(FIRE_BIG, state_handle, 0);
-    mlogPrintf("%s,%s :%s\n", __func__, state_info[STATE_PAN_FIRE], "set big fire");
+    if (state_handle->temp_control_switch == 0)
+    {
+        set_fire_gear(FIRE_BIG, state_handle, 0);
+        mlogPrintf("%s,%s :%s\n", __func__, state_info[STATE_PAN_FIRE], "set big fire");
+    }
     return prepare_state;
 }
 #ifdef BOIL_ENABLE
