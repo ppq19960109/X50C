@@ -675,12 +675,14 @@ int pangu_cook_start()
             {
                 if (pangu_cook.cook_attr[pangu_cook.current_step].runPause > 0)
                 {
+                    pangu_cook.cook_attr[pangu_cook.current_step].runPause = 0;
                     pangu_attr->value[0] = 1;
                     pangu_attr->change = 1;
                     pangu_cook_stop_pause_finish(1);
                 }
                 else
                 {
+                    dzlog_warn("%s,run step:%d", __func__, pangu_cook.current_step);
                     pangu_single_set(&pangu_cook.cook_attr[pangu_cook.current_step]);
                 }
                 return 1;

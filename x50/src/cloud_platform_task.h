@@ -3,8 +3,8 @@
 
 #include "cJSON.h"
 
-#define DEFAULT_PRODUCT_KEY "a1YTZpQDGwn"
-#define DEFAULT_PRODUCT_SECRET "oE99dmyBcH5RAWE3"
+#define DEFAULT_PRODUCT_KEY "a1p1Xdlu3IU"
+#define DEFAULT_PRODUCT_SECRET "XgxDwIQeZRxAuVYT"
 
 #define PROFILE_NAME "DevProfile.json"
 #define QUAD_NAME "DevQuad.json"
