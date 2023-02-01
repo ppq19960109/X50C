@@ -16,6 +16,7 @@
         "type_traits": "c",
         "utility": "c",
         "curl_http_request.h": "c",
-        "wifi_task.h": "c"
+        "wifi_task.h": "c",
+        "stdio.h": "c"
     }
 }

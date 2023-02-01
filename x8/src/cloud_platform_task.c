@@ -1050,6 +1050,7 @@ static void link_timestamp_cb(const unsigned long timestamp)
     dzlog_warn("link_timestamp_cb:%ld", timestamp);
     // struct timeval tv;
     // tv.tv_sec = timestamp;
+    // tv.tv_usec = 0;
     // settimeofday(&tv, NULL);
 
     cJSON *root = cJSON_CreateObject();

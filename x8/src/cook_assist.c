@@ -31,7 +31,7 @@ static unsigned short left_temp = 0;
 static unsigned short left_environment_temp = 0;
 static unsigned short right_temp = 0;
 static unsigned short right_environment_temp = 0;
-static unsigned long curveKey = 0;
+static int curveKey = 0;
 static unsigned char recv_timeout_count = 0;
 static unsigned char temp_uart_switch = 0;
 //-----------------------------------------------
@@ -201,7 +201,8 @@ void set_stove_status(unsigned char status, enum INPUT_DIR input_dir)
     {
         if (g_cook_assist.RStoveStatus == 0 && status > 0)
         {
-            ++curveKey;
+            srand(time(NULL));
+            curveKey = rand();
         }
         g_cook_assist.RStoveStatus = status;
     }
