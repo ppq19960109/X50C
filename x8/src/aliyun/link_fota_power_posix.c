@@ -377,7 +377,6 @@ int link_fota_power_query_firmware(void)
     if (g_ota_state == OTA_DOWNLOAD_START)
         return 0;
 
-    set_ota_power_state(OTA_IDLE, NULL);
     aiot_ota_setopt(ota_handle, AIOT_OTAOPT_MODULE, "power");
     int res = aiot_ota_query_firmware(ota_handle);
     if (STATE_SUCCESS == res)

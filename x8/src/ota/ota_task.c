@@ -224,7 +224,7 @@ static void ota_complete_cb(void)
         cJSON_AddNumberToObject(root, "OTASlientUpgrade", 1);
         send_event_uds(root, NULL);
     }
-    set_OtaCmdPushType(0);
+    // set_OtaCmdPushType(0);
 }
 
 int ota_task_init(void)

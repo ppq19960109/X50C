@@ -675,7 +675,7 @@
     ],
     "tempRecipes": [
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/温泉蛋",
             "ingredients": "原料A：鸡蛋4个（每个约50克）",
             "details": [
                 "灶具架锅，加入1000ml 水，燃气灶设置65℃，开始加热",
@@ -688,7 +688,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/水波蛋",
             "ingredients": "原料A：鸡蛋1个（新鲜）",
             "details": [
                 "找一口很深的锅，让鸡蛋在里面有活动的空间，加入1000ml水，燃气灶设置80℃，开始加热",
@@ -701,7 +701,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/低温牛肉",
             "ingredients": "原料A：西冷牛排 1块（200g）\n原料B：黑胡椒 适量、盐 适量、黄油 10克、迷迭香 一根、大蒜 2瓣",
             "details": [
                 "将牛排正反面撒上盐、胡椒，腌制5分钟后和迷迭香一起放进密封袋中，慢慢放进水里把气排出来封上封口",
@@ -715,7 +715,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/慢煮鸡胸肉",
             "ingredients": "原料A：鸡胸肉 一块（200g）\n原料B：盐适量、黑胡椒 适量、橄榄油 1勺、柠檬 1个",
             "details": [
                 "鸡胸肉用盐和黑胡椒两面腌制10分钟，装进密封袋中，慢慢放进水里把气排出来封上封口",
@@ -729,7 +729,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/慢煮三文鱼",
             "ingredients": "原料A：三文鱼（100g）\n原料B：盐 适量、黑胡椒 适量、柠檬 1个、橄榄油 适量",
             "details": [
                 "将三文鱼用适量的黑胡椒、盐、橄榄油腌制十分钟，装进密封袋中，慢慢放进水里把气排出来封上封口",
@@ -743,7 +743,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/炒糖色",
             "ingredients": "原料A：冰糖 适量\n原料B：水 少量",
             "details": [
                 "灶具架锅，燃气灶设置170℃，开始加热，当达到170℃提示时加入冰糖和少量水",
@@ -755,7 +755,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/肉松",
             "ingredients": "原料A：里脊 300克\n原料B：葱姜料酒 适量、糖 40g、生抽 8g、蚝油 10g、食用油 10g",
             "details": [
                 "肉顺着纹路切成薄片，放入水中，加葱姜料酒，煮1小时煮烂",
@@ -769,7 +769,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/煎牛排",
             "ingredients": "原料A：西冷牛排 1块（300克）\n原料B：黑胡椒酱 适量、盐 适量、黑胡椒碎 适量、迷迭香 适量、橄榄油 适量",
             "details": [
                 "牛排中倒入少许橄榄油，正反面撒少量的盐，涂抹均匀，加入黑胡椒碎、迷迭香腌制6小时，中途翻动两遍",
@@ -782,7 +782,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/煎带鱼",
             "ingredients": "原料A：带鱼 500克、姜 6-7片、葱段 4-5段、花椒 5-6粒\n原料B：料酒 2勺、盐 1勺半、玉米淀粉 适量、食用油 适量",
             "details": [
                 "带鱼去除内脏，清洗干净后切段，装入盆中，放入食用盐，料酒，葱，姜丝，花椒腌制5分钟后捞出，裹上玉米淀粉",
@@ -795,7 +795,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/虾仁滑蛋",
             "ingredients": "原料A：虾仁 150克、鸡蛋 4个、姜丝 适量\n原料B：料酒 1勺、盐 适量、淀粉水 适量、黑椒碎 适量",
             "details": [
                 "虾仁洗净，加入料酒、姜丝、盐腌制30分钟，焯水后捞出备用",
@@ -809,7 +809,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/松饼",
             "ingredients": "原料A：鸡蛋 2个、砂糖 35g、牛奶 120g、低筋面粉 120g\n原料B：盐 适量",
             "details": [
                 "低筋面粉中加入2个蛋黄、牛奶、25g细砂糖和适量盐，搅拌至无颗粒状",
@@ -822,7 +822,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/红糖粑粑",
             "ingredients": "原料A：糯米粉 300克、红糖 3小勺、绵白糖 1小勺\n原料B：食用油 适量",
             "details": [
                 "揉面，捏成一个个小圆，按扁，待用",
@@ -835,7 +835,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/雪花酥",
             "ingredients": "原料A：黄油50克、小奇福饼干150克、纯白色棉花糖200克、开心果55克、蔓越莓干55克、奶粉50克",
             "details": [
                 "不粘锅置于灶具，燃气灶设置70℃，开始加热,。当达到70℃提示时放入切成小块的黄油加热至完全融化；继续加入棉花糖，用木铲轻轻搅拌棉花糖至融化无硬块；加入奶粉，轻轻拌制融化；加入坚果和蔓越莓混合好后再加入小饼干，将混合物用锅铲拌匀",
@@ -848,7 +848,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/炸鸡块",
             "ingredients": "原料A：鸡胸肉 1斤、鸡蛋 3个、面粉 1杯\n原料B：盐 适量、白胡椒粉、适量、番茄酱 适量",
             "details": [
                 "鸡胸肉用刀背轻敲5分钟，剁成细末，放盐，白胡椒粉腌制30分钟",
@@ -862,7 +862,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/花生米",
             "ingredients": "原料A：花生米 500克\n原料B：菜油 适量、盐 适量",
             "details": [
                 "将花生米洗净，倒入开水碗里泡一下捞出沥干备用",
@@ -874,7 +874,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/椒盐皮皮虾",
             "ingredients": "原料A：皮皮虾 500克、青辣椒 适量 、大蒜 适量、生姜 适量、葱白 适量\n原料B：醋 适量、淀粉 两勺、椒盐 适量、食用油 适量",
             "details": [
                 "将一锅水加入生、姜、葱和几滴醋，烧开后倒进清洗干净的皮皮虾，变色捞出",
@@ -888,7 +888,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/炸薯条",
             "ingredients": "原料A：半成品薯条500克\n原料B：盐 适量",
             "details": [
                 "灶具架锅，放入适量食用油，燃气灶设置180℃，开始加热。当达到180℃提示时放入薯条，炸至金黄酥脆时即可捞出食用"
@@ -899,7 +899,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/天妇罗",
             "ingredients": "原料A：对虾 6只、鸡蛋 1个、淀粉 适量、面粉 适量、面包糠 适量、柠檬 1个",
             "details": [
                 "虾去头和壳，用竹签从虾的尾巴戳进去挑出虾线，将处理好的虾尾放入碗中，加入一点盐，淀粉和少量水抓一下，放用清水冲洗干净；放在厨房纸上，再上面盖上一层厨房纸，轻轻按压，去除多余水分",
@@ -912,7 +912,7 @@
             "cookPos": 1
         },
         {
-            "imgUrl": "recipes/蒜蓉粉丝娃娃菜",
+            "imgUrl": "recipes/right/拔丝红薯",
             "ingredients": "原料A：红薯（地瓜） 500g、白糖 200g",
             "details": [
                 "红薯刮掉皮切成大块，待用",

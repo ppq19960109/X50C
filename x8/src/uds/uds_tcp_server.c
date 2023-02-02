@@ -24,11 +24,11 @@ static int app_select_tcp_server_recv_cb(void *arg)
 {
     struct Select_Client_Event *client_event = (struct Select_Client_Event *)arg;
     struct App_Select_Client_Tcp *app_select_tcp = container_of(client_event, struct App_Select_Client_Tcp, select_client_event);
-    app_select_tcp->recv_len = recv(client_event->fd, app_select_tcp->recv_buf, sizeof(app_select_tcp->recv_buf), 0); //读取客户端发过来的数据
+    app_select_tcp->recv_len = recv(client_event->fd, app_select_tcp->recv_buf, BUFLEN, 0); // 读取客户端发过来的数据
 
     if (app_select_tcp->recv_len <= 0)
     {
-        printf("recv[fd=%d] error[%d]:%s\n", client_event->fd, errno, strerror(errno));
+        printf("recv[fd=%d] error[%d]:%s recv_len:%d\n", client_event->fd, errno, strerror(errno), app_select_tcp->recv_len);
 
         delete_select_client_event(&select_server_event, client_event);
         close(client_event->fd);
@@ -39,7 +39,7 @@ static int app_select_tcp_server_recv_cb(void *arg)
     }
     else
     {
-        app_select_tcp->recv_buf[app_select_tcp->recv_len] = '\0'; //手动添加字符串结束标记
+        app_select_tcp->recv_buf[app_select_tcp->recv_len] = '\0'; // 手动添加字符串结束标记
         printf("%s,[%d]: %d\n", __func__, client_event->fd, app_select_tcp->recv_len);
         if (app_select_tcp->recv_cb != NULL)
             app_select_tcp->recv_cb(app_select_tcp->recv_buf, app_select_tcp->recv_len);
@@ -158,7 +158,7 @@ void *uds_tcp_server_task(void *arg) // uds任务
     app_select_client_Tcp_Server.recv_cb = uds_recv_cb;
     app_select_client_Tcp_Server.connect_cb = uds_connect;
     app_select_client_Tcp_Server.disconnect_cb = uds_disconnect;
-    add_select_client_event(&select_server_event, &app_select_client_Tcp_Server.select_client_event); //添加uds server fd进select
+    add_select_client_event(&select_server_event, &app_select_client_Tcp_Server.select_client_event); // 添加uds server fd进select
     select_server_task(&select_server_event, 200);
 
     uds_tcp_server_close();

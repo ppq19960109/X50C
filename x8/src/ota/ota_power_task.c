@@ -128,7 +128,6 @@ static int ota_state_event(const int state, void *arg)
 
     if (OTA_NO_FIRMWARE == state)
     {
-        set_OtaCmdPushType(0);
     }
     else
     {
