@@ -1181,7 +1181,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     // STATE_DOWN_JUMP
     signed short diff0_0, diff0_1, diff0_2, diff1_0, diff1_1, diff1_2, diff2_0, diff2_1, diff2_2;
     signed short before, after;
-    signed short JUMP_RISE_VALUE = 150, JUMP_DOWN_VALUE = -150;
+    signed short JUMP_RISE_VALUE = 250, JUMP_DOWN_VALUE = -250;
 
     if ((state_handle->state == STATE_GENTLE || (state_handle->state == STATE_RISE_SLOW && data[len - 1] - data[0] < 50 && data[len - 1] - data[0] > 0)) && state_handle->current_tick >= INPUT_DATA_HZ * 2 && state_handle->last_temp < 1000 && state_handle->last_temp > 650)
     {
@@ -1313,12 +1313,21 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
                     if (abs(diff2_0) > 500)
                     {
 
-                        if (state_handle->total_tick <= INPUT_DATA_HZ * 10 && after < 1500)
-                            continue;
-                        else if (state_handle->total_tick <= INPUT_DATA_HZ * 40 && after < 1800)
-                            continue;
-                        else if (state_handle->total_tick <= INPUT_DATA_HZ * 80 && after < 2000)
-                            continue;
+                        if (state_handle->total_tick <= INPUT_DATA_HZ * 10)
+                        {
+                            if (after < 1500)
+                                continue;
+                        }
+                        else if (state_handle->total_tick <= INPUT_DATA_HZ * 40)
+                        {
+                            if (after < 1800)
+                                continue;
+                        }
+                        else if (state_handle->total_tick <= INPUT_DATA_HZ * 80)
+                        {
+                            if (after < 2000)
+                                continue;
+                        }
                         else if (after < 2200)
                             continue;
 
