@@ -159,7 +159,8 @@ int pangu_state_event(unsigned char cmd)
             attr->change = 0;
         }
     }
-    send_event_uds(resp, NULL);
+    // send_event_uds(resp, NULL);
+    report_msg_all_platform(resp);
     return 0;
 }
 
@@ -729,7 +730,7 @@ int pangu_recv_set(void *data)
             cJSON *mode = cJSON_GetObjectItem(arraySub, "mode");
             cJSON *fire = cJSON_GetObjectItem(arraySub, "fire");
             cJSON *temp = cJSON_GetObjectItem(arraySub, "temp");
-            cJSON *time = cJSON_GetObjectItem(arraySub, "time");
+            cJSON *time = cJSON_GetObjectItem(arraySub, "cookTime");
             cJSON *motorSpeed = cJSON_GetObjectItem(arraySub, "motorSpeed");
             cJSON *motorDir = cJSON_GetObjectItem(arraySub, "motorDir");
             cJSON *waterTime = cJSON_GetObjectItem(arraySub, "waterTime");

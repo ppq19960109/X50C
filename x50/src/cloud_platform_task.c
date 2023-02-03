@@ -154,7 +154,7 @@ static void POSIXTimer_cb(union sigval val)
 #endif
 }
 
-int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回调函数，并拼包
+int set_attr_report_uds(cJSON *root, set_attr_t *attr) // 调用相关上报回调函数，并拼包
 {
     if (root == NULL)
     {
@@ -172,7 +172,7 @@ int set_attr_report_uds(cJSON *root, set_attr_t *attr) //调用相关上报回�
     return 0;
 }
 
-int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) //调用相关设置回调函数，并拼包
+int set_attr_ctrl_uds(cJSON *root, set_attr_t *attr, cJSON *item) // 调用相关设置回调函数，并拼包
 {
     if (root == NULL)
     {
@@ -243,7 +243,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
     return 0;
 }
 
-int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数据解析，并拼包成JSON
+int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) // 把串口上报数据解析，并拼包成JSON
 {
     if ((ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT_CTRL && ptr->cloud_fun_type != LINK_FUN_TYPE_ATTR_REPORT) || strlen(ptr->cloud_key) == 0)
     {
@@ -383,7 +383,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) //把串口上报数�
     return 0;
 }
 
-int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) //把阿里云下发数据解析，并解析成串口数据
+int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) // 把阿里云下发数据解析，并解析成串口数据
 {
     long num = 0;
     if (out == NULL)
@@ -526,7 +526,7 @@ end:
     return ptr->uart_byte_len + 1;
 }
 
-void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) //所有串口数据解析，并上报阿里云平台和UI
+void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) // 所有串口数据解析，并上报阿里云平台和UI
 {
     // dzlog_debug("send_data_to_cloud...");
     // hdzlog_info(value, value_len);
@@ -548,8 +548,8 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
             {
                 get_attr_report_event(attr, (char *)&value[i + 1], 0);
                 memcpy((*attr).value, &value[i + 1], (*attr).uart_byte_len);
-                //dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
-                // hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
+                // dzlog_debug("i:%d cloud_key:%s", i, (*attr).cloud_key);
+                //  hdzlog_info((unsigned char *)(*attr).value, (*attr).uart_byte_len);
                 get_attr_report_value(root, attr);
                 if (strcmp("MultiMode", (*attr).cloud_key) == 0 && *((*attr).value) == 1)
                 {
@@ -588,6 +588,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
             ++first_uds_report;
             send_event_uds(root, NULL);
         }
+        pangu_state_event(1);
     }
     else
     {
@@ -596,7 +597,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
     return;
 }
 
-int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚建立连接
+int send_all_to_cloud(void) // 发送所有属性给阿里云平台，用于刚建立连接
 {
     dzlog_info("send_all_to_cloud");
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -621,10 +622,11 @@ int send_all_to_cloud(void) //发送所有属性给阿里云平台，用于刚�
     // json = get_link_CookHistory();
     // link_send_property_post(json);
     // cJSON_free(json);
+    pangu_state_event(1);
     return 0;
 }
 
-int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
+int cloud_resp_get(cJSON *root, cJSON *resp) // 解析UI GET命令
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
@@ -642,7 +644,7 @@ int cloud_resp_get(cJSON *root, cJSON *resp) //解析UI GET命令
     return 0;
 }
 
-int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
+int cloud_resp_getall(cJSON *root, cJSON *resp) // 解析UI GETALL命令
 {
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
@@ -661,7 +663,7 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) //解析UI GETALL命令
     return 0;
 }
 
-int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云平台下发命令
+int cloud_resp_set(cJSON *root, cJSON *resp) // 解析UI SETALL命令或阿里云平台下发命令
 {
     pthread_mutex_lock(&mutex);
     pangu_recv_set(root);
@@ -692,7 +694,7 @@ int cloud_resp_set(cJSON *root, cJSON *resp) //解析UI SETALL命令或阿里云
     return 0;
 }
 
-static int recv_data_from_cloud(unsigned long devid, char *value, int value_len) //阿里云下发接口回调函数，初始化时注册
+static int recv_data_from_cloud(unsigned long devid, char *value, int value_len) // 阿里云下发接口回调函数，初始化时注册
 {
     if (demo_mode != 0)
         return -1;
@@ -759,7 +761,7 @@ int save_device_quad(const char *productkey, const char *productsecret, const ch
     return save_device_secret(devicesecret);
 }
 
-static void *cloud_quad_parse_json(void *input, const char *str) //启动时解析四元组文件
+static void *cloud_quad_parse_json(void *input, const char *str) // 启动时解析四元组文件
 {
     cJSON *root = cJSON_Parse(str);
     if (root == NULL)
@@ -804,7 +806,7 @@ fail:
     cJSON_Delete(root);
     return NULL;
 }
-static void *cloud_parse_json(void *input, const char *str) //启动时解析转换配置文件
+static void *cloud_parse_json(void *input, const char *str) // 启动时解析转换配置文件
 {
     cJSON *root = cJSON_Parse(str);
     if (root == NULL)
@@ -941,7 +943,7 @@ static void quad_burn_success()
     systemRun("wpa_cli remove_network all && wpa_cli save_config && sync");
 }
 
-int cloud_init(void) //初始化
+int cloud_init(void) // 初始化
 {
     pthread_mutex_init(&mutex, NULL);
     register_save_quad_cb(save_device_quad);
@@ -949,7 +951,7 @@ int cloud_init(void) //初始化
     register_quad_burn_success_cb(quad_burn_success);
     register_ota_complete_cb(ota_complete_cb);
     register_recv_sync_service_invoke_cb(recv_sync_service_invoke);
-    register_property_set_event_cb(recv_data_from_cloud); //注册阿里云下发回调
+    register_property_set_event_cb(recv_data_from_cloud); // 注册阿里云下发回调
 #ifdef DYNREGMQ
     register_dynreg_device_secret_cb(save_device_secret);
 #endif
@@ -974,7 +976,7 @@ int cloud_init(void) //初始化
     return 0;
 }
 
-void cloud_deinit(void) //反初始化
+void cloud_deinit(void) // 反初始化
 {
     quad_burn_deinit();
     link_model_close();
@@ -1053,7 +1055,7 @@ void get_quad(void)
 //     return 0;
 // }
 
-void *cloud_task(void *arg) //云端任务
+void *cloud_task(void *arg) // 云端任务
 {
     if (strlen(g_cloud_dev->product_key) == 0)
     {
