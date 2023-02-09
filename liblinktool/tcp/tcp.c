@@ -3,8 +3,8 @@
 int tcpClientConnect(int *fd, const char *addr, const short port)
 {
     struct sockaddr_in server;
-    server.sin_family = AF_INET;              //簇
-    server.sin_port = htons(port);            //端口
+    server.sin_family = AF_INET;              // 簇
+    server.sin_port = htons(port);            // 端口
     server.sin_addr.s_addr = inet_addr(addr); // ip地址
 
     int cfd = Socket(AF_INET, SOCK_STREAM);
@@ -49,6 +49,19 @@ int tcpClientConnect2(int *fd, void *addr, int domain)
         addrlen = sizeof(struct sockaddr_in);
     }
 
+    int buf_size = 0;
+    socklen_t optlen = sizeof(buf_size);
+    if (getsockopt(cfd, SOL_SOCKET, SO_SNDBUF, &buf_size, &optlen) < 0)
+    {
+        printf("getsockopt error=%d(%s)!!!\n", errno, strerror(errno));
+    }
+    printf("getsockopt send success=%d\n", buf_size);
+    if (getsockopt(cfd, SOL_SOCKET, SO_RCVBUF, &buf_size, &optlen) < 0)
+    {
+        printf("getsockopt error=%d(%s)!!!\n", errno, strerror(errno));
+    }
+    printf("getsockopt recv success=%d\n", buf_size);
+
     if (Connect(cfd, addr, addrlen) != 0)
     {
         close(cfd);
@@ -91,7 +104,7 @@ int tcpServerListen(int *fd, const char *addr, const short port, int listenNum)
         return -1;
     }
 
-    bind(lfd, (struct sockaddr *)&sin, sizeof(sin));
+    if (bind(lfd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
     {
         printf("%s bind error:%s\n", __func__, strerror(errno));
         close(lfd);
