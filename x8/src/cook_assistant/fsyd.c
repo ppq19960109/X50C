@@ -723,7 +723,9 @@ static int state_func_idle(unsigned char prepare_state, state_handle_t *state_ha
     }
     return prepare_state;
 }
-
+/***********************************************************
+ * 移锅小火处理函数
+ ***********************************************************/
 static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *state_handle)
 {
     if (!state_handle->pan_fire_switch || state_handle->temp_control_switch)
@@ -962,7 +964,9 @@ static state_func_def g_state_func_handle[] = {state_func_shake, state_func_down
                                                state_func_boil
 #endif
 };
-
+/***********************************************************
+ * 重新初始化函数
+ ***********************************************************/
 void cook_assistant_reinit(state_handle_t *state_handle)
 {
     mlogPrintf("%s,cook_assistant_reinit\n", __func__);
@@ -1018,7 +1022,9 @@ void cook_assistant_init(enum INPUT_DIR input_dir)
 
     state_handle->pan_fire_close_delay_tick = 180;
 }
-
+/***********************************************************
+ * 状态转化处理函数
+ ***********************************************************/
 static int status_judge(state_handle_t *state_handle, const unsigned short *data, const int len)
 {
 #define START (2)
@@ -1478,6 +1484,9 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
 
     return STATE_IDLE;
 }
+/***********************************************************
+ * 辅助控火处理函数
+ ***********************************************************/
 static void temp_control_func(state_handle_t *state_handle)
 {
     int i, average;
