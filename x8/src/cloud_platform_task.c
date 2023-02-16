@@ -381,7 +381,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) // 把串口上报数�
                 {
                     item = cJSON_CreateString(g_cloud_dev->software_ver);
                 }
-                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0 || strcmp("ElcHWVersion", ptr->cloud_key) == 0 || strcmp("PwrSWVersion", ptr->cloud_key) == 0 || strcmp("PwrHWVersion", ptr->cloud_key) == 0)
+                else if (strcmp("ElcSWVersion", ptr->cloud_key) == 0 || strcmp("ElcHWVersion", ptr->cloud_key) == 0 || strcmp("PwrSWVersion", ptr->cloud_key) == 0 || strcmp("PwrHWVersion", ptr->cloud_key) == 0 || strcmp("ShortcutSWVersion", ptr->cloud_key) == 0 || strcmp("KeySWVersion", ptr->cloud_key) == 0)
                 {
                     char buf[6];
                     sprintf(buf, "%d.%d", *ptr->value >> 4, *ptr->value & 0x0f);

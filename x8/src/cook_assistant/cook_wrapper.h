@@ -4,7 +4,7 @@
 extern "C"
 {
 #endif
-
+#define COOK_ASSIST_SOFTER_VER "1.0.0"
     enum INPUT_DIR
     {
         INPUT_LEFT = 0, // 左灶

@@ -24,6 +24,7 @@ typedef struct
     char RStoveStatus;
     unsigned short RAuxiliaryTemp;
     unsigned short RMovePotLowHeatOffTime;
+    char version[8];
 } cook_assist_t;
 static int fd = -1;
 static struct Select_Client_Event select_client_event;
@@ -106,8 +107,11 @@ static void cook_assist_uart_switch(const int state)
 {
     static unsigned char open_uart_data[] = {0xAA, 0X01, 0X01, 0X00, 0XAC};
     static unsigned char close_uart_data[] = {0xAA, 0X01, 0X00, 0X00, 0XAB};
-    if (state)
+    static unsigned char version_uart_data[] = {0xAA, 0X01, 0X01, 0XFF, 0XAB, 0X96};
+    if (state == 1)
         cook_assist_uart_send(open_uart_data, sizeof(open_uart_data));
+    else if (state == 2)
+        cook_assist_uart_send(version_uart_data, sizeof(version_uart_data));
     else
         cook_assist_uart_send(close_uart_data, sizeof(close_uart_data));
 }
@@ -329,6 +333,8 @@ void cook_assist_report_all(cJSON *root)
     cJSON_AddNumberToObject(root, "OilTempSwitch", g_cook_assist.OilTempSwitch);
     cJSON_AddNumberToObject(root, "RMovePotLowHeatSwitch", g_cook_assist.RMovePotLowHeatSwitch);
     cJSON_AddNumberToObject(root, "RMovePotLowHeatOffTime", g_cook_assist.RMovePotLowHeatOffTime);
+    cJSON_AddStringToObject(root, "CookAssistVersion", g_cook_assist.version);
+    cook_assist_uart_switch(2);
     if (resp != NULL)
         cJSON_Delete(resp);
     resp = NULL;
@@ -383,12 +389,13 @@ static int cook_assist_recv_cb(void *arg)
     recv_timeout_count = 0;
     // printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
     // hdzlog_info(uart_read_buf, uart_read_len);
-    if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
-        return -1;
     if (uart_read_len > 0)
     {
+        if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)
+            goto fail;
+
         if (uart_read_len < 15 || uart_read_buf[0] != 0x55 || uart_read_buf[1] != 0x2b)
-            return -1;
+            goto fail;
 
         left_environment_temp = (uart_read_buf[2] << 8) + uart_read_buf[3];
         left_temp = (uart_read_buf[4] << 8) + uart_read_buf[5];
@@ -403,6 +410,25 @@ static int cook_assist_recv_cb(void *arg)
         cook_assistant_input(INPUT_RIGHT, right_temp * 10, right_environment_temp * 10);
         cook_assistant_input(INPUT_LEFT, left_temp * 10, left_environment_temp * 10);
         prepare_gear_change_task();
+        if (uart_read_len == 15)
+            return 0;
+    fail:
+        if (uart_read_len >= 8)
+        {
+            if (uart_read_buf[0] == 0xAA && uart_read_buf[7] == 0x96)
+                sprintf(g_cook_assist.version, "%d.%d.%d", uart_read_buf[3], uart_read_buf[4], uart_read_buf[5]);
+            else if (uart_read_len == 23 && uart_read_buf[15 + 0] == 0xAA && uart_read_buf[15 + 7] == 0x96)
+                sprintf(g_cook_assist.version, "%d.%d.%d", uart_read_buf[15 + 3], uart_read_buf[15 + 4], uart_read_buf[15 + 5]);
+            else
+            {
+                dzlog_error("%s,cook assist version error", __func__);
+                return -1;
+            }
+            dzlog_warn("%s,cook assist version:%s", __func__, g_cook_assist.version);
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddStringToObject(root, "CookAssistVersion", g_cook_assist.version);
+            send_event_uds(root, NULL);
+        }
     }
     return 0;
 }
@@ -463,6 +489,7 @@ void cook_assist_init()
     // cook_assist_set_smartSmoke(1);
     // cook_assistant_hood_speed_cb(0,INPUT_RIGHT);
     cook_assist_judge_work_mode();
+    cook_assist_uart_switch(2);
 }
 void cook_assist_deinit()
 {

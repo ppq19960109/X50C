@@ -48,6 +48,20 @@
             "uartByteLen": 1
         },
         {
+            "cloudKey": "ShortcutSWVersion",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 14,
+            "uartByteLen": 1
+        },
+        {
+            "cloudKey": "KeySWVersion",
+            "valueType": 2,
+            "funType": 1,
+            "uartCmd": 15,
+            "uartByteLen": 1
+        },
+        {
             "cloudKey": "SysPower",
             "valueType": 0,
             "funType": 0,
