@@ -8,6 +8,7 @@ MKDIR = mkdir -p
 
 TOPDIR = .
 
+HV_PATH:=libhv
 ALI_PATH:=LinkSDK-MQTT3-CA
 SRC_DIRS := $(shell find src -maxdepth 3 -type d)
 INC_DIRS += $(shell find ${ALI_PATH} -type d \( ! -name demos \))
@@ -25,6 +26,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/signal
 CFLAGS += -I$(LINKTOOL_PATH)/include/timer
 CFLAGS += -I$(LINKTOOL_PATH)/include/md5
 CFLAGS += -I$(ALI_PATH)/include
+CFLAGS += -I$(HV_PATH)/include/hv
 
 CFLAGS += -Wall #-Werror
 ifdef DEBUG
@@ -32,11 +34,12 @@ CFLAGS += -g -lmcheck -DDEBUG
 endif
 
 LDFLAGS += -L$(LINKTOOL_PATH)/lib
+LDFLAGS += -L$(HV_PATH)/lib
 LDFLAGS += -L$(ALI_PATH)
 LDFLAGS += -L$(TOPDIR)
 
 LIBS += -Wl,--start-group	\
-		-Wl,-Bstatic  -llinktool -lalisdk -lzlog \
+		-Wl,-Bstatic  -llinktool -lalisdk -lzlog -lhv \
 		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lsqlite3	-lcurl -lDeviceIo -lasound \
 		-Wl,--end-group
 

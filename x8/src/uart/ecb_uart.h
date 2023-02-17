@@ -16,7 +16,6 @@ void ecb_resend_list_clear();
 
 void ecb_uart_init(void);
 void ecb_uart_deinit(void);
-
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend, unsigned char iscopy);
 
 void set_ecb_ota_power_state(char state);

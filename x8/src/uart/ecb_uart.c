@@ -3,12 +3,11 @@
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "uart_resend.h"
-#include "uart_task.h"
 
+static int fd = -1;
+static hio_t *mio;
 static char ota_power_state = 0;
 static int ecb_msg_get_count = 0;
-static struct Select_Client_Event select_client_event;
-static int fd = -1;
 static pthread_mutex_t lock;
 LIST_HEAD(ECB_LIST_RESEND);
 
@@ -36,45 +35,13 @@ char get_ecb_ota_power_state()
 {
     return ota_power_state;
 }
-// static void InvertUint16(unsigned short *dBuf, unsigned short *srcBuf)
-// {
-//     int i;
-//     unsigned short tmp[4] = {0};
-
-//     for (i = 0; i < 16; i++)
-//     {
-//         if (srcBuf[0] & (1 << i))
-//             tmp[0] |= 1 << (15 - i);
-//     }
-//     dBuf[0] = tmp[0];
-// }
-
-// unsigned short CRC16_MAXIM(const unsigned char *data, unsigned int datalen)
-// {
-//     unsigned short wCRCin = 0x0000;
-//     unsigned short wCPoly = 0x8005;
-
-//     InvertUint16(&wCPoly, &wCPoly);
-//     while (datalen--)
-//     {
-//         wCRCin ^= *(data++);
-//         for (int i = 0; i < 8; i++)
-//         {
-//             if (wCRCin & 0x01)
-//                 wCRCin = (wCRCin >> 1) ^ wCPoly;
-//             else
-//                 wCRCin = wCRCin >> 1;
-//         }
-//     }
-//     return (wCRCin ^ 0xFFFF);
-// }
 
 int ecb_uart_resend_cb(const unsigned char *in, int in_len);
 int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag, unsigned char iscopy)
 {
-    if (fd < 0)
+    if (mio == NULL)
     {
-        dzlog_error("ecb_uart_send fd error\n");
+        LOGW("%s,mio NULL", __func__);
         return -1;
     }
     if (in == NULL || in_len <= 0)
@@ -90,7 +57,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
             uart_resend_t *resend = (uart_resend_t *)malloc(sizeof(uart_resend_t));
             if (resend == NULL)
             {
-                dzlog_error("malloc error\n");
+                LOGE("malloc error\n");
                 resend_flag = -1;
                 goto resend_fail;
             }
@@ -100,7 +67,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
                 resend->send_data = (unsigned char *)malloc(resend->send_len);
                 if (resend->send_data == NULL)
                 {
-                    dzlog_error("malloc error\n");
+                    LOGE("malloc error\n");
                     free(resend);
                     resend_flag = -1;
                     goto resend_fail;
@@ -110,7 +77,6 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
             else
                 resend->send_data = (unsigned char *)in;
 
-            // resend->fd = fd;
             if (resend->send_len >= 4)
                 resend->resend_seq_id = resend->send_data[2] * 256 + resend->send_data[3];
             resend->resend_cnt = RESEND_CNT;
@@ -119,7 +85,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
             ecb_resend_list_add(resend);
         }
     resend_fail:
-        write(fd, in, in_len);
+        hio_write(mio, in, in_len);
         if (resend_flag < 0)
         {
             res = -1;
@@ -133,7 +99,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
     }
     else
     {
-        dzlog_error("pthread_mutex_lock error\n");
+        LOGE("pthread_mutex_lock error\n");
     }
     return res;
 }
@@ -146,35 +112,37 @@ int ecb_uart_resend_cb(const unsigned char *in, int in_len)
     return ecb_uart_send(in, in_len, 0, 0);
 }
 
-static int ecb_recv_cb(void *arg)
+static void on_uart_read(hio_t *io, void *buf, int readbytes)
 {
     static unsigned char uart_read_buf[512];
-    int uart_read_len;
     static int uart_read_buf_index = 0;
+    int uart_read_len = readbytes;
 
-    uart_read_len = read(fd, &uart_read_buf[uart_read_buf_index], sizeof(uart_read_buf) - uart_read_buf_index);
     if (uart_read_len > 0)
     {
-        uart_read_buf_index += uart_read_len;
-        // dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
-        // hdzlog_info(uart_read_buf, uart_read_buf_index);
+        if (uart_read_buf_index + uart_read_len >= sizeof(uart_read_buf))
+        {
+            memcpy(uart_read_buf, buf, uart_read_len);
+            uart_read_buf_index = uart_read_len;
+        }
+        else
+        {
+            memcpy(&uart_read_buf[uart_read_buf_index], buf, uart_read_len);
+            uart_read_buf_index += uart_read_len;
+        }
+        LOGW("recv from ecb--------------------------uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+        mlogHex(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        // dzlog_warn("uart_read_buf_index:%d", uart_read_buf_index);
+        LOGW("uart_read_buf_index:%d", uart_read_buf_index);
         //  hdzlog_info(uart_read_buf, uart_read_buf_index);
     }
-    return 0;
 }
 
-static int ecb_except_cb(void *arg)
-{
-    return 0;
-}
-
-static int ecb_timeout_cb(void *arg)
+static void on_idle(hidle_t *idle)
 {
     resend_list_each(&ECB_LIST_RESEND);
     if (ota_power_state != 0)
-        return 0;
+        return;
     static int ecb_msg_get_timeout = MSG_GET_SHORT_TIME;
 
     int msg_get_status = ecb_uart_msg_get(false);
@@ -192,7 +160,7 @@ static int ecb_timeout_cb(void *arg)
     {
         ecb_msg_get_count = 0;
         ecb_uart_msg_get(true);
-        dzlog_warn("ecb_uart_msg_get\n");
+        LOGW("ecb_uart_msg_get\n");
     }
     if (ecb_uart_heart_timeout(false) < MSG_HEART_TIME)
     {
@@ -201,13 +169,6 @@ static int ecb_timeout_cb(void *arg)
             send_error_to_cloud(POWER_BOARD_ERROR_CODE);
         }
     }
-    return 0;
-}
-
-void ecb_uart_deinit(void)
-{
-    close(fd);
-    pthread_mutex_destroy(&lock);
 }
 /*********************************************************************************
  *Function:  ecb_uart_init
@@ -220,17 +181,20 @@ void ecb_uart_init(void)
     fd = uart_init("/dev/ttyS4", BAUDRATE_115200, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
-        dzlog_error("ecb_uart uart init error:%d,%s", errno, strerror(errno));
+        LOGE("ecb_uart uart init error:%d,%s", errno, strerror(errno));
         return;
     }
-    dzlog_info("ecb_uart,fd:%d", fd);
+    LOGI("ecb_uart,fd:%d", fd);
     pthread_mutex_init(&lock, NULL);
 
-    select_client_event.fd = fd;
-    select_client_event.read_cb = ecb_recv_cb;
-    select_client_event.except_cb = ecb_except_cb;
-    select_client_event.timeout_cb = ecb_timeout_cb;
+    hidle_add(g_loop, on_idle, INFINITE);
+    static char uart_buf[256];
+    mio = hread(g_loop, fd, uart_buf, sizeof(uart_buf), on_uart_read);
 
-    add_select_client_uart(&select_client_event);
     ecb_uart_msg_get(true);
+}
+void ecb_uart_deinit(void)
+{
+    close(fd);
+    pthread_mutex_destroy(&lock);
 }

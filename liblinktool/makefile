@@ -15,7 +15,7 @@ INSTALL_LIB = "$(INSTALL)/lib"
 TOPDIR = .
 
 SRC_DIRS := $(shell find tool -maxdepth 1 -type d)
-TCP_DIRS := $(shell find tcp -maxdepth 1 -type d)
+#TCP_DIRS := $(shell find tcp -maxdepth 1 -type d)
 
 CJSON_PATH:=cJSON
 KLIB_PATH:=klib
@@ -48,8 +48,8 @@ LIBS += -Wl,--start-group	\
 
 SRC := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
 INC:=$(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.h))
-SRC_TCP:= $(foreach dir,$(TCP_DIRS),$(wildcard $(dir)/*.c))
-INC_TCP:=$(foreach dir,$(TCP_DIRS),$(wildcard $(dir)/*.h))
+#SRC_TCP:= $(foreach dir,$(TCP_DIRS),$(wildcard $(dir)/*.c))
+#INC_TCP:=$(foreach dir,$(TCP_DIRS),$(wildcard $(dir)/*.h))
 SRC_CJSON := $(wildcard $(CJSON_PATH)/*.c)
 INC_CJSON := $(wildcard $(CJSON_PATH)/*.h)
 SRC_KLIB := $(wildcard $(KLIB_PATH)/*.c)
@@ -66,7 +66,7 @@ SRC_BMP := $(wildcard $(BMP_PATH)/*.c)
 INC_BMP := $(wildcard $(BMP_PATH)/*.h)
 
 OBJ += $(SRC:%.c=%.o)
-OBJ += $(SRC_TCP:%.c=%.o)
+#OBJ += $(SRC_TCP:%.c=%.o)
 OBJ += $(SRC_CJSON:%.c=%.o)
 OBJ += $(SRC_KLIB:%.c=%.o)
 OBJ += $(SRC_BASE64:%.c=%.o)
@@ -90,7 +90,7 @@ install: $(TARGET)
 	$(MKDIR) $(INSTALL_LIB) $(INSTALL_INCLUDE) $(INSTALL_INCLUDE)/tcp $(INSTALL_INCLUDE)/cJSON $(INSTALL_INCLUDE)/klib $(INSTALL_INCLUDE)/base64 $(INSTALL_INCLUDE)/signal $(INSTALL_INCLUDE)/timer $(INSTALL_INCLUDE)/md5
 	$(CP) $(TARGET) $(INSTALL_LIB)
 	$(CP) $(INC) $(INSTALL_INCLUDE)
-	$(CP) $(INC_TCP) $(INSTALL_INCLUDE)/tcp
+#	$(CP) $(INC_TCP) $(INSTALL_INCLUDE)/tcp
 	$(CP) $(INC_CJSON) $(INSTALL_INCLUDE)/cJSON
 	$(CP) $(INC_KLIB) $(INSTALL_INCLUDE)/klib
 	$(CP) $(INC_BASE64) $(INSTALL_INCLUDE)/base64

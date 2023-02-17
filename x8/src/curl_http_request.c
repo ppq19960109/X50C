@@ -19,10 +19,10 @@ static size_t curl_http_request_cb(void *ptr, size_t size, size_t nmemb, void *s
 }
 int curl_http_post(const char *path, const char *body)
 {
-    dzlog_warn("%s,path:%s body:%s", __func__, path, body);
+    LOGW("%s,path:%s body:%s", __func__, path, body);
     if (get_link_connected_state() == 0)
     {
-        dzlog_warn("%s,link disconnect", __func__);
+        LOGW("%s,link disconnect", __func__);
         return -1;
     }
     CURLcode res;

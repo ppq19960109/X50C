@@ -1,7 +1,6 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "uds_tcp_server.h"
 #include "rkwifi.h"
 #include "ecb_uart_parse_msg.h"
 #include "link_solo.h"
@@ -25,7 +24,7 @@ static char demo_mode = 0;
 // void power_ota_install();
 void uds_report_reset(void)
 {
-    dzlog_warn("%s", __func__);
+    LOGW("%s", __func__);
     first_uds_report = 0;
     ecb_uart_msg_get(true);
 }
@@ -47,7 +46,7 @@ int report_msg_all_platform(cJSON *root)
     if (cJSON_Object_isNull(root))
     {
         cJSON_Delete(root);
-        dzlog_warn("%s,send NULL", __func__);
+        LOGW("%s,send NULL", __func__);
         return -1;
     }
     char *json = cJSON_PrintUnformatted(root);
@@ -160,7 +159,7 @@ signed char get_OtaCmdPushType(void)
 }
 signed char set_OtaCmdPushType(char type)
 {
-    dzlog_warn("%s,type:%d", __func__, type);
+    LOGW("%s,type:%d", __func__, type);
     cloud_attr_t *attr = get_attr_ptr("OtaCmdPushType");
     if (attr == NULL)
     {
@@ -255,7 +254,7 @@ static int get_attr_report_event(cloud_attr_t *ptr, const char *value, const int
     {
         return -1;
     }
-    // dzlog_warn("get_attr_report_event:%s", ptr->cloud_key);
+    // LOGW("get_attr_report_event:%s", ptr->cloud_key);
     if (strcmp("LStOvState", ptr->cloud_key) == 0)
     {
         if (*value == 4 && (*ptr->value != *value || event_all > 0))
@@ -367,7 +366,7 @@ int get_attr_report_value(cJSON *resp, cloud_attr_t *ptr) // 把串口上报数�
                 char *buf = (char *)malloc(ptr->uart_byte_len + 1);
                 if (buf == NULL)
                 {
-                    dzlog_error("malloc error\n");
+                    LOGE("malloc error\n");
                     return -1;
                 }
                 memcpy(buf, ptr->value, ptr->uart_byte_len);
@@ -439,7 +438,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) // �
             int arraySize = cJSON_GetArraySize(item);
             if (arraySize == 0)
             {
-                dzlog_error("get_attr_set_value arraySize is 0\n");
+                LOGE("get_attr_set_value arraySize is 0\n");
                 return 0;
             }
             ptr->uart_byte_len = arraySize * 13 + 1;
@@ -533,7 +532,7 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) // �
                     out[index++] = 0;
                 }
             }
-            dzlog_warn("get_attr_set_value %s:%d %d", ptr->cloud_key, ptr->uart_byte_len, index);
+            LOGW("get_attr_set_value %s:%d %d", ptr->cloud_key, ptr->uart_byte_len, index);
         }
     }
     else
@@ -589,13 +588,13 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) // �
     }
 end:
     out[0] = ptr->uart_cmd;
-    dzlog_warn("uart_cmd:%d", ptr->uart_cmd);
+    LOGW("uart_cmd:%d", ptr->uart_cmd);
     return ptr->uart_byte_len + 1;
 }
 
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) // 所有串口数据解析，并上报阿里云平台和UI
 {
-    // dzlog_debug("send_data_to_cloud...");
+    // LOGD("send_data_to_cloud...");
     // hdzlog_info((unsigned char *)value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
@@ -615,7 +614,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
             {
                 get_attr_report_event(attr, (char *)&value[i + 1], 0);
                 memcpy(attr->value, &value[i + 1], attr->uart_byte_len);
-                // dzlog_debug("i:%d cloud_key:%s", i, attr->cloud_key);
+                // LOGD("i:%d cloud_key:%s", i, attr->cloud_key);
                 // hdzlog_info((unsigned char *)attr->value, attr->uart_byte_len);
                 get_attr_report_value(root, attr);
                 switch (attr->uart_cmd)
@@ -665,7 +664,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
     if (cJSON_Object_isNull(root))
     {
         cJSON_Delete(root);
-        dzlog_warn("%s,send NULL", __func__);
+        LOGW("%s,send NULL", __func__);
         return;
     }
     if (cJSON_HasObjectItem(root, "LStOvState") && cJSON_HasObjectItem(root, "LStOvMode") && cJSON_HasObjectItem(root, "RStOvState") && cJSON_HasObjectItem(root, "RStOvMode"))
@@ -708,7 +707,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
 
 int send_all_to_cloud(void) // 发送所有属性给阿里云平台，用于刚建立连接
 {
-    dzlog_info("send_all_to_cloud");
+    LOGI("send_all_to_cloud");
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
     char *json = NULL;
@@ -765,13 +764,13 @@ int cloud_resp_getall(cJSON *root, cJSON *resp) // 解析UI GETALL命令
             cloud_attr_t *attr = get_attr_ptr("ProductionTestStatus");
             if (attr == NULL)
             {
-                dzlog_error("not attr ProductionTestStatus");
+                LOGE("not attr ProductionTestStatus");
             }
             else
             {
                 if (*attr->value > 0)
                 {
-                    dzlog_warn("ProductionTestStatus not report");
+                    LOGW("ProductionTestStatus not report");
                     continue;
                 }
             }
@@ -824,7 +823,7 @@ static int recv_data_from_cloud(unsigned long devid, char *value, int value_len)
     cJSON *root = cJSON_Parse(value);
     if (root == NULL)
     {
-        dzlog_error("JSON Parse Error");
+        LOGE("JSON Parse Error");
         return -1;
     }
     cloud_resp_set(root, NULL);
@@ -895,25 +894,25 @@ static void *cloud_quad_parse_json(void *input, const char *str) // 启动时解
     cJSON *ProductKey = cJSON_GetObjectItem(root, PRODUCT_KEY);
     if (ProductKey == NULL)
     {
-        dzlog_error("ProductKey is NULL\n");
+        LOGE("ProductKey is NULL\n");
         goto fail;
     }
     cJSON *ProductSecret = cJSON_GetObjectItem(root, PRODUCT_SECRET);
     if (ProductSecret == NULL)
     {
-        dzlog_error("ProductSecret is NULL\n");
+        LOGE("ProductSecret is NULL\n");
         goto fail;
     }
     cJSON *DeviceName = cJSON_GetObjectItem(root, DEVICE_NAME);
     if (DeviceName == NULL)
     {
-        dzlog_error("DeviceName is NULL\n");
+        LOGE("DeviceName is NULL\n");
         goto fail;
     }
     cJSON *DeviceSecret = cJSON_GetObjectItem(root, DEVICE_SECRET);
     if (DeviceSecret == NULL)
     {
-        dzlog_error("DeviceSecret is NULL\n");
+        LOGE("DeviceSecret is NULL\n");
         goto fail;
     }
 
@@ -939,51 +938,51 @@ static void *cloud_parse_json(void *input, const char *str) // 启动时解析�
     cJSON *DeviceCategory = cJSON_GetObjectItem(root, "DeviceCategory");
     if (DeviceCategory == NULL)
     {
-        dzlog_error("DeviceCategory is NULL\n");
+        LOGE("DeviceCategory is NULL\n");
         goto fail;
     }
     cJSON *DeviceModel = cJSON_GetObjectItem(root, "DeviceModel");
     if (DeviceModel == NULL)
     {
-        dzlog_error("DeviceModel is NULL\n");
+        LOGE("DeviceModel is NULL\n");
         goto fail;
     }
     cJSON *HardwareVer = cJSON_GetObjectItem(root, "HardwareVer");
     if (HardwareVer == NULL)
     {
-        dzlog_error("HardwareVer is NULL\n");
+        LOGE("HardwareVer is NULL\n");
         goto fail;
     }
     cJSON *UpdateLog = cJSON_GetObjectItem(root, "UpdateLog");
     if (UpdateLog == NULL)
     {
-        dzlog_error("UpdateLog is NULL\n");
+        LOGE("UpdateLog is NULL\n");
         goto fail;
     }
     // cJSON *mcookUrl = cJSON_GetObjectItem(root, "mcookUrl");
     // if (mcookUrl == NULL)
     // {
-    //     dzlog_error("mcookUrl is NULL\n");
+    //     LOGE("mcookUrl is NULL\n");
     //     goto fail;
     // }
     cJSON *attr = cJSON_GetObjectItem(root, "attr");
     if (attr == NULL)
     {
-        dzlog_error("attr is NULL\n");
+        LOGE("attr is NULL\n");
         goto fail;
     }
 
     int arraySize = cJSON_GetArraySize(attr);
     if (arraySize == 0)
     {
-        dzlog_error("attr arraySize is 0\n");
+        LOGE("attr arraySize is 0\n");
         goto fail;
     }
     int i;
     cloud_dev_t *cloud_dev = (cloud_dev_t *)malloc(sizeof(cloud_dev_t));
     if (cloud_dev == NULL)
     {
-        dzlog_error("malloc error\n");
+        LOGE("malloc error\n");
         goto fail;
     }
     memset(cloud_dev, 0, sizeof(cloud_dev_t));
@@ -991,7 +990,7 @@ static void *cloud_parse_json(void *input, const char *str) // 启动时解析�
     cloud_dev->attr = (cloud_attr_t *)malloc(sizeof(cloud_attr_t) * cloud_dev->attr_len);
     if (cloud_dev->attr == NULL)
     {
-        dzlog_error("malloc error\n");
+        LOGE("malloc error\n");
         goto fail;
     }
     memset(cloud_dev->attr, 0, sizeof(cloud_attr_t) * cloud_dev->attr_len);
@@ -1030,7 +1029,7 @@ static void *cloud_parse_json(void *input, const char *str) // 启动时解析�
             cloud_dev->attr[i].value = (char *)malloc(cloud_dev->attr[i].uart_byte_len);
             if (cloud_dev->attr[i].value == NULL)
             {
-                dzlog_error("malloc error\n");
+                LOGE("malloc error\n");
                 goto fail;
             }
             memset(cloud_dev->attr[i].value, 0, cloud_dev->attr[i].uart_byte_len);
@@ -1062,7 +1061,7 @@ static void quad_burn_success()
 
 static void link_timestamp_cb(const unsigned long timestamp)
 {
-    dzlog_warn("link_timestamp_cb:%ld", timestamp);
+    LOGW("link_timestamp_cb:%ld", timestamp);
     // struct timeval tv;
     // tv.tv_sec = timestamp;
     // tv.tv_usec = 0;
@@ -1090,7 +1089,7 @@ int cloud_init(void) // 初始化
     g_cloud_dev = get_dev_profile(".", NULL, PROFILE_NAME, cloud_parse_json);
     if (g_cloud_dev == NULL)
     {
-        dzlog_error("cloud_init error\n");
+        LOGE("cloud_init error\n");
         return -1;
     }
 
@@ -1099,7 +1098,7 @@ int cloud_init(void) // 初始化
     {
         if (get_dev_profile(".", g_cloud_dev, QUAD_NAME, cloud_quad_parse_json) == NULL)
         {
-            dzlog_error("cloud_init cloud_quad_parse_json error\n");
+            LOGE("cloud_init cloud_quad_parse_json error\n");
         }
     }
 
@@ -1129,7 +1128,7 @@ void cloud_deinit(void) // 反初始化
     }
     free(g_cloud_dev->attr);
     free(g_cloud_dev);
-    dzlog_warn("cloud_deinit...........\n");
+    LOGW("cloud_deinit...........\n");
 #ifdef SOFT_TEST
     if (cook_name_timer != NULL)
     {
@@ -1154,7 +1153,7 @@ void get_quad(void)
         s_addr &= ~(0xff << 24);
         s_addr |= 200 << 24;
         inet_ntop(AF_INET, &s_addr, ip, sizeof(ip));
-        dzlog_warn("ip:0X%x,url:%s,device_name:%s", s_addr, ip, g_cloud_dev->device_name);
+        LOGW("ip:0X%x,url:%s,device_name:%s", s_addr, ip, g_cloud_dev->device_name);
 
         quad_burn_requst(g_cloud_dev->product_key, g_cloud_dev->device_name, ip);
     }
@@ -1224,13 +1223,13 @@ void *cloud_task(void *arg) // 云端任务
             cloud_attr_t *attr = get_attr_ptr("ProductionTestStatus");
             if (attr == NULL)
             {
-                dzlog_error("not attr ProductionTestStatus");
+                LOGE("not attr ProductionTestStatus");
             }
             else
             {
                 if (*attr->value > 0)
                 {
-                    dzlog_warn("wait ProductionTestStatus");
+                    LOGW("wait ProductionTestStatus");
                     continue;
                 }
             }
@@ -1241,12 +1240,12 @@ void *cloud_task(void *arg) // 云端任务
             }
             else
             {
-                dzlog_warn("no Internet...");
+                LOGW("no Internet...");
             }
         }
         else
         {
-            dzlog_warn("wait curl_http_get_quad");
+            LOGW("wait curl_http_get_quad");
         }
     } while (1);
 #else

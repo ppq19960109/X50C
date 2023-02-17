@@ -8,6 +8,7 @@ extern "C"
 #include "cJSON.h"
     void cook_assist_init();
     void cook_assist_deinit();
+    
     void cook_assist_report_all(cJSON *root);
 
     void set_stove_status(unsigned char status, enum INPUT_DIR input_dir);

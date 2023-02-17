@@ -6,7 +6,6 @@
 
 #include "main.h"
 #include "cloud_platform_task.h"
-#include "uart_task.h"
 #include "ecb_uart_parse_msg.h"
 #include "uds_protocol.h"
 #include "curl/curl.h"
@@ -26,8 +25,9 @@ typedef struct
     unsigned short RMovePotLowHeatOffTime;
     char version[8];
 } cook_assist_t;
+static hio_t *mio;
 static int fd = -1;
-static struct Select_Client_Event select_client_event;
+
 static unsigned short left_temp = 0;
 static unsigned short left_environment_temp = 0;
 static unsigned short right_temp = 0;
@@ -52,18 +52,18 @@ static cJSON *resp = NULL;
 
 static int cook_assist_uart_send(const unsigned char *in, int in_len)
 {
-    if (fd < 0)
+    if (mio == NULL)
     {
-        dzlog_error("cook_assist_uart_send fd error\n");
+        LOGW("%s,mio NULL", __func__);
         return -1;
     }
     if (in == NULL || in_len <= 0)
     {
         return -1;
     }
-    dzlog_warn("cook_assist_uart_send--------------------------");
+    LOGW("cook_assist_uart_send--------------------------");
     hdzlog_info(in, in_len);
-    return write(fd, in, in_len);
+    return hio_write(mio, in, in_len);
 }
 static int cook_assist_remind_cb(int index)
 {
@@ -379,12 +379,10 @@ static int cook_assistant_fire_cb(const int gear, enum INPUT_DIR input_dir)
     return 0;
 }
 
-static int cook_assist_recv_cb(void *arg)
+static void on_uart_read(hio_t *io, void *buf, int readbytes)
 {
-    static unsigned char uart_read_buf[32];
-    int uart_read_len;
-
-    uart_read_len = read(fd, uart_read_buf, sizeof(uart_read_buf));
+    char *uart_read_buf = buf;
+    int uart_read_len = readbytes;
 
     recv_timeout_count = 0;
     // printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
@@ -411,7 +409,7 @@ static int cook_assist_recv_cb(void *arg)
         cook_assistant_input(INPUT_LEFT, left_temp * 10, left_environment_temp * 10);
         prepare_gear_change_task();
         if (uart_read_len == 15)
-            return 0;
+            return;
     fail:
         if (uart_read_len >= 8)
         {
@@ -421,23 +419,17 @@ static int cook_assist_recv_cb(void *arg)
                 sprintf(g_cook_assist.version, "%d.%d.%d", uart_read_buf[15 + 3], uart_read_buf[15 + 4], uart_read_buf[15 + 5]);
             else
             {
-                dzlog_error("%s,cook assist version error", __func__);
-                return -1;
+                LOGE("%s,cook assist version error", __func__);
+                return;
             }
-            dzlog_warn("%s,cook assist version:%s", __func__, g_cook_assist.version);
+            LOGW("%s,cook assist version:%s", __func__, g_cook_assist.version);
             cJSON *root = cJSON_CreateObject();
             cJSON_AddStringToObject(root, "CookAssistVersion", g_cook_assist.version);
             send_event_uds(root, NULL);
         }
     }
-    return 0;
 }
-
-static int cook_assist_except_cb(void *arg)
-{
-    return 0;
-}
-static int cook_assist_timeout_cb(void *arg)
+static void on_idle(hidle_t *idle)
 {
     cook_assist_link_recv(NULL, NULL);
     if (recv_timeout_count < 6)
@@ -451,7 +443,6 @@ static int cook_assist_timeout_cb(void *arg)
             report_msg_all_platform(root);
         }
     }
-    return 0;
 }
 
 void cook_assist_init()
@@ -471,20 +462,17 @@ void cook_assist_init()
     fd = uart_init("/dev/ttyS0", BAUDRATE_9600, DATABIT_8, PARITY_NONE, STOPBIT_1, FLOWCTRL_NONE, BLOCKING_NONBLOCK);
     if (fd < 0)
     {
-        dzlog_error("cook_assist uart init error:%d,%s", errno, strerror(errno));
+        LOGE("cook_assist uart init error:%d,%s", errno, strerror(errno));
         return;
     }
-    dzlog_info("cook_assist,fd:%d", fd);
-    dzlog_warn("cook_assist init,OilTempSwitch:%d", g_cook_assist.OilTempSwitch);
+    LOGI("cook_assist,fd:%d", fd);
+    LOGW("cook_assist init,OilTempSwitch:%d", g_cook_assist.OilTempSwitch);
     cook_assistant_init(INPUT_LEFT);
     cook_assistant_init(INPUT_RIGHT);
 
-    select_client_event.fd = fd;
-    select_client_event.read_cb = cook_assist_recv_cb;
-    select_client_event.except_cb = cook_assist_except_cb;
-    select_client_event.timeout_cb = cook_assist_timeout_cb;
-
-    add_select_client_uart(&select_client_event);
+    hidle_add(g_loop, on_idle, INFINITE);
+    static char uart_buf[36];
+    mio = hread(g_loop, fd, uart_buf, sizeof(uart_buf), on_uart_read);
 
     // cook_assist_set_smartSmoke(1);
     // cook_assistant_hood_speed_cb(0,INPUT_RIGHT);

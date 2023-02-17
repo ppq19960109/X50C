@@ -1,7 +1,6 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "uds_tcp_server.h"
 
 #include "cloud_platform_task.h"
 #include "ota_power_task.h"
@@ -123,7 +122,7 @@ int ota_power_resp_set(cJSON *root, cJSON *resp)
 static int ota_state_event(const int state, void *arg)
 {
     char otaCmdPushType = get_OtaCmdPushType();
-    dzlog_info("power ota_state_event:%d,otaCmdPushType:%d", state, otaCmdPushType);
+    LOGI("power ota_state_event:%d,otaCmdPushType:%d", state, otaCmdPushType);
     cJSON *root = cJSON_CreateObject();
 
     if (OTA_NO_FIRMWARE == state)
@@ -152,7 +151,7 @@ static int ota_state_event(const int state, void *arg)
 
 static void ota_progress_cb(const int precent)
 {
-    dzlog_info("ota_progress_cb:%d", precent);
+    LOGI("ota_progress_cb:%d", precent);
     if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
         return;
     cJSON *root = cJSON_CreateObject();
@@ -197,28 +196,28 @@ static void *cloud_parse_power_json(void *input, const char *str)
     cJSON *FileSize = cJSON_GetObjectItem(root, "FileSize");
     if (FileSize == NULL)
     {
-        dzlog_error("FileSize is NULL\n");
+        LOGE("FileSize is NULL\n");
         goto fail;
     }
     cJSON *FileVersion = cJSON_GetObjectItem(root, "FileVersion");
     if (FileVersion == NULL)
     {
-        dzlog_error("FileVersion is NULL\n");
+        LOGE("FileVersion is NULL\n");
         goto fail;
     }
     cJSON *FileCRC = cJSON_GetObjectItem(root, "FileCRC");
     if (FileCRC == NULL)
     {
-        dzlog_error("FileCRC is NULL\n");
+        LOGE("FileCRC is NULL\n");
         goto fail;
     }
     long file_size = getFileSize(POWER_OTA_FILE);
-    dzlog_warn("%s,POWER_OTA_FILE getFileSize size:%ld", __func__, file_size);
+    LOGW("%s,POWER_OTA_FILE getFileSize size:%ld", __func__, file_size);
     if (file_size <= 0)
         goto fail;
     if (file_size != FileSize->valueint)
     {
-        dzlog_error("FileSize is error:%ld %d\n", file_size, FileSize->valueint);
+        LOGE("FileSize is error:%ld %d\n", file_size, FileSize->valueint);
         // goto fail;
     }
     ota_total_packages = file_size / ench_package_len + (file_size % ench_package_len > 0 ? 1 : 0);
@@ -274,7 +273,7 @@ static int ota_power_send_data(const char cmd)
         buf[len++] = 0;
         buf[len++] = 0;
         size_t read_len = fread(&buf[len], 1, ench_package_len, ota_fp);
-        dzlog_warn("ota_power_send_data read data len:%ld,ota_total_packages:%d,ota_current_package:%d", read_len, ota_total_packages, ota_current_package);
+        LOGW("ota_power_send_data read data len:%ld,ota_total_packages:%d,ota_current_package:%d", read_len, ota_total_packages, ota_current_package);
         buf[len - 2] = read_len >> 8;
         buf[len - 1] = read_len;
         len += read_len;
@@ -324,7 +323,7 @@ void ota_power_ack(const unsigned char *data)
 {
     if (data[0] == 0)
     {
-        dzlog_warn("ota_power_ack :%d", ota_power_steps);
+        LOGW("ota_power_ack :%d", ota_power_steps);
         if (ota_power_steps == OTA_CMD_START + 1)
         {
             if (ota_fp != NULL)
@@ -335,7 +334,7 @@ void ota_power_ack(const unsigned char *data)
             ota_fp = fopen(POWER_OTA_FILE, "r");
             if (ota_fp == NULL)
             {
-                dzlog_error("fopen error NULL");
+                LOGE("fopen error NULL");
                 ota_power_steps = -1;
                 return;
             }
@@ -376,7 +375,7 @@ void ota_power_ack(const unsigned char *data)
     }
     else
     {
-        dzlog_error("ota_power_ack error:%d", data[1]);
+        LOGE("ota_power_ack error:%d", data[1]);
         if (data[1] == 5 || data[1] == 7)
         {
             // if (data[1] == 5)
@@ -389,7 +388,7 @@ void ota_power_ack(const unsigned char *data)
             //     ota_fp = fopen(POWER_OTA_FILE, "r");
             //     if (ota_fp == NULL)
             //     {
-            //         dzlog_error("fopen error NULL");
+            //         LOGE("fopen error NULL");
             //         ota_power_steps = 0;
             //         return;
             //     }
@@ -407,13 +406,13 @@ void ota_power_ack(const unsigned char *data)
 }
 static int ota_power_install()
 {
-    dzlog_warn("ota_power_install start...");
+    LOGW("ota_power_install start...");
     set_ecb_ota_power_state(1);
     ota_power_send_data(OTA_CMD_START);
     while (ota_power_steps > 0)
     {
     }
-    dzlog_warn("ota_power_install end...");
+    LOGW("ota_power_install end...");
     POSIXTimerSet(ota_power_timer, 0, 0);
 #ifdef OTA_RESEND
     set_resend_wait_tick(0);
@@ -432,7 +431,7 @@ static void ota_power_slient_install()
     time_t t;
     time(&t);
     struct tm *local_tm = localtime(&t);
-    dzlog_warn("%s,mon:%d mday:%d hour:%d minutes:%d", __func__, local_tm->tm_mon, local_tm->tm_mday, local_tm->tm_hour, local_tm->tm_min);
+    LOGW("%s,mon:%d mday:%d hour:%d minutes:%d", __func__, local_tm->tm_mon, local_tm->tm_mday, local_tm->tm_hour, local_tm->tm_min);
     int minutes = 0;
     srand(t);
 
@@ -446,7 +445,7 @@ static void ota_power_slient_install()
         minutes = rand() % 120;
         minutes += hour * 60;
     }
-    dzlog_warn("%s,slient_install minutes:%d", __func__, minutes);
+    LOGW("%s,slient_install minutes:%d", __func__, minutes);
     POSIXTimerSet(ota_power_slient_timer, 0, minutes * 60);
 }
 static int ota_install_cb(char *text)
@@ -454,7 +453,7 @@ static int ota_install_cb(char *text)
     int ret = -1;
     POSIXTimerSet(ota_power_slient_timer, 0, 0);
     long size = getFileSize(text);
-    dzlog_warn("ota_power_install_cb size:%ld", size);
+    LOGW("ota_power_install_cb size:%ld", size);
     if (size <= 0)
         goto fail;
     char cmd[48] = {0};
@@ -470,7 +469,7 @@ static int ota_install_cb(char *text)
         ota_power_slient_install();
 
 fail:
-    dzlog_warn("ota_power_install_cb ret:%d", ret);
+    LOGW("ota_power_install_cb ret:%d", ret);
     sprintf(cmd, "rm -rf %s", text);
     system(cmd);
     return ret;
@@ -482,7 +481,7 @@ void power_ota_install()
 
 static void POSIXTimer_cb(union sigval val)
 {
-    dzlog_warn("%s, sigval:%d", __func__, val.sival_int);
+    LOGW("%s, sigval:%d", __func__, val.sival_int);
     if (val.sival_int == 0)
     {
         ota_power_query_timer_end();

@@ -13,7 +13,7 @@ typedef struct
     unsigned char resend_cnt; /* 等待的时序号 */
     unsigned char *send_data; /* 发送数据指针 */
     int resend_seq_id;
-    // int fd;
+
     unsigned int send_len;   /* 发送长度 */
     unsigned long wait_tick; /* 等待结束tick */
     int (*resend_cb)(const unsigned char *, int);

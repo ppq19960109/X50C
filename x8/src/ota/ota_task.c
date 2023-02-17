@@ -1,7 +1,6 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "uds_tcp_server.h"
 
 #include "cloud_platform_task.h"
 #include "ota_task.h"
@@ -137,7 +136,7 @@ int ota_resp_set(cJSON *root, cJSON *resp)
 static int ota_state_event(const int state, void *arg)
 {
     char otaCmdPushType = get_OtaCmdPushType();
-    dzlog_info("ota_state_event:%d,otaCmdPushType:%d", state, otaCmdPushType);
+    LOGI("ota_state_event:%d,otaCmdPushType:%d", state, otaCmdPushType);
     cJSON *root = cJSON_CreateObject();
 
     if (OTA_NO_FIRMWARE == state)
@@ -166,7 +165,7 @@ static int ota_state_event(const int state, void *arg)
 
 static void ota_progress_cb(const int precent)
 {
-    dzlog_info("ota_progress_cb:%d", precent);
+    LOGI("ota_progress_cb:%d", precent);
     if (get_OtaCmdPushType() == OTA_PUSH_TYPE_SILENT)
         return;
     cJSON *root = cJSON_CreateObject();
@@ -195,14 +194,14 @@ static int ota_install_cb(char *text)
     int ret = -1;
     // system("sh " OTA_FILE);
     long size = getFileSize(text);
-    dzlog_warn("ota_install_cb size:%ld", size);
+    LOGW("ota_install_cb size:%ld", size);
     if (size <= 0)
         goto fail;
     char cmd[48] = {0};
     sprintf(cmd, "sh %s", text);
     ret = system(cmd);
     // ret = 0;
-    dzlog_warn("ota_install_cb ret:%d", ret);
+    LOGW("ota_install_cb ret:%d", ret);
 fail:
     sprintf(cmd, "rm -rf %s", text);
     system(cmd);
@@ -211,7 +210,7 @@ fail:
 
 static void ota_complete_cb(void)
 {
-    dzlog_warn("%s...", __func__);
+    LOGW("%s...", __func__);
     sync();
     if (get_OtaCmdPushType() == OTA_PUSH_TYPE_CONFIRM)
     {

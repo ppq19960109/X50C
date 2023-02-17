@@ -17,6 +17,26 @@
         "utility": "c",
         "curl_http_request.h": "c",
         "wifi_task.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "signalquit.h": "c",
+        "nlog.h": "c",
+        "hlog.h": "c",
+        "hmain.h": "c",
+        "inet.h": "c",
+        "ip.h": "c",
+        "kv_linux.h": "c",
+        "uart_task.h": "c",
+        "ecb_uart.h": "c",
+        "uds_protocol.h": "c",
+        "uds_tcp_server.h": "c",
+        "cook_assist.h": "c",
+        "hsocket.h": "c",
+        "cjson.h": "c",
+        "tcp_uds.h": "c",
+        "uart_resend.h": "c",
+        "string": "c",
+        "string_view": "c",
+        "hssl.h": "c",
+        "mcheck.h": "c"
     }
 }

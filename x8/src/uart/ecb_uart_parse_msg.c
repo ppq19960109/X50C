@@ -92,7 +92,7 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     unsigned char *send_msg = (unsigned char *)malloc(ECB_MSG_MIN_LEN + msg_len);
     if (send_msg == NULL)
     {
-        dzlog_error("malloc error\n");
+        LOGE("malloc error\n");
         return -1;
     }
     send_msg[index++] = 0xe6;
@@ -118,8 +118,8 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
 
     if (ECB_UART_COMMAND_ACK != command)
     {
-        // dzlog_warn("uart send to ecb--------------------------%ld", get_systime_ms());
-        dzlog_warn("uart send to ecb--------------------------");
+        // LOGW("uart send to ecb--------------------------%ld", get_systime_ms());
+        LOGW("uart send to ecb--------------------------");
         hdzlog_info(send_msg, ECB_MSG_MIN_LEN + msg_len);
     }
     if (ECB_UART_COMMAND_SET == command)
@@ -164,29 +164,29 @@ void keypress_local_pro(unsigned char value)
         break;
     case KEYPRESS_LOCAL_FT_START: /* 厂测开始 */
     {
-        dzlog_warn("Factory test began");
+        LOGW("Factory test began");
     }
     break;
     case KEYPRESS_LOCAL_FT_END: /* 厂测结束 */
-        dzlog_error("End of the factory test");
+        LOGE("End of the factory test");
         break;
     case KEYPRESS_LOCAL_RUN_IN_DO: /* 蒸烤模式下门未关闭时，按运行键 */
         break;
     case KEYPRESS_LOCAL_FT_WIFI: /* 整机厂测，通讯及WIFI检测 */
-        dzlog_info("factory test: wifi test ");
+        LOGI("factory test: wifi test ");
         break;
     case KEYPRESS_LOCAL_FT_BT: /* 整机厂测，蓝牙检测 */
-        dzlog_info("factory test: bluetooth test ");
+        LOGI("factory test: bluetooth test ");
         break;
     case KEYPRESS_LOCAL_FT_SPEAKER: /* 整机厂测，喇叭检测 */
-        dzlog_info("factory test: speaker test ");
+        LOGI("factory test: speaker test ");
         break;
     case KEYPRESS_LOCAL_FT_RESET: /* 整机厂测，恢复出厂设置 */
-        dzlog_info("factory test: reset test ");
+        LOGI("factory test: reset test ");
         break;
     case KEYPRESS_LOCAL_RESET: /* 通讯板重启（主要用于强制断电前进行通知和追溯） */
     case 0xFF:                 /*重启 */
-        dzlog_error("now reboot......");
+        LOGE("now reboot......");
         sync();
         reboot(RB_AUTOBOOT);
         break;
@@ -202,7 +202,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (in_len < 2)
     {
         *end = 0;
-        dzlog_error("input len too small");
+        LOGE("input len too small");
         return ECB_UART_READ_LEN_SMALL;
     }
 
@@ -213,7 +213,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     if (i >= in_len - 1)
     {
-        dzlog_error("no header was detected");
+        LOGE("no header was detected");
         return ECB_UART_READ_NO_HEADER;
     }
     index = i;
@@ -221,7 +221,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (in_len - index < ECB_MSG_MIN_LEN)
     {
         *end = index;
-        dzlog_error("input len too small");
+        LOGE("input len too small");
         return ECB_UART_READ_LEN_SMALL;
     }
     int msg_index = 2;
@@ -234,7 +234,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (data_len > 256)
     {
         *end = index + 1;
-        dzlog_error("input data len error");
+        LOGE("input data len error");
         return ECB_UART_READ_LEN_ERR;
     }
     msg_index += 2;
@@ -243,33 +243,33 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     if (index + msg_index + 2 + 2 > in_len)
     {
         *end = index;
-        dzlog_error("input data len too small");
+        LOGE("input data len too small");
         return ECB_UART_READ_LEN_SMALL;
     }
     else if (in[index + msg_index + 2] != 0x6e || in[index + msg_index + 2 + 1] != 0x6e)
     {
         *end = index + msg_index + 2 + 2;
-        dzlog_error("no tailer was detected");
+        LOGE("no tailer was detected");
         ecb_uart_send_nak(ECB_NAK_TAILER, seq_id);
         return ECB_UART_READ_TAILER_ERR;
     }
     unsigned short crc16 = crc16_maxim_single(&in[index + 2], msg_index - 2);
     unsigned short check_sum = in[index + msg_index] * 256 + in[index + msg_index + 1];
-    // dzlog_info("crc16:%x,check_sum:%x", crc16, check_sum);
+    // LOGI("crc16:%x,check_sum:%x", crc16, check_sum);
     msg_index += 2;
     msg_index += 2;
 
     *end = index + msg_index;
     if (crc16 != check_sum)
     {
-        dzlog_error("data check error");
+        LOGE("data check error");
         ecb_uart_send_nak(ECB_NAK_CHECKSUM, seq_id);
         return ECB_UART_READ_CHECK_ERR;
     }
     //----------------------
     if (command != ECB_UART_COMMAND_HEART)
     {
-        dzlog_info("read from ecb-------------------- command:%d", command);
+        LOGI("read from ecb-------------------- command:%d", command);
         // if (data_len > 0)
         //     hdzlog_info((unsigned char *)payload, data_len);
         hdzlog_info(&in[index], msg_index);
@@ -330,7 +330,7 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     }
     else if (command == ECB_UART_COMMAND_NAK)
     {
-        dzlog_warn("uart nak:%d", payload[0]);
+        LOGW("uart nak:%d", payload[0]);
     }
     else if (command == ECB_UART_COMMAND_OTAACK)
     {
@@ -355,7 +355,7 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
     ecb_uart_read_status_t status;
     for (;;)
     {
-        // dzlog_info("index:%d,end:%d,msg_len:%d", index, end, msg_len);
+        // LOGI("index:%d,end:%d,msg_len:%d", index, end, msg_len);
         status = func(&in[index], msg_len, &end);
         msg_len -= end;
         index += end;
@@ -374,7 +374,7 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
         }
         else
         {
-            dzlog_error("error return value..");
+            LOGE("error return value..");
         }
         if (msg_len <= 0)
         {
@@ -383,7 +383,7 @@ void uart_parse_msg(unsigned char *in, int *in_len, int(func)(const unsigned cha
     }
     // index = *in_len - msg_len;
 
-    // dzlog_info("last move index:%d,msg_len:%d", index, msg_len);
+    // LOGI("last move index:%d,msg_len:%d", index, msg_len);
     if (msg_len <= 0)
     {
         msg_len = 0;

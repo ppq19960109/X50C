@@ -1,4 +1,5 @@
 #include "main.h"
+#ifdef ICE_ENABLE
 #include "thread2Client.h"
 #include "ecb_uart_parse_msg.h"
 
@@ -6,7 +7,7 @@
 static ThreadTcp threadTcp;
 int display_send(unsigned char *data, unsigned int len)
 {
-    // dzlog_warn("display_send--------------------------len:%d", len);
+    // LOGW("display_send--------------------------len:%d", len);
     // hdzlog_info(data, len);
     return thread2ClientSend(&threadTcp, data, len);
 }
@@ -18,7 +19,7 @@ static int display_recv(char *data, unsigned int uart_read_len)
 
     if (data == NULL || uart_read_len <= 0)
         return -1;
-    // dzlog_warn("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+    // LOGW("recv from ecb-------------------------- uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
 
     if (uart_read_buf_index > 0)
     {
@@ -32,7 +33,7 @@ static int display_recv(char *data, unsigned int uart_read_len)
         uart_read_buf_index += uart_read_len;
         uart_parse_msg((unsigned char *)data, &uart_read_buf_index, ecb_uart_parse_msg);
     }
-    // dzlog_warn("after uart_read_buf_index:%d", uart_read_buf_index);
+    // LOGW("after uart_read_buf_index:%d", uart_read_buf_index);
     if (uart_read_buf_index > 0)
     {
         memcpy(uart_read_buf, data, uart_read_buf_index);
@@ -67,3 +68,4 @@ void *display_client_task(void *arg)
     thread2ClientOpen(&threadTcp);
     return 0;
 }
+#endif

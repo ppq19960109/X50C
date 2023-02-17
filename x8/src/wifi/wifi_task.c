@@ -1,7 +1,6 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "uds_tcp_server.h"
 
 #include "cloud_platform_task.h"
 #include "wifi_task.h"
@@ -37,7 +36,7 @@ static void *WifiState_cb(void *ptr, void *arg)
     }
     else
         attr->value.n = wifi_state;
-    dzlog_warn("WifiState_cb wifi_state:%d link_connected_state:%d", wifi_state, link_connected_state);
+    LOGW("WifiState_cb wifi_state:%d link_connected_state:%d", wifi_state, link_connected_state);
 
     cJSON *item = cJSON_CreateNumber(attr->value.n);
     return item;
@@ -99,13 +98,13 @@ static void *WifiConnect_cb(void *ptr, void *arg)
         return NULL;
     g_link_state = g_wifi_state = 0;
     link_disconnect();
-    dzlog_warn("WifiConnect_cb ssid:%s,psk:%s,encryp:%d", ssid->valuestring, psk->valuestring, encryp->valueint);
+    LOGW("WifiConnect_cb ssid:%s,psk:%s,encryp:%d", ssid->valuestring, psk->valuestring, encryp->valueint);
     if (wifiConnect(ssid->valuestring, psk->valuestring, encryp->valueint) < 0)
     {
         return NULL;
     }
 
-    dzlog_warn("WifiConnect_cb succcess");
+    LOGW("WifiConnect_cb succcess");
     return NULL;
 }
 
@@ -123,7 +122,7 @@ static void *WifiCurConnected_cb(void *ptr, void *arg)
     RK_WIFI_INFO_Connection_s wifiInfo = {0};
     if (getWifiConnectionInfo(&wifiInfo) < 0)
     {
-        dzlog_error("getWifiConnectionInfo error");
+        LOGE("getWifiConnectionInfo error");
         return NULL;
         // memset(&wifiInfo, 0, sizeof(RK_WIFI_INFO_Connection_s));
     }
@@ -228,7 +227,7 @@ void register_wifi_connected_cb(void (*cb)(int))
 }
 static int wiFiReport(int event)
 {
-    dzlog_warn("%s,%d", __func__, event);
+    LOGW("%s,%d", __func__, event);
 
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "WifiState", event);
@@ -243,7 +242,7 @@ static int wiFiCallback(int event)
     }
     else
         wiFiReport(event);
-    dzlog_warn("wiFiCallback:%d", event);
+    LOGW("wiFiCallback:%d", event);
     g_wifi_state = event;
 
     if (event == RK_WIFI_State_CONNECTED)
@@ -254,7 +253,7 @@ static int wiFiCallback(int event)
 }
 static void linkkit_connected_cb(int connect)
 {
-    dzlog_warn("linkkit_connected_cb:%d wifi_state:%d", connect, g_wifi_state);
+    LOGW("linkkit_connected_cb:%d wifi_state:%d", connect, g_wifi_state);
     if (connect)
     {
         wiFiReport(RK_WIFI_State_LINK_CONNECTED);
@@ -276,7 +275,7 @@ static void linkkit_connected_cb(int connect)
 }
 static int link_wifi_state_cb()
 {
-    dzlog_warn("link_wifi_state_cb:%d", g_wifi_state);
+    LOGW("link_wifi_state_cb:%d", g_wifi_state);
     if (RK_WIFI_State_CONNECTED != g_wifi_state)
     {
         g_wifi_state = getWifiRunningState();

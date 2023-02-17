@@ -1,7 +1,6 @@
 #include "main.h"
 
 #include "uds_protocol.h"
-#include "uds_tcp_server.h"
 
 #include "cloud_platform_task.h"
 #include "device_task.h"
