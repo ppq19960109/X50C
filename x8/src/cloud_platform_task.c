@@ -595,7 +595,7 @@ end:
 void send_data_to_cloud(const unsigned char *value, const int value_len, const unsigned char command) // 所有串口数据解析，并上报阿里云平台和UI
 {
     // LOGD("send_data_to_cloud...");
-    // hdzlog_info((unsigned char *)value, value_len);
+    // mlogHex((unsigned char *)value, value_len);
     int i, j;
     cloud_dev_t *cloud_dev = g_cloud_dev;
     cloud_attr_t *cloud_attr = cloud_dev->attr;
@@ -615,7 +615,7 @@ void send_data_to_cloud(const unsigned char *value, const int value_len, const u
                 get_attr_report_event(attr, (char *)&value[i + 1], 0);
                 memcpy(attr->value, &value[i + 1], attr->uart_byte_len);
                 // LOGD("i:%d cloud_key:%s", i, attr->cloud_key);
-                // hdzlog_info((unsigned char *)attr->value, attr->uart_byte_len);
+                // mlogHex((unsigned char *)attr->value, attr->uart_byte_len);
                 get_attr_report_value(root, attr);
                 switch (attr->uart_cmd)
                 {

@@ -37,6 +37,7 @@
         "string": "c",
         "string_view": "c",
         "hssl.h": "c",
-        "mcheck.h": "c"
+        "mcheck.h": "c",
+        "ecb_uart_parse_msg.h": "c"
     }
 }

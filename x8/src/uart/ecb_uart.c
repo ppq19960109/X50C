@@ -107,7 +107,7 @@ int ecb_uart_send(const unsigned char *in, int in_len, unsigned char resend_flag
 int ecb_uart_resend_cb(const unsigned char *in, int in_len)
 {
     printf("%s,resend send...start\n", __func__);
-    hdzlog_info(in, in_len);
+    mlogHex(in, in_len);
     printf("%s,resend send...end\n", __func__);
     return ecb_uart_send(in, in_len, 0, 0);
 }
@@ -134,7 +134,7 @@ static void on_uart_read(hio_t *io, void *buf, int readbytes)
         mlogHex(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
         LOGW("uart_read_buf_index:%d", uart_read_buf_index);
-        //  hdzlog_info(uart_read_buf, uart_read_buf_index);
+        //  mlogHex(uart_read_buf, uart_read_buf_index);
     }
 }
 

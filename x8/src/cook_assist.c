@@ -62,7 +62,7 @@ static int cook_assist_uart_send(const unsigned char *in, int in_len)
         return -1;
     }
     LOGW("cook_assist_uart_send--------------------------");
-    hdzlog_info(in, in_len);
+    mlogHex(in, in_len);
     return hio_write(mio, in, in_len);
 }
 static int cook_assist_remind_cb(int index)
@@ -386,7 +386,7 @@ static void on_uart_read(hio_t *io, void *buf, int readbytes)
 
     recv_timeout_count = 0;
     // printf("recv from cook_assist-------------------------- uart_read_len:%d\n", uart_read_len);
-    // hdzlog_info(uart_read_buf, uart_read_len);
+    // mlogHex(uart_read_buf, uart_read_len);
     if (uart_read_len > 0)
     {
         if (g_cook_assist.OilTempSwitch == 0 && g_cook_assist.CookingCurveSwitch == 0 && g_cook_assist.RMovePotLowHeatSwitch == 0 && g_cook_assist.RAuxiliarySwitch == 0 && g_cook_assist.SmartSmokeSwitch == 0)

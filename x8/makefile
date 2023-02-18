@@ -5,6 +5,7 @@ RM = rm -rf
 AR = ar -rcs
 CP = cp -r
 MKDIR = mkdir -p
+STRIP = $(CROSS_COMPILE)strip
 
 TOPDIR = .
 
@@ -28,7 +29,7 @@ CFLAGS += -I$(LINKTOOL_PATH)/include/md5
 CFLAGS += -I$(ALI_PATH)/include
 CFLAGS += -I$(HV_PATH)/include/hv
 
-CFLAGS += -Wall #-Werror
+CFLAGS += -Wall #-Wno-builtin-macro-redefined #-Werror
 ifdef DEBUG
 CFLAGS += -g -lmcheck -DDEBUG
 endif
@@ -63,6 +64,7 @@ all: $(TARGET)
 
 $(TARGET) : $(OBJ)
 	$(CXX) $^  $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@
+	$(STRIP) $@
 
 clean :
 	$(RM) $(TARGET)

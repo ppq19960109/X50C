@@ -50,13 +50,6 @@ int main(int argc, char **argv)
     setenv("MALLOC_TRACE", "./memleak.log", 1);
     mtrace();
 #endif                                           // DEBUG
-    int rc = dzlog_init("zlog.conf", "default"); // zlog初始化
-    if (rc)
-    {
-        printf("dzlog_init failed\n");
-        return -1;
-    }
-
     signal_init(on_reload, NULL);
 
     g_loop = hloop_new(0);

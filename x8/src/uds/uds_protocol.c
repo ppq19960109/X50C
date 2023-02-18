@@ -29,6 +29,7 @@ int send_event_uds(cJSON *send, const char *type) // uds发送u接口
     if (mio == NULL)
     {
         LOGW("%s,mio NULL", __func__);
+        cJSON_Delete(send);
         return -1;
     }
     if (cJSON_Object_isNull(send))
@@ -144,8 +145,8 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
     }
     else // 解析HEART命令
     {
-        cJSON_AddNullToObject(resp, "Response");
-        send_event_uds(resp, TYPE_HEART);
+        // cJSON_AddNullToObject(resp, "Response");
+        // send_event_uds(resp, TYPE_HEART);
         goto heart;
     }
     send_event_uds(resp, NULL); // 发送返回数据
@@ -187,7 +188,7 @@ static int uds_recv(char *data, unsigned int len) // uds接受回调函数，初
             {
                 continue;
             }
-            // hdzlog_info(&data[i], 6 + msg_len + 4);
+            // mlogHex(&data[i], 6 + msg_len + 4);
             LOGD("uds_recv encry:%d seqid:%d msg_len:%d", encry, seqid, msg_len);
             verify = data[i + 6 + msg_len + 1];
             unsigned char verify_check = CheckSum((unsigned char *)&data[i + 2], msg_len + 5);

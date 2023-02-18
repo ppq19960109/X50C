@@ -1,7 +1,5 @@
 #include "main.h"
 
-// #include "link_reset_posix.h"
-// #include "uart_resend.h"
 #include "ecb_uart.h"
 #include "ecb_uart_parse_msg.h"
 #include "cloud_platform_task.h"
@@ -120,7 +118,7 @@ int ecb_uart_send_msg(const unsigned char command, unsigned char *msg, const int
     {
         // LOGW("uart send to ecb--------------------------%ld", get_systime_ms());
         LOGW("uart send to ecb--------------------------");
-        hdzlog_info(send_msg, ECB_MSG_MIN_LEN + msg_len);
+        mlogHex(send_msg, ECB_MSG_MIN_LEN + msg_len);
     }
     if (ECB_UART_COMMAND_SET == command)
     {
@@ -271,8 +269,8 @@ int ecb_uart_parse_msg(const unsigned char *in, const int in_len, int *end)
     {
         LOGI("read from ecb-------------------- command:%d", command);
         // if (data_len > 0)
-        //     hdzlog_info((unsigned char *)payload, data_len);
-        hdzlog_info(&in[index], msg_index);
+        //     mlogHex((unsigned char *)payload, data_len);
+        mlogHex(&in[index], msg_index);
     }
     if (command == ECB_UART_COMMAND_EVENT || command == ECB_UART_COMMAND_KEYPRESS)
     {

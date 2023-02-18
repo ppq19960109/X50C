@@ -8,7 +8,7 @@ static ThreadTcp threadTcp;
 int display_send(unsigned char *data, unsigned int len)
 {
     // LOGW("display_send--------------------------len:%d", len);
-    // hdzlog_info(data, len);
+    // mlogHex(data, len);
     return thread2ClientSend(&threadTcp, data, len);
 }
 static int display_recv(char *data, unsigned int uart_read_len)
@@ -24,7 +24,7 @@ static int display_recv(char *data, unsigned int uart_read_len)
     if (uart_read_buf_index > 0)
     {
         memcpy(&uart_read_buf[uart_read_buf_index], data, uart_read_len);
-        // hdzlog_info(uart_read_buf, uart_read_buf_index);
+        // mlogHex(uart_read_buf, uart_read_buf_index);
         uart_read_buf_index += uart_read_len;
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
     }
@@ -37,7 +37,7 @@ static int display_recv(char *data, unsigned int uart_read_len)
     if (uart_read_buf_index > 0)
     {
         memcpy(uart_read_buf, data, uart_read_buf_index);
-        //  hdzlog_info(uart_read_buf, uart_read_buf_index);
+        //  mlogHex(uart_read_buf, uart_read_buf_index);
     }
     return 0;
 }
