@@ -13,7 +13,7 @@ static pthread_mutex_t mutex;
 static char g_send_buf[2048];
 static int g_seqid = 0;
 
-unsigned char CheckSum(unsigned char *buf, int len) //和校验算法
+unsigned char CheckSum(unsigned char *buf, int len) // 和校验算法
 {
     int i;
     unsigned char ret = 0;
@@ -112,8 +112,8 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         dzlog_error("Data is NULL\n");
         goto fail;
     }
-    cJSON *resp = cJSON_CreateObject();           //创建返回数据
-    if (strcmp(TYPE_GET, Type->valuestring) == 0) //解析GET命令
+    cJSON *resp = cJSON_CreateObject();           // 创建返回数据
+    if (strcmp(TYPE_GET, Type->valuestring) == 0) // 解析GET命令
     {
         wifi_resp_get(Data, resp);
         cloud_resp_get(Data, resp);
@@ -121,7 +121,7 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         ota_power_resp_get(Data, resp);
         device_resp_get(Data, resp);
     }
-    else if (strcmp(TYPE_SET, Type->valuestring) == 0) //解析SET命令
+    else if (strcmp(TYPE_SET, Type->valuestring) == 0) // 解析SET命令
     {
         wifi_resp_set(Data, resp);
         cloud_resp_set(Data, resp);
@@ -129,7 +129,7 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         ota_power_resp_set(Data, resp);
         device_resp_set(Data, resp);
     }
-    else if (strcmp(TYPE_GETALL, Type->valuestring) == 0) //解析GETALL命令
+    else if (strcmp(TYPE_GETALL, Type->valuestring) == 0) // 解析GETALL命令
     {
         wifi_resp_getall(Data, resp);
         cloud_resp_getall(Data, resp);
@@ -137,13 +137,13 @@ static int uds_json_parse(char *value, unsigned int value_len) // uds接受的js
         ota_power_resp_getall(Data, resp);
         device_resp_getall(Data, resp);
     }
-    else //解析HEART命令
+    else // 解析HEART命令
     {
-        cJSON_AddNullToObject(resp, "Response");
-        send_event_uds(resp, TYPE_HEART);
+        // cJSON_AddNullToObject(resp, "Response");
+        // send_event_uds(resp, TYPE_HEART);
         goto heart;
     }
-    send_event_uds(resp, NULL); //发送返回数据
+    send_event_uds(resp, NULL); // 发送返回数据
 heart:
     cJSON_Delete(root);
     return 0;
