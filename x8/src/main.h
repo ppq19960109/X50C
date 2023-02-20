@@ -9,7 +9,7 @@
 #include <sys/reboot.h>
 #include <pthread.h>
 #include <errno.h>
-
+#include <stdbool.h>
 #include <sys/select.h>
 #include <limits.h>
 #include <sys/types.h>

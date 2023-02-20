@@ -40,7 +40,7 @@ LDFLAGS += -L$(ALI_PATH)
 LDFLAGS += -L$(TOPDIR)
 
 LIBS += -Wl,--start-group	\
-		-Wl,-Bstatic  -llinktool -lalisdk -lzlog -lhv \
+		-Wl,-Bstatic  -llinktool -lalisdk -lhv \
 		-Wl,-Bdynamic -ldl -lm -lpthread -lrt -lsqlite3	-lcurl -lDeviceIo -lasound \
 		-Wl,--end-group
 

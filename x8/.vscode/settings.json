@@ -38,6 +38,10 @@
         "string_view": "c",
         "hssl.h": "c",
         "mcheck.h": "c",
-        "ecb_uart_parse_msg.h": "c"
+        "ecb_uart_parse_msg.h": "c",
+        "mqueue.h": "c",
+        "stdbool.h": "c",
+        "string.h": "c",
+        "initializer_list": "c"
     }
 }

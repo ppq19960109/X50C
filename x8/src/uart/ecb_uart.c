@@ -130,10 +130,10 @@ static void on_uart_read(hio_t *io, void *buf, int readbytes)
             memcpy(&uart_read_buf[uart_read_buf_index], buf, uart_read_len);
             uart_read_buf_index += uart_read_len;
         }
-        LOGW("recv from ecb--------------------------uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
-        mlogHex(uart_read_buf, uart_read_buf_index);
+        // LOGW("recv from ecb--------------------------uart_read_len:%d uart_read_buf_index:%d", uart_read_len, uart_read_buf_index);
+        // mlogHex(uart_read_buf, uart_read_buf_index);
         uart_parse_msg(uart_read_buf, &uart_read_buf_index, ecb_uart_parse_msg);
-        LOGW("uart_read_buf_index:%d", uart_read_buf_index);
+        // LOGW("uart_read_buf_index:%d", uart_read_buf_index);
         //  mlogHex(uart_read_buf, uart_read_buf_index);
     }
 }

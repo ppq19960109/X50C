@@ -30,13 +30,13 @@ static void mlogger(int loglevel, const char *buf, int len)
     if (loglevel >= LOG_LEVEL_ERROR)
     {
         stderr_logger(loglevel, buf, len);
-        if (loglevel >= LOG_LEVEL_INFO)
-        {
-            file_logger(loglevel, buf, len);
-        }
     }
     else
         stdout_logger(loglevel, buf, len);
+    if (loglevel >= LOG_LEVEL_INFO)
+    {
+        file_logger(loglevel, buf, len);
+    }
     // network_logger(loglevel, buf, len);
 }
 static void on_reload(void *userdata)
@@ -49,17 +49,18 @@ int main(int argc, char **argv)
     LOGI("debug app main start");
     setenv("MALLOC_TRACE", "./memleak.log", 1);
     mtrace();
-#endif                                           // DEBUG
+#endif // DEBUG
     signal_init(on_reload, NULL);
-
-    g_loop = hloop_new(0);
 
     hlog_set_handler(mlogger);
     hlog_set_file("X8GCZ01.log");
+    hlog_set_max_filesize(512000);
     hlog_set_format(DEFAULT_LOG_FORMAT);
     hlog_set_level(LOG_LEVEL_DEBUG);
     hlog_set_remain_days(1);
     logger_enable_color(hlog, 1);
+
+    g_loop = hloop_new(0);
     nlog_listen(g_loop, DEFAULT_LOG_PORT);
 
     LOGI("main start");
