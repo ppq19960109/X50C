@@ -28,7 +28,7 @@ CFLAGS += -I$(ALI_PATH)/include
 
 CFLAGS += -Wall #-Werror
 ifdef DEBUG
-CFLAGS += -g -lmcheck -DDEBUG
+CFLAGS += -g -rdynamic -funwind-tables -ffunction-sections -lmcheck -DDEBUG
 endif
 
 LDFLAGS += -L$(LINKTOOL_PATH)/lib

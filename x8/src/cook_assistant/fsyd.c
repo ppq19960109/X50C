@@ -1193,7 +1193,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     {
 #ifndef BOIL_ENABLE
         // JUMP_DOWN_VALUE = -150;
-        JUMP_RISE_VALUE = 30;
+        JUMP_RISE_VALUE = 50;
 #endif
     }
     else if (state_handle->state == STATE_SHAKE)
