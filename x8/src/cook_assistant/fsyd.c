@@ -821,22 +821,24 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     }
     else if (prepare_state == STATE_DOWN_SLOW)
     {
-        if (state_handle->last_temp > 1800)
-        {
-            state_handle->last_prepare_state_tick = state_handle->current_tick;
-            return STATE_PAN_FIRE;
-        }
-        else if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 4 > state_handle->current_tick)
+        // if (state_handle->last_temp > 1800)
+        // {
+        //     state_handle->last_prepare_state_tick = state_handle->current_tick;
+        //     return STATE_PAN_FIRE;
+        // }
+        // else
+        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 5 > state_handle->current_tick)
             return STATE_PAN_FIRE;
     }
     else if (prepare_state == STATE_GENTLE)
     {
-        if (state_handle->last_temp > 1800)
-        {
-            state_handle->last_prepare_state_tick = state_handle->current_tick;
-            return STATE_PAN_FIRE;
-        }
-        else if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 3 > state_handle->current_tick)
+        // if (state_handle->last_temp > 1800)
+        // {
+        //     state_handle->last_prepare_state_tick = state_handle->current_tick;
+        //     return STATE_PAN_FIRE;
+        // }
+        // else
+        if (state_handle->last_prepare_state_tick + INPUT_DATA_HZ * 5 > state_handle->current_tick)
             return STATE_PAN_FIRE;
     }
     else if (prepare_state == STATE_RISE_JUMP)
@@ -1193,7 +1195,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     {
 #ifndef BOIL_ENABLE
         // JUMP_DOWN_VALUE = -150;
-        JUMP_RISE_VALUE = 50;
+        JUMP_RISE_VALUE = 40;
 #endif
     }
     else if (state_handle->state == STATE_SHAKE)
