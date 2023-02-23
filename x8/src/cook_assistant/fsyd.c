@@ -730,6 +730,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
 {
     if (!state_handle->pan_fire_switch || state_handle->temp_control_switch)
     {
+        mlogPrintf("%s,switch exit\n", __func__);
         goto exit;
     }
 
@@ -737,7 +738,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     {
         mlogPrintf("%s,enter state:%s\n", __func__, state_info[STATE_PAN_FIRE]);
         state_handle->current_tick = 1;
-        state_handle->last_prepare_state = STATE_IDLE;
+        state_handle->last_prepare_state = STATE_PAN_FIRE;
         state_handle->last_prepare_state_tick = 0;
 #ifdef FIRE_CONFIRM_ENABLE
         state_handle->pan_fire_state = PAN_FIRE_CLOSE;
@@ -753,7 +754,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     {
         ++state_handle->current_tick;
     }
-    mlogPrintf("%s,%s pan_fire_state:%d pan_fire_tick:%d current_tick:%d\n", __func__, state_info[STATE_PAN_FIRE], state_handle->pan_fire_state, state_handle->pan_fire_tick, state_handle->current_tick);
+    mlogPrintf("%s,%s prepare_state:%d pan_fire_state:%d pan_fire_tick:%d current_tick:%d last_prepare_state_tick:%d\n", __func__, state_info[STATE_PAN_FIRE], prepare_state, state_handle->pan_fire_state, state_handle->pan_fire_tick, state_handle->current_tick, state_handle->last_prepare_state_tick);
 
     if (state_handle->pan_fire_state == PAN_FIRE_CLOSE) // 假设移锅小火
     {
@@ -786,10 +787,10 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
             state_handle->pan_fire_tick = state_handle->current_tick;
             gear_change(1, 0, state_info[STATE_PAN_FIRE], state_handle);
         }
-        else if (state_handle->total_tick >= INPUT_DATA_HZ * 20 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 1] < 900 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 2] < 900 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 3] < 900 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 4] < 900)
-        {
-            goto exit;
-        }
+        // else if (state_handle->total_tick >= INPUT_DATA_HZ * 20 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 1] < 900 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 2] < 900 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 3] < 900 && state_handle->last_temp_data[STATE_JUDGE_DATA_SIZE - 4] < 900)
+        // {
+        //     goto exit;
+        // }
     }
     else if (state_handle->pan_fire_state == PAN_FIRE_START && state_handle->pan_fire_tick + PAN_FIRE_ENTER_TICK < state_handle->current_tick) // 开关小火，规定时间温度没有跳降，不是移锅小火
     {
@@ -807,7 +808,7 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     if (prepare_state == STATE_RISE_SLOW)
     {
         mlogPrintf("%s,%s pan_fire enter total_tick:%d last_prepare_state_tick:%d current_tick:%d\n", __func__, state_info[STATE_RISE_SLOW], state_handle->total_tick, state_handle->last_prepare_state_tick, state_handle->current_tick);
-        if (state_handle->total_tick <= INPUT_DATA_HZ * 12)
+        if (state_handle->total_tick <= INPUT_DATA_HZ * 15)
         {
             state_handle->last_prepare_state_tick = state_handle->current_tick;
             return STATE_PAN_FIRE;
@@ -1036,7 +1037,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     // STATE_PAN_FIRE
     if (!state_handle->temp_control_switch && state_handle->pan_fire_switch && state_handle->pan_fire_state == PAN_FIRE_CLOSE && state_handle->fire_gear == FIRE_BIG)
     {
-        if (state_handle->total_tick <= 5 * INPUT_DATA_HZ && data[len - 1] > 1200 && (data[len - 1] > state_handle->ignition_switch_close_temp + 500))
+        if (state_handle->total_tick >= 1 * INPUT_DATA_HZ && state_handle->total_tick <= 5 * INPUT_DATA_HZ && data[len - 1] > 1200 && (data[len - 1] > state_handle->ignition_switch_close_temp + 500))
         {
             mlogPrintf("%s judge STATE_PAN_FIRE\n", __func__);
             state_handle->pan_fire_enter_type = 0;
@@ -1645,7 +1646,7 @@ static void change_state(state_handle_t *state_handle)
 
     // 下一个状态判断
     prepare_state = status_judge(state_handle, &state_handle->last_temp_data[state_handle->temp_data_size - STATE_JUDGE_DATA_SIZE], STATE_JUDGE_DATA_SIZE);
-    mlogPrintf("%s,prepare_state:%s\n", __func__, state_info[prepare_state]);
+    mlogPrintf("%s,prepare_state:%s input_dir:%d\n", __func__, state_info[prepare_state], state_handle->input_dir);
 
     if (prepare_state == STATE_IDLE && state_handle->state != STATE_PAN_FIRE)
     {

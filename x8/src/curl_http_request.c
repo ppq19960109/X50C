@@ -103,6 +103,7 @@ static int hex_to_str(const unsigned char *buff, int buff_len, char *out, int ou
 }
 void http_report_hex(char *title, const unsigned char *buff, int buff_len)
 {
+    return;
     pthread_mutex_lock(&mutex_log);
     int len;
     strncpy(http_report_hex_buf + http_report_hex_len, title, 16);

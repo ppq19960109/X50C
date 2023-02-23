@@ -31,7 +31,8 @@ static int app_select_tcp_server_recv_cb(void *arg)
         printf("recv[fd=%d] error[%d]:%s recv_len:%d\n", client_event->fd, errno, strerror(errno), app_select_tcp->recv_len);
 
         delete_select_client_event(&select_server_event, client_event);
-        close(client_event->fd);
+        if (client_event->fd > 0)
+            close(client_event->fd);
         if (app_select_tcp->disconnect_cb != NULL)
             app_select_tcp->disconnect_cb(client_event->fd);
         client_event->fd = -1;
@@ -92,7 +93,7 @@ static int app_select_tcp_server_accetp_cb(void *arg) // uds服务端accetp回�
     int res;
     struct sockaddr cin;
     socklen_t clen = sizeof(cin);
-
+    printf("%s server fd:%d\r\n", __func__, client_event->fd);
     int cfd;
     if ((cfd = accept(client_event->fd, (struct sockaddr *)&cin, &clen)) == -1)
     {
@@ -103,7 +104,7 @@ static int app_select_tcp_server_accetp_cb(void *arg) // uds服务端accetp回�
         printf("%s:accept,%s\n", __func__, strerror(errno));
         return -1;
     }
-    printf("%s:accept success\n", __func__);
+    printf("%s:accept success cfd:%d\n", __func__, cfd);
     res = app_add_tcp_select_client_event(cfd);
     if (res < 0)
     {
@@ -153,6 +154,7 @@ void *uds_tcp_server_task(void *arg) // uds任务
 
     app_select_client_Tcp_Server.select_client_event.fd = tcp_uds_server_init(NULL, UNIX_DOMAIN, SELECT_TCP_MAX_CLIENT); // uds server fd初始化
     // app_select_client_Tcp_Server.select_client_event.fd = tcpServerListen(NULL,"0.0.0.0",9999,SELECT_TCP_MAX_CLIENT); //htonl(INADDR_ANY)
+    printf("%s server fd:%d\r\n", __func__, app_select_client_Tcp_Server.select_client_event.fd);
     app_select_client_Tcp_Server.select_client_event.read_cb = app_select_tcp_server_accetp_cb;
     app_select_client_Tcp_Server.select_client_event.except_cb = app_select_tcp_server_except_cb;
     app_select_client_Tcp_Server.recv_cb = uds_recv_cb;

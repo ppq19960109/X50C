@@ -10,7 +10,7 @@
 #include "device_task.h"
 
 static pthread_mutex_t mutex;
-static char g_send_buf[2048];
+static char g_send_buf[3072];
 static int g_seqid = 0;
 
 unsigned char CheckSum(unsigned char *buf, int len) // 和校验算法

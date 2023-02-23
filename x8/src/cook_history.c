@@ -42,6 +42,7 @@ int cook_history_set(void *data)
     {
         cJSON_AddNumberToObject(resp, "cavity", 0);
         cJSON_AddNumberToObject(resp, "number", 1);
+        cJSON_AddNumberToObject(resp, "recipeType", 6);
 
         cJSON *LCookbookID = cJSON_GetObjectItem(root, "LCookbookID");
         cJSON_AddNumberToObject(resp, "menuId", LCookbookID->valueint);
@@ -75,6 +76,7 @@ int cook_history_set(void *data)
     {
         cJSON_AddNumberToObject(resp, "cavity", 0);
         cJSON_AddNumberToObject(resp, "number", 1);
+        cJSON_AddNumberToObject(resp, "recipeType", 0);
 
         arrayItem = cJSON_GetObjectItem(root, "LMultiStageContent");
         arraySize = cJSON_GetArraySize(arrayItem);
@@ -105,6 +107,7 @@ int cook_history_set(void *data)
     {
         cJSON_AddNumberToObject(resp, "cavity", 0);
         cJSON_AddNumberToObject(resp, "number", 0);
+        cJSON_AddNumberToObject(resp, "recipeType", 0);
 
         cJSON *cookStep = cJSON_CreateObject();
         cJSON_AddItemToArray(cookSteps, cookStep);

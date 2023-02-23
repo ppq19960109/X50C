@@ -209,7 +209,7 @@ static int32_t _core_sysdep_network_connect(char *host, uint16_t port, int famil
             }
 
             close(fd);
-            printf("connect error, errno: %d\n", errno);
+            printf("connect error, errno: %d fd:%d\n", errno, fd);
         }
     } else {
         res = STATE_PORT_NETWORK_DNS_FAILED;
