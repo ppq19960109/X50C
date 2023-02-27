@@ -324,7 +324,6 @@
                     "hoodSpeed": 0,
                     "repeat": 0,
                     "repeatStep": 0,
-                    "runPause": 0,
                     "runPause": 0
                 },
                 {
@@ -338,7 +337,8 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 1,
-                    "repeatStep": 26
+                    "repeatStep": 26,
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -352,7 +352,6 @@
                     "hoodSpeed": 0,
                     "repeat": 0,
                     "repeatStep": 0,
-                    "runPause": 0,
                     "runPause": 0
                 },
                 {
@@ -366,7 +365,131 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 1,
-                    "repeatStep": 8
+                    "repeatStep": 8,
+                    "runPause": 0
+                }
+            ],
+            "details": "用料:\n主料：高筋面粉300g\n辅料：奶粉25g 全蛋液50g 酵母4g 白糖50g 盐2g 牛奶160g 黄油45g\n步骤:\n1、加入高筋面粉300g，奶粉25g，全蛋液50g，酵母4g，白糖50g，盐2g，牛奶160g，黄油45g\n2、盖上锅盖，关门，启动揉面\n3、将面团取出放入碗中，入烤箱发酵30分钟\n4、取出发酵好的面团，压排气，再松弛10分钟，分成60g左右的剂子，整理成喜欢的形状\n5、发酵至2倍大，上面筛少量面粉，再用锋利的小刀割出形状\n6、放入烤箱160℃烤15分钟左右",
+            "cookType": 2,
+            "recipeType": 1,
+            "clearMode": 1,
+            "reserve": 0
+        },
+        {
+            "dishName": "馒头面团",
+            "imgUrl": "recipes/牛奶面包.png",
+            "cookSteps": [
+                {
+                    "mode": 3,
+                    "fire": 5,
+                    "temp": 40,
+                    "cookTime": 60,
+                    "motorSpeed": 5,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 20,
+                    "motorSpeed": 7,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 1
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 11,
+                    "repeatStep": 3,
+                    "runPause": 0
+                },
+                {
+                    "mode": 3,
+                    "fire": 5,
+                    "temp": 75,
+                    "cookTime": 1500,
+                    "motorSpeed": 4,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 1
+                },
+                {
+                    "mode": 3,
+                    "fire": 5,
+                    "temp": 120,
+                    "cookTime": 900,
+                    "motorSpeed": 2,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
                 }
             ],
             "details": "用料:\n主料：高筋面粉300g\n辅料：奶粉25g 全蛋液50g 酵母4g 白糖50g 盐2g 牛奶160g 黄油45g\n步骤:\n1、加入高筋面粉300g，奶粉25g，全蛋液50g，酵母4g，白糖50g，盐2g，牛奶160g，黄油45g\n2、盖上锅盖，关门，启动揉面\n3、将面团取出放入碗中，入烤箱发酵30分钟\n4、取出发酵好的面团，压排气，再松弛10分钟，分成60g左右的剂子，整理成喜欢的形状\n5、发酵至2倍大，上面筛少量面粉，再用锋利的小刀割出形状\n6、放入烤箱160℃烤15分钟左右",
@@ -525,6 +648,259 @@
                     "hoodSpeed": 0,
                     "repeat": 1,
                     "repeatStep": 1,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "揉面模式",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 3,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "烘焙揉面模式",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 11,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "发酵模式",
+            "cookSteps": [
+                {
+                    "mode": 3,
+                    "fire": 5,
+                    "temp": 75,
+                    "cookTime": 1500,
+                    "motorSpeed": 4,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
                     "runPause": 0
                 }
             ]
