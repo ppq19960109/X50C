@@ -20,25 +20,25 @@ typedef struct rgb888_type
 /**** BMP文件头数据结构 ****/
 typedef struct
 {
-    unsigned char type[2];    //文件类型
-    unsigned int size;        //文件大小
-    unsigned short reserved1; //保留字段1
-    unsigned short reserved2; //保留字段2
-    unsigned int offset;      //到位图数据的偏移量
+    unsigned char type[2];    // 文件类型
+    unsigned int size;        // 文件大小
+    unsigned short reserved1; // 保留字段1
+    unsigned short reserved2; // 保留字段2
+    unsigned int offset;      // 到位图数据的偏移量
 } __attribute__((packed)) bmp_file_header;
 
 /**** 位图信息头数据结构 ****/
 typedef struct
 {
-    unsigned int size;        //位图信息头大小
-    int width;                //图像宽度
-    int height;               //图像高度
-    unsigned short planes;    //位面数
-    unsigned short bpp;       //像素深度
-    unsigned int compression; //压缩方式
-    unsigned int image_size;  //图像大小
-    int x_pels_per_meter;     //像素/米
-    int y_pels_per_meter;     //像素/米
+    unsigned int size;        // 位图信息头大小
+    int width;                // 图像宽度
+    int height;               // 图像高度
+    unsigned short planes;    // 位面数
+    unsigned short bpp;       // 像素深度
+    unsigned int compression; // 压缩方式
+    unsigned int image_size;  // 图像大小
+    int x_pels_per_meter;     // 像素/米
+    int y_pels_per_meter;     // 像素/米
     unsigned int clr_used;
     unsigned int clr_omportant;
 } __attribute__((packed)) bmp_info_header;
@@ -46,8 +46,8 @@ typedef struct
 /**** 静态全局变量 ****/
 static int width;                // LCD X分辨率
 static int height;               // LCD Y分辨率
-static void *screen_base = NULL; //映射后的显存基地址
-static int bpp;                  //像素深度
+static void *screen_base = NULL; // 映射后的显存基地址
+static int bpp;                  // 像素深度
 
 void show_fix_screeninfo(struct fb_fix_screeninfo *p)
 {
@@ -225,12 +225,12 @@ static void show_bmp_image(const char *path)
     unsigned int line_bytes = info_h.width * info_h.bpp / 8;
     printf("line_bytes:%d\n", line_bytes);
 
-    unsigned int *buf = (unsigned int *)malloc(line_bytes);
+    // unsigned int *buf = (unsigned int *)malloc(line_bytes);
     for (int j = info_h.height - 1; j >= 0; j--)
     {
         read(fd, base + j * width, line_bytes);
     }
-    free(buf);
+    // free(buf);
     close(fd);
 }
 
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
     show_bmp_image("logo.bmp");
 
     /* 退出 */
-    munmap(screen_base, screen_size); //取消映射
-    close(fd);                        //关闭文件
-    exit(0);                          //退出进程
+    munmap(screen_base, screen_size); // 取消映射
+    close(fd);                        // 关闭文件
+    exit(0);                          // 退出进程
 }

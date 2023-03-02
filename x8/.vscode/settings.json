@@ -17,6 +17,7 @@
         "utility": "c",
         "curl_http_request.h": "c",
         "wifi_task.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "xf86drm.h": "c"
     }
 }
