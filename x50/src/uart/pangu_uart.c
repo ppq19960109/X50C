@@ -702,7 +702,31 @@ int pangu_cook_start()
     }
     return 0;
 }
-
+int pangu_cook_time(pangu_cook_t *pangu_cook, const int start, const int end)
+{
+    int time = 0;
+    pangu_cook_attr_t *pangu_cook_attr = pangu_cook.cook_attr;
+    if (end < 0 || start < 0)
+    {
+        printf("Out of range start:%d end:%d\n", start, end);
+        return 0;
+    }
+    for (int i = start; i < end; ++i)
+    {
+        // g_total_time += pangu_cook_attr[i].waterTime;
+        if (pangu_cook_attr[i].repeat)
+        {
+            time += pangu_cook_attr[i].time * (pangu_cook_attr[i].repeat + 1);
+            for (int j = 0; j < pangu_cook_attr[i].repeat; ++j)
+            {
+                time += pangu_cook_time(pangu_cook, i - pangu_cook_attr[i].repeatStep, i - 1);
+            }
+        }
+        else
+            time += pangu_cook_attr[i].time;
+    }
+    return time;
+}
 int pangu_recv_set(void *data)
 {
     cJSON *root = data;
