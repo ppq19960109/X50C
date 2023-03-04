@@ -142,11 +142,11 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
     }
     else
     {
-        state_handle->temp_control_first = 0;
-        state_handle->temp_control_lock_countdown = 0;
         if (state_handle->pan_fire_state <= PAN_FIRE_ERROR_CLOSE)
             set_fire_gear(FIRE_BIG, state_handle, 1);
     }
+    state_handle->temp_control_first = 0;
+    state_handle->temp_control_lock_countdown = 0;
     state_handle->temp_control_enter_start_tick = 0;
     if (temp_control_switch_cb != NULL)
         temp_control_switch_cb(temp_control_switch, input_dir);
