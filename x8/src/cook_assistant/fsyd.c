@@ -771,7 +771,8 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
     }
     else
     {
-        ++state_handle->current_tick;
+        if (prepare_state != STATE_IDLE)
+            ++state_handle->current_tick;
     }
     mlogPrintf("%s,%s prepare_state:%d pan_fire_state:%d pan_fire_tick:%d current_tick:%d last_prepare_state_tick:%d\n", __func__, state_info[STATE_PAN_FIRE], prepare_state, state_handle->pan_fire_state, state_handle->pan_fire_tick, state_handle->current_tick, state_handle->last_prepare_state_tick);
 
@@ -818,7 +819,8 @@ static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *stat
         // state_handle->pan_fire_state = PAN_FIRE_ERROR_CLOSE;
         goto exit;
     }
-
+    if (prepare_state == STATE_IDLE)
+        return STATE_PAN_FIRE;
     mlogPrintf("%s, pan_fire last_prepare_state:%d pre_prepare_state:%d prepare_state:%d\n", __func__, state_handle->last_prepare_state, pre_prepare_state, prepare_state);
     if (state_handle->last_prepare_state != prepare_state)
     {
@@ -1075,7 +1077,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
     // STATE_PAN_FIRE
     if (!state_handle->temp_control_switch && state_handle->pan_fire_switch && state_handle->pan_fire_state == PAN_FIRE_CLOSE && state_handle->fire_gear == FIRE_BIG)
     {
-        if (state_handle->total_tick >= 2 * INPUT_DATA_HZ && state_handle->total_tick <= 5 * INPUT_DATA_HZ && data[len - 1] > 1200 && (data[len - 1] > state_handle->ignition_switch_close_temp + 500))
+        if (state_handle->total_tick >= 4 * INPUT_DATA_HZ && state_handle->total_tick <= 7 * INPUT_DATA_HZ && data[len - 1] > 1200 && (data[len - 1] > state_handle->ignition_switch_close_temp + 500))
         {
             mlogPrintf("%s judge STATE_PAN_FIRE\n", __func__);
             state_handle->pan_fire_enter_type = 0;
@@ -1688,16 +1690,9 @@ static void change_state(state_handle_t *state_handle)
 
     if (prepare_state == STATE_IDLE && state_handle->state != STATE_PAN_FIRE)
     {
-        if (state_handle->state == STATE_PAN_FIRE)
-        {
-            return;
-        }
-        else
-        {
-            // if (state_handle->current_tick != 0)
-            ++state_handle->current_tick;
-            return;
-        }
+        // if (state_handle->current_tick != 0)
+        ++state_handle->current_tick;
+        return;
     }
 
     // 状态切换
