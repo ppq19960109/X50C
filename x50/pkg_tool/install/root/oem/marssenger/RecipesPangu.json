@@ -740,120 +740,8 @@
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 5,
-                    "motorSpeed": 6,
-                    "motorDir": 1,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 2,
-                    "motorSpeed": 0,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 5,
-                    "motorSpeed": 6,
-                    "motorDir": 1,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 2,
-                    "motorSpeed": 0,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 5,
-                    "motorSpeed": 6,
-                    "motorDir": 1,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 2,
-                    "motorSpeed": 0,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 5,
-                    "motorSpeed": 6,
-                    "motorDir": 1,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
-                    "runPause": 0
-                },
-                {
-                    "mode": 1,
-                    "fire": 0,
-                    "temp": 0,
-                    "cookTime": 2,
-                    "motorSpeed": 0,
-                    "motorDir": 0,
-                    "waterTime": 0,
-                    "fan": 0,
-                    "hoodSpeed": 0,
-                    "repeat": 0,
-                    "repeatStep": 0,
+                    "repeat": 4,
+                    "repeatStep": 1,
                     "runPause": 0
                 },
                 {
@@ -881,7 +769,7 @@
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 0,
-                    "repeatStep": 11,
+                    "repeatStep": 3,
                     "runPause": 0
                 }
             ]
@@ -900,6 +788,146 @@
                     "fan": 0,
                     "hoodSpeed": 1,
                     "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        }
+    ],
+    "testMode": [
+        {
+            "dishName": "低温测试模式",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 180,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 14400,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 11,
+                    "repeatStep": 1,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "低速耐久模式",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 600,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 600,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 4999,
+                    "repeatStep": 1,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "高速耐久模式",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 180,
+                    "motorSpeed": 18,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 180,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 9999,
+                    "repeatStep": 1,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "火力模式",
+            "cookSteps": [
+                {
+                    "mode": 2,
+                    "fire": 10,
+                    "temp": 140,
+                    "cookTime": 1800,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 60,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 199,
+                    "repeatStep": 0,
+                    "runPause": 0,
+                    "waterRepeat": 1
+                }
+            ]
+        },
+        {
+            "dishName": "加热寿命模式",
+            "cookSteps": [
+                {
+                    "mode": 2,
+                    "fire": 10,
+                    "temp": 140,
+                    "cookTime": 660,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 60,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 999,
                     "repeatStep": 0,
                     "runPause": 0
                 }

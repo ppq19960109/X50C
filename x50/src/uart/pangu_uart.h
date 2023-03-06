@@ -37,17 +37,17 @@ typedef struct
     unsigned char mode;
     unsigned char fire;
     unsigned short temp;
-    unsigned short time;
+    unsigned int time;
     unsigned char motorSpeed;
     unsigned char motorDir;
     unsigned short waterTime;
     unsigned char fan;
     unsigned char hoodSpeed;
-    unsigned char repeat;
+    unsigned short repeat;
     unsigned char repeatStep;
     unsigned char runPause;
     unsigned short waterTime_cache;
-    unsigned char repeat_cache;
+    unsigned short repeat_cache;
 } pangu_cook_attr_t;
 
 typedef struct
