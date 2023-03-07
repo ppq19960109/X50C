@@ -672,6 +672,7 @@ int pangu_cook_start()
     }
     else
     {
+        dzlog_warn("%s current_step:%d total_step:%d", __func__, g_pangu_cook.current_step, g_pangu_cook.total_step);
         if (g_pangu_cook.total_step != 0)
         {
             if (g_pangu_cook.current_step < g_pangu_cook.total_step)
@@ -780,9 +781,8 @@ int pangu_recv_set(void *data)
             pangu_cook_attr[i].motorSpeed = motorSpeed->valueint;
             pangu_cook_attr[i].motorDir = motorDir->valueint;
             pangu_cook_attr[i].waterTime = waterTime->valueint;
-            if (waterRepeat == NULL)
-                pangu_cook_attr[i].waterTime_cache = 0;
-            else
+            pangu_cook_attr[i].waterTime_cache = 0;
+            if (waterRepeat != NULL)
             {
                 if (waterRepeat->valueint > 0)
                     pangu_cook_attr[i].waterTime_cache = pangu_cook_attr[i].waterTime;
@@ -793,8 +793,8 @@ int pangu_recv_set(void *data)
             pangu_cook_attr[i].repeat_cache = pangu_cook_attr[i].repeat;
             pangu_cook_attr[i].repeatStep = repeatStep->valueint;
             pangu_cook_attr[i].runPause = runPause->valueint;
-            if (pangu_cook_attr[i].repeat > 0 && pangu_cook_attr[i].repeatStep == 0)
-                pangu_cook_attr[i].repeatStep = 1;
+            // if (pangu_cook_attr[i].repeat > 0 && pangu_cook_attr[i].repeatStep == 0)
+            //     pangu_cook_attr[i].repeatStep = 1;
 
             if (pangu_cook_attr[i].waterTime_cache == 0)
                 g_total_time += pangu_cook_attr[i].waterTime;
@@ -919,10 +919,15 @@ static void POSIXTimer_cb(union sigval val)
                 }
                 else
                 {
+                    dzlog_warn("%s current_step:%d repeat:%d repeatStep:%d", __func__, g_pangu_cook.current_step, g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeat, g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeatStep);
                     if (g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeat && g_pangu_cook.current_step >= g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeatStep)
                     {
                         g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeat -= 1;
                         g_pangu_cook.current_step -= g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeatStep;
+                        if (g_pangu_cook.cook_attr[g_pangu_cook.current_step].repeatStep == 0)
+                        {
+                            g_pangu_cook.cook_attr[g_pangu_cook.current_step].waterTime = g_pangu_cook.cook_attr[g_pangu_cook.current_step].waterTime_cache;
+                        }
                     }
                     else
                     {

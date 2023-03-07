@@ -43,7 +43,7 @@ int report_msg_all_platform(cJSON *root)
     if (cJSON_Object_isNull(root))
     {
         cJSON_Delete(root);
-        dzlog_warn("%s,send NULL", __func__);
+        //dzlog_warn("%s,send NULL", __func__);
         return -1;
     }
     char *json = cJSON_PrintUnformatted(root);

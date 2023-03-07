@@ -802,7 +802,7 @@
                     "mode": 1,
                     "fire": 0,
                     "temp": 0,
-                    "cookTime": 180,
+                    "cookTime": 60,
                     "motorSpeed": 20,
                     "motorDir": 0,
                     "waterTime": 0,
@@ -904,7 +904,7 @@
                     "cookTime": 1800,
                     "motorSpeed": 0,
                     "motorDir": 0,
-                    "waterTime": 60,
+                    "waterTime": 120,
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 199,
@@ -921,15 +921,16 @@
                     "mode": 2,
                     "fire": 10,
                     "temp": 140,
-                    "cookTime": 660,
+                    "cookTime": 720,
                     "motorSpeed": 0,
                     "motorDir": 0,
-                    "waterTime": 60,
+                    "waterTime": 20,
                     "fan": 0,
                     "hoodSpeed": 0,
                     "repeat": 999,
                     "repeatStep": 0,
-                    "runPause": 0
+                    "runPause": 0,
+                    "waterRepeat": 1
                 }
             ]
         }

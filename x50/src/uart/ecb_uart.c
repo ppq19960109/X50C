@@ -211,8 +211,8 @@ static int ecb_timeout_cb(void)
     if (++ecb_msg_get_count > ecb_msg_get_timeout)
     {
         ecb_msg_get_count = 0;
-        ecb_uart_msg_get(true);
-        dzlog_warn("ecb_uart_msg_get\n");
+        // ecb_uart_msg_get(true);
+        // dzlog_warn("ecb_uart_msg_get\n");
     }
     if (ecb_uart_heart_timeout(false) < MSG_HEART_TIME)
     {
