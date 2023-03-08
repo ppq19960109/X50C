@@ -901,7 +901,7 @@
                     "mode": 2,
                     "fire": 10,
                     "temp": 140,
-                    "cookTime": 1800,
+                    "cookTime": 2400,
                     "motorSpeed": 0,
                     "motorDir": 0,
                     "waterTime": 120,
