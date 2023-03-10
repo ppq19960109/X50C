@@ -105,6 +105,7 @@ static int cook_assistant_hood_speed_cb(const int gear)
 }
 static void cook_assist_uart_switch(const int state)
 {
+    dzlog_warn("%s state:%d", __func__, state);
     static unsigned char open_uart_data[] = {0xAA, 0X01, 0X01, 0X00, 0XAC};
     static unsigned char close_uart_data[] = {0xAA, 0X01, 0X00, 0X00, 0XAB};
     static unsigned char version_uart_data[] = {0xAA, 0X01, 0X01, 0XFF, 0XAB, 0X96};
@@ -262,12 +263,12 @@ static void oil_temp_cb(const unsigned short temp, enum INPUT_DIR input_dir)
         right_oil_temp = temp;
     }
 
-    if (++report_temp_count >= 10 || report_temp_count == 5)
+    if (++report_temp_count >= 12 || report_temp_count == 6)
     {
         cJSON *root = cJSON_CreateObject();
         cJSON_AddNumberToObject(root, "LOilTemp", left_oil_temp / 10);
         cJSON_AddNumberToObject(root, "ROilTemp", right_oil_temp / 10);
-        if (report_temp_count != 5)
+        if (report_temp_count != 6)
         {
             report_temp_count = 0;
             report_msg_all_platform(root);
@@ -488,8 +489,9 @@ void cook_assist_init()
 
     // cook_assist_set_smartSmoke(1);
     // cook_assistant_hood_speed_cb(0,INPUT_RIGHT);
+    
+    // cook_assist_uart_switch(2);
     cook_assist_judge_work_mode();
-    cook_assist_uart_switch(2);
 }
 void cook_assist_deinit()
 {

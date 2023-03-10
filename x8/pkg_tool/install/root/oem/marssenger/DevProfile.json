@@ -486,7 +486,7 @@
             "valueType": 4,
             "funType": 1,
             "uartCmd": 227,
-            "uartByteLen": 29
+            "uartByteLen": 31
         },
         {
             "cloudKey": "ValveSwitch",
