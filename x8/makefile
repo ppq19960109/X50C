@@ -9,7 +9,7 @@ MKDIR = mkdir -p
 TOPDIR = .
 
 ALI_PATH:=LinkSDK-MQTT3-CA
-SRC_DIRS := $(shell find src -maxdepth 3 -type d)
+SRC_DIRS := $(shell find src -maxdepth 1 -type d)
 INC_DIRS += $(shell find ${ALI_PATH} -type d \( ! -name demos \))
 
 LINKTOOL_PATH:=liblinktool
