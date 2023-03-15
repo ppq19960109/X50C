@@ -9,6 +9,8 @@ extern "C"
 
     // #define BOIL_ENABLE
 // #define FIRE_CONFIRM_ENABLE
+#define TEMP_FIRE_ENABLE
+
 #define STATE_JUDGE_DATA_SIZE (10)
 #define INPUT_DATA_HZ (4)
 
@@ -72,7 +74,7 @@ extern "C"
         PAN_FIRE_HIGH_TEMP_EXIT_LOCK_TICK = INPUT_DATA_HZ * 5,
         PAN_FIRE_ERROR_LOCK_TICK = INPUT_DATA_HZ * 40,
         SHAKE_EXIT_TICK = INPUT_DATA_HZ * 20,
-        TEMP_CONTROL_LOCK_TICK = INPUT_DATA_HZ * 5,
+        TEMP_CONTROL_LOCK_TICK = INPUT_DATA_HZ * 4,
 #ifdef BOIL_ENABLE
         BOIL_START_TICK = INPUT_DATA_HZ * 9,
         BOIL_STOP_TICK = INPUT_DATA_HZ * 90,
@@ -105,7 +107,11 @@ extern "C"
         unsigned char temp_control_lock_countdown; // 控温，锁定时间
         unsigned short temp_control_enter_start_tick;
         unsigned short temp_control_target_value;
-
+#ifdef TEMP_FIRE_ENABLE
+        unsigned char temp_fire_state;
+        unsigned char temp_fire_countdown;
+        unsigned short temp_fire_temp;
+#endif
         unsigned int shake_permit_start_tick; // 允许翻炒开始的时间
         unsigned int shake_exit_tick;
         unsigned char shake_long;

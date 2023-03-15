@@ -747,11 +747,7 @@ static int state_func_idle(unsigned char prepare_state, state_handle_t *state_ha
 static int state_func_pan_fire(unsigned char prepare_state, state_handle_t *state_handle)
 {
     static unsigned char pre_prepare_state;
-#ifdef TEMP_FIRE_ENABLE
-    if ((state_handle->pan_fire_switch == 0 && state_handle->temp_control_switch == 0) || (state_handle->pan_fire_switch == 0 && state_handle->temp_control_switch == 1 && state_handle->temp_fire_state == 0))
-#else
-    if (state_handle->pan_fire_switch == 0 && state_handle->temp_control_switch == 0)
-#endif
+    if (!state_handle->pan_fire_switch || state_handle->temp_control_switch)
     {
         mlogPrintf("%s,switch exit\n", __func__);
         goto exit;
@@ -1534,7 +1530,7 @@ static int status_judge(state_handle_t *state_handle, const unsigned short *data
 /***********************************************************
  * 辅助控火处理函数
  ***********************************************************/
-static int temp_control_func(state_handle_t *state_handle)
+static void temp_control_func(state_handle_t *state_handle)
 {
     int i, average;
 
@@ -1542,26 +1538,6 @@ static int temp_control_func(state_handle_t *state_handle)
     {
         ++state_handle->temp_control_lock_countdown;
     }
-#ifdef TEMP_FIRE_ENABLE
-    if (state_handle->temp_fire_countdown > 0)
-    {
-        --state_handle->temp_fire_countdown;
-        if (state_handle->last_temp_data[state_handle->temp_data_size - 1] + 50 < state_handle->temp_fire_temp)
-        {
-            state_handle->temp_fire_countdown = 0;
-            if (state_handle->state != STATE_PAN_FIRE)
-            {
-                state_handle->temp_fire_state = 1;
-                return STATE_PAN_FIRE;
-            }
-        }
-    }
-    if (state_handle->state == STATE_PAN_FIRE)
-    {
-        return STATE_IDLE;
-    }
-    state_handle->temp_fire_state = 0;
-#endif
     // if (state_handle->pan_fire_state > PAN_FIRE_ERROR_CLOSE)
     // {
     //     return;
@@ -1595,10 +1571,6 @@ static int temp_control_func(state_handle_t *state_handle)
             state_handle->temp_control_first = 1;
             set_fire_gear(FIRE_SMALL, state_handle, 0);
             state_handle->temp_control_lock_countdown = 0;
-#ifdef TEMP_FIRE_ENABLE
-            state_handle->temp_fire_countdown = 2 * INPUT_DATA_HZ;
-            state_handle->temp_fire_temp = state_handle->last_temp;
-#endif
         }
         else
         {
@@ -1614,10 +1586,6 @@ static int temp_control_func(state_handle_t *state_handle)
             {
                 set_fire_gear(FIRE_SMALL, state_handle, 0);
                 state_handle->temp_control_lock_countdown = 0;
-#ifdef TEMP_FIRE_ENABLE
-                state_handle->temp_fire_countdown = 2 * INPUT_DATA_HZ;
-                state_handle->temp_fire_temp = state_handle->last_temp;
-#endif
             }
         }
         else if (state_handle->temp_control_target_value - 80 >= average)
@@ -1639,7 +1607,6 @@ static int temp_control_func(state_handle_t *state_handle)
                 cook_assist_remind_cb(0);
         }
     }
-    return STATE_IDLE;
 }
 
 /***********************************************************
@@ -1647,7 +1614,7 @@ static int temp_control_func(state_handle_t *state_handle)
  ***********************************************************/
 static void change_state(state_handle_t *state_handle)
 {
-    unsigned char prepare_state, next_state, temp_control_state = STATE_IDLE;
+    unsigned char prepare_state, next_state;
 
     state_handle->temp_data_size = ring_buffer_peek(&state_handle->ring_buffer, state_handle->last_temp_data, STATE_JUDGE_DATA_SIZE);
     state_handle->last_temp = state_handle->last_temp_data[state_handle->temp_data_size - 1];
@@ -1674,7 +1641,7 @@ static void change_state(state_handle_t *state_handle)
     // 控温
     if (state_handle->temp_control_switch)
     {
-        temp_control_state = temp_control_func(state_handle);
+        temp_control_func(state_handle);
     }
     if (state_hood.smart_smoke_switch == 0 && state_handle->pan_fire_switch == 0)
     {
@@ -1717,26 +1684,19 @@ static void change_state(state_handle_t *state_handle)
         }
     }
 
-    if (temp_control_state == STATE_PAN_FIRE)
-    {
-        next_state = temp_control_state;
-    }
-    else
-    {
-        // 下一个状态判断
-        prepare_state = status_judge(state_handle, &state_handle->last_temp_data[state_handle->temp_data_size - STATE_JUDGE_DATA_SIZE], STATE_JUDGE_DATA_SIZE);
-        mlogPrintf("%s,prepare_state:%s input_dir:%d\n", __func__, state_info[prepare_state], state_handle->input_dir);
+    // 下一个状态判断
+    prepare_state = status_judge(state_handle, &state_handle->last_temp_data[state_handle->temp_data_size - STATE_JUDGE_DATA_SIZE], STATE_JUDGE_DATA_SIZE);
+    mlogPrintf("%s,prepare_state:%s input_dir:%d\n", __func__, state_info[prepare_state], state_handle->input_dir);
 
-        if (prepare_state == STATE_IDLE && state_handle->state != STATE_PAN_FIRE)
-        {
-            // if (state_handle->current_tick != 0)
-            ++state_handle->current_tick;
-            return;
-        }
-        // 状态切换
-        next_state = g_state_func_handle[state_handle->state](prepare_state, state_handle);
+    if (prepare_state == STATE_IDLE && state_handle->state != STATE_PAN_FIRE)
+    {
+        // if (state_handle->current_tick != 0)
+        ++state_handle->current_tick;
+        return;
     }
 
+    // 状态切换
+    next_state = g_state_func_handle[state_handle->state](prepare_state, state_handle);
     if (state_handle->state != next_state)
     {
         state_handle->current_tick = 0;

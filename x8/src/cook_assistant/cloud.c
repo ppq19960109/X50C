@@ -148,6 +148,11 @@ void set_temp_control_switch(unsigned char temp_control_switch, enum INPUT_DIR i
     state_handle->temp_control_first = 0;
     state_handle->temp_control_lock_countdown = 0;
     state_handle->temp_control_enter_start_tick = 0;
+#ifdef TEMP_FIRE_ENABLE
+    state_handle->temp_fire_state = 0;
+    state_handle->temp_fire_countdown = 0;
+    state_handle->temp_fire_temp = 0;
+#endif
     if (temp_control_switch_cb != NULL)
         temp_control_switch_cb(temp_control_switch, input_dir);
 }
