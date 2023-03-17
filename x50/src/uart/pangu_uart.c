@@ -456,7 +456,7 @@ static int pangu_recv_cb(void *arg)
     }
     return 0;
 }
-static void pangu_transfer_set(signed char WaterInletValve, signed char Exhaust, signed char IndicatorLight, signed char PressurePot, signed char PushRod, signed char HeatDissipation)
+static void pangu_transfer_set(signed char WaterInletValve, unsigned short WaterIntake, signed char PressurePot, signed char PushRod, signed char HeatDissipation)
 {
     unsigned char uart_buf[8] = {0};
 
@@ -465,16 +465,10 @@ static void pangu_transfer_set(signed char WaterInletValve, signed char Exhaust,
         uart_buf[0] |= 1 << 5;
         uart_buf[1] = WaterInletValve;
     }
-    if (Exhaust >= 0)
-    {
-        uart_buf[0] |= 1 << 4;
-        uart_buf[2] = Exhaust;
-    }
-    if (IndicatorLight >= 0)
-    {
-        uart_buf[0] |= 1 << 3;
-        uart_buf[3] = IndicatorLight;
-    }
+
+    uart_buf[2] = WaterIntake >> 8;
+    uart_buf[3] = WaterIntake;
+
     if (PressurePot >= 0)
     {
         uart_buf[0] |= 1 << 2;
@@ -534,9 +528,15 @@ static int pangu_single_set(pangu_cook_attr_t *attr)
     pangu_attr_t *pangu_attr;
     if (attr->waterTime)
     {
-        pangu_transfer_set(1, -1, -1, -1, -1, -1);
         if (g_time == 0)
-            g_time = attr->waterTime;
+        {
+            g_time = attr->waterTime / 9 + 1;
+            pangu_transfer_set(1, attr->waterTime, -1, -1, -1);
+        }
+        else
+        {
+            pangu_transfer_set(1, g_time * 9 + 1, -1, -1, -1);
+        }
         report_work_state(REPORT_WORK_STATE_WATER);
     }
     else
@@ -576,8 +576,6 @@ static int pangu_single_set(pangu_cook_attr_t *attr)
         ++uart_buf_len;
         pangu_cuyi_set(uart_buf, uart_buf_len);
 
-        if (attr->fan)
-            pangu_transfer_set(-1, -1, -1, -1, -1, 1);
         if (attr->hoodSpeed > 0)
             hoodSpeed_set(attr->hoodSpeed);
 
@@ -627,7 +625,7 @@ int pangu_cook_stop_pause_finish(unsigned char state)
     POSIXTimerSet(g_pangu_timer, 0, 0);
     if (g_order_time == 0)
     {
-        pangu_transfer_set(0, -1, -1, -1, -1, 0);
+        pangu_transfer_set(0, 0, -1, -1, 0);
         unsigned char uart_buf[16] = {0};
         unsigned short uart_buf_len = 0;
 
@@ -881,7 +879,7 @@ int pangu_recv_set(void *data)
     if (cJSON_HasObjectItem(root, "PushRod"))
     {
         item = cJSON_GetObjectItem(root, "PushRod");
-        pangu_transfer_set(-1, -1, -1, -1, item->valueint, -1);
+        pangu_transfer_set(-1, 0, -1, item->valueint, -1);
     }
     return 0;
 }
@@ -914,7 +912,7 @@ static void POSIXTimer_cb(union sigval val)
                 if (g_pangu_cook.cook_attr[g_pangu_cook.current_step].waterTime)
                 {
                     g_pangu_cook.cook_attr[g_pangu_cook.current_step].waterTime = 0;
-                    pangu_transfer_set(0, -1, -1, -1, -1, -1);
+                    pangu_transfer_set(0, 0, -1, -1, -1);
                     pangu_cook_start();
                 }
                 else
