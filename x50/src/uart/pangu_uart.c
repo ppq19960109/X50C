@@ -201,8 +201,8 @@ int pangu_uart_send(unsigned char *in, int in_len)
         }
         res = write(fd, in, in_len);
         usleep(200000);
-        // res = write(fd, in, in_len);
-        // usleep(200000);
+        res = write(fd, in, in_len);
+        usleep(200000);
         // res = write(fd, in, in_len);
         // usleep(200000);
     fail:

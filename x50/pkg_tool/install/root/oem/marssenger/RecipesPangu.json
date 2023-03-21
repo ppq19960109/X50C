@@ -270,6 +270,73 @@
             "reserve": 0
         },
         {
+            "dishName": "馒头面团750g",
+            "imgUrl": "recipes/面团.png",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 3,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 3,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 20,
+                    "repeatStep": 1,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 23,
+                    "repeatStep": 1,
+                    "runPause": 0
+                }
+            ],
+            "details": "用料:\n中筋面粉750克,清水375克,细砂糖15克,高活性干酵母7克,食盐3克\n步骤:\n1、 将中筋面粉、细砂糖、食盐、高活性干酵母、清水放入主锅内，盖上主锅盖，揉面10分钟",
+            "cookType": 2,
+            "recipeType": 1,
+            "clearMode": 1,
+            "reserve": 0
+        },
+        {
             "dishName": "香菇牛肉酱",
             "imgUrl": "recipes/香菇牛肉酱.png",
             "cookSteps": [
