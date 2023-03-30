@@ -1001,5 +1001,445 @@
                 }
             ]
         }
+    ],
+    "PanguMode": [
+        {
+            "dishName": "馒头面团-揉面",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 3,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 3,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 21,
+                    "repeatStep": 1,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 9,
+                    "repeatStep": 1,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "面包面团-揉面",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 5,
+                    "repeatStep": 1,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 6,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 14,
+                    "repeatStep": 3,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "奶油打发",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 5,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 110,
+                    "motorSpeed": 6,
+                    "motorDir": 1,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "蛋白打发",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 5,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 290,
+                    "motorSpeed": 7,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "煲汤",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 60,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "研磨",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 60,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "酸奶发酵",
+            "cookSteps": [
+                {
+                    "mode": 4,
+                    "fire": 6,
+                    "temp": 40,
+                    "cookTime": 30,
+                    "motorSpeed": 4,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 4,
+                    "fire": 6,
+                    "temp": 40,
+                    "cookTime": 28770,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "面团发酵",
+            "cookSteps": [
+                {
+                    "mode": 4,
+                    "fire": 6,
+                    "temp": 40,
+                    "cookTime": 3600,
+                    "motorSpeed": 3,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "绞肉",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 25,
+                    "motorSpeed": 16,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "切碎",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 10,
+                    "motorSpeed": 11,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "冰沙",
+            "cookSteps": [
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 5,
+                    "motorSpeed": 8,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 2,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 3,
+                    "motorSpeed": 16,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 0,
+                    "repeat": 0,
+                    "repeatStep": 2,
+                    "runPause": 0
+                }
+            ]
+        },
+        {
+            "dishName": "豆浆",
+            "cookSteps": [
+                {
+                    "mode": 4,
+                    "fire": 10,
+                    "temp": 100,
+                    "cookTime": 60,
+                    "motorSpeed": 1,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 4,
+                    "fire": 5,
+                    "temp": 92,
+                    "cookTime": 20,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 4,
+                    "fire": 5,
+                    "temp": 92,
+                    "cookTime": 60,
+                    "motorSpeed": 3,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                },
+                {
+                    "mode": 4,
+                    "fire": 5,
+                    "temp": 92,
+                    "cookTime": 20,
+                    "motorSpeed": 0,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 13,
+                    "repeatStep": 1,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 180,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
+                    "runPause": 0
+                }
+            ]
+        }
     ]
 }

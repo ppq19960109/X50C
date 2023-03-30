@@ -788,6 +788,8 @@ int pangu_recv_set(void *data)
             pangu_cook_attr[i].fan = fan->valueint;
             pangu_cook_attr[i].hoodSpeed = hoodSpeed->valueint;
             pangu_cook_attr[i].repeat = repeat->valueint;
+            if (pangu_cook_attr[i].repeat > 0)
+                pangu_cook_attr[i].repeat -= 1;
             pangu_cook_attr[i].repeat_cache = pangu_cook_attr[i].repeat;
             pangu_cook_attr[i].repeatStep = repeatStep->valueint;
             pangu_cook_attr[i].runPause = runPause->valueint;

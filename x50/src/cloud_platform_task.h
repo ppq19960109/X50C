@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile.json"
 #define QUAD_NAME "DevQuad.json"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "5.1.8"
+#define SOFTER_VER "5.2.1"
 
 enum LINK_VALUE_TYPE
 {
