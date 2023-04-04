@@ -1423,7 +1423,7 @@
                     "hoodSpeed": 1,
                     "repeat": 0,
                     "repeatStep": 0,
-                    "runPause": 1
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -1465,7 +1465,7 @@
                     "hoodSpeed": 1,
                     "repeat": 0,
                     "repeatStep": 0,
-                    "runPause": 1
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
@@ -1507,7 +1507,7 @@
                     "hoodSpeed": 1,
                     "repeat": 0,
                     "repeatStep": 0,
-                    "runPause": 1
+                    "runPause": 0
                 },
                 {
                     "mode": 1,
