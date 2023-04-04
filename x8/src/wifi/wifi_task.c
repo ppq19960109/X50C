@@ -238,6 +238,12 @@ static int wiFiReport(int event)
 
 static int wiFiCallback(int event)
 {
+    cloud_dev_t *cloud_dev = get_cloud_dev();
+    if (event == RK_WIFI_State_CONNECTED && strlen(cloud_dev->device_secret) != 0)
+    {
+        systemRun("udhcpc -A 0 -t 0 -i wlan0 -n -q -b");
+    }
+
     if (event == RK_WIFI_State_CONNECTED && g_link_state > 0)
     {
     }
@@ -245,11 +251,6 @@ static int wiFiCallback(int event)
         wiFiReport(event);
     dzlog_warn("wiFiCallback:%d", event);
     g_wifi_state = event;
-
-    if (event == RK_WIFI_State_CONNECTED)
-    {
-        systemRun("udhcpc -A 1 -t 1 -i wlan0 -n -q -b");
-    }
     return 0;
 }
 static void linkkit_connected_cb(int connect)

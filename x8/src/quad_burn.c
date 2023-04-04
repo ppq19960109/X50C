@@ -39,7 +39,7 @@ static int curl_http_quad(const char *path, const char *body)
     CURL *curl = curl_easy_init();
     if (curl)
     {
-        printf("%s,g_product_key:%s,g_mac:%s\n", __func__, g_product_key, g_mac);
+        printf("%s,g_product_key:%s,g_mac:%s body:%s\n", __func__, g_product_key, g_mac, body);
         headers = curl_slist_append(headers, "Content-Type:application/json");
         sprintf(buf, "pk:%s", g_product_key);
         headers = curl_slist_append(headers, buf);
