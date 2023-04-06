@@ -235,13 +235,14 @@ void set_ignition_switch(unsigned char ignition_switch, enum INPUT_DIR input_dir
     state_handle_t *state_handle = get_input_handle(input_dir);
     mlogPrintf("%s,set_ignition_switch:%d input_dir:%d\n", __func__, ignition_switch, input_dir);
 
-    if (!state_hood.work_mode)
-        return;
     if (state_handle->ignition_switch == ignition_switch)
         return;
     state_handle->ignition_switch = ignition_switch;
     mlogPrintf("%s,ignition_switch change:%d\n", __func__, ignition_switch);
 
+    if (!state_hood.work_mode)
+        return;
+        
     state_handle_t *state_handle_another;
     if (input_dir == INPUT_LEFT)
     {
