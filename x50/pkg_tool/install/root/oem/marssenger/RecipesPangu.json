@@ -1664,8 +1664,22 @@
                     "waterTime": 0,
                     "fan": 0,
                     "hoodSpeed": 1,
-                    "repeat": 4,
+                    "repeat": 3,
                     "repeatStep": 1,
+                    "runPause": 0
+                },
+                {
+                    "mode": 1,
+                    "fire": 0,
+                    "temp": 0,
+                    "cookTime": 60,
+                    "motorSpeed": 20,
+                    "motorDir": 0,
+                    "waterTime": 0,
+                    "fan": 0,
+                    "hoodSpeed": 1,
+                    "repeat": 0,
+                    "repeatStep": 0,
                     "runPause": 0
                 }
             ]
