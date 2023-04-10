@@ -563,6 +563,30 @@ int get_attr_set_value(cloud_attr_t *ptr, cJSON *item, unsigned char *out) // æŠ
                 *ptr->value = num;
                 return 0;
             }
+            else if (strcmp("LStOvOperation", ptr->cloud_key) == 0)
+            {
+                if (num == 0x01)
+                {
+                    cloud_attr_t *attr = get_attr_ptr("LStOvState");
+                    if (attr != NULL)
+                    {
+                        if (*attr->value == 0x01 || *attr->value == 0x06)
+                            num = 0x05;
+                    }
+                }
+            }
+            else if (strcmp("RStOvOperation", ptr->cloud_key) == 0)
+            {
+                if (num == 0x01)
+                {
+                    cloud_attr_t *attr = get_attr_ptr("RStOvState");
+                    if (attr != NULL)
+                    {
+                        if (*attr->value == 0x01 || *attr->value == 0x06)
+                            num = 0x05;
+                    }
+                }
+            }
             // else if (strcmp("HoodSpeed", ptr->cloud_key) == 0)
             // {
             //     power_ota_install();

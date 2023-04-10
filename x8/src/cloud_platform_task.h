@@ -9,7 +9,7 @@
 #define PROFILE_NAME "DevProfile.json"
 #define QUAD_NAME "DevQuad.json"
 #define ETH_NAME "wlan0"
-#define SOFTER_VER "0.2.3"
+#define SOFTER_VER "0.2.4"
 
 enum OTA_PUSH_TYPE
 {
